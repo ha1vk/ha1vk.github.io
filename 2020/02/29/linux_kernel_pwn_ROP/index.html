@@ -5,36 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="Linux kernel rop根glibc下的ROP思路是差不多的，当我们学习掌握了glibc下的ROP，再来看kernel的ROP攻击，就很容易理解了。 与用户态同样的是，内核有也类似于PIE的机制，加kaslr，在启动系统时的脚本里可以指定开启或关闭kaslr。 12345678qemu-system-x86_64 \  -m 256M \  -kernel .&#x2F;bzImage \  -in">
 <meta property="og:type" content="article">
 <meta property="og:title" content="linux kernel pwn学习之ROP">
-<meta property="og:url" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/index.html">
+<meta property="og:url" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="Linux kernel rop根glibc下的ROP思路是差不多的，当我们学习掌握了glibc下的ROP，再来看kernel的ROP攻击，就很容易理解了。 与用户态同样的是，内核有也类似于PIE的机制，加kaslr，在启动系统时的脚本里可以指定开启或关闭kaslr。 12345678qemu-system-x86_64 \  -m 256M \  -kernel .&#x2F;bzImage \  -in">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image5.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image6.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image7.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image8.JPG">
+<meta property="og:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image1.JPG">
+<meta property="og:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image3.JPG">
+<meta property="og:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image5.JPG">
+<meta property="og:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image6.JPG">
+<meta property="og:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image7.JPG">
+<meta property="og:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image8.JPG">
 <meta property="article:published_time" content="2020-02-29T07:48:11.000Z">
 <meta property="article:modified_time" content="2025-06-26T03:21:04.098Z">
 <meta property="article:author" content="ha1vk">
@@ -42,9 +42,9 @@
 <meta property="article:tag" content="ROP">
 <meta property="article:tag" content="Linux Kernel">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2020/02/29/linux_kernel_pwn_ROP/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/">
+<link rel="canonical" href="https://github.com/2020/02/29/linux_kernel_pwn_ROP/">
 
 
 <script id="page-configurations">
@@ -106,7 +106,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -127,27 +127,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -205,10 +205,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_ROP/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/02/29/linux_kernel_pwn_ROP/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -243,7 +243,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -271,10 +271,10 @@
 
 <p>因此，对于开启了kaslr选项的系统，我们同样需要先泄露地址，然后计算出基址。在linux下，有一个文件，记录着内核各函数的地址，它就是**[&#x2F;proc&#x2F;kallsyms文件]{.mark}**，因此，我们只要读取这个文件，就能计算出需要的函数、gadgets的地址。系统一般会限制普通用户读取这个文件。我们做个试验。</p>
 <p>在普通用户下，cat &#x2F;proc&#x2F;kallsyms，发现地址全部都是0。</p>
-<img src="/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image1.JPG" class="">
+<img src="/2020/02/29/linux_kernel_pwn_ROP/image1.JPG" class="">
 
 <p>在root用户下，cat &#x2F;proc&#x2F;kallsyms，能够得到地址。</p>
-<img src="/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image2.JPG" class="">
+<img src="/2020/02/29/linux_kernel_pwn_ROP/image2.JPG" class="">
 
 <p>因此，如果没有提供其他方法，有时我们还需要像glibc下那样，泄露地址。</p>
 <h2 id="内核ROP的基本操作"><a href="#内核ROP的基本操作" class="headerlink" title="内核ROP的基本操作"></a>内核ROP的基本操作</h2><ol>
@@ -285,14 +285,14 @@
 </ol>
 <h2 id="寻找gadgets"><a href="#寻找gadgets" class="headerlink" title="寻找gadgets"></a>寻找gadgets</h2><p>我们仍然可以用ROPgadget工具来寻找gadgets，有些gadgets找不到的话，可以用IDA搜索。如果我们有vmlinux文件，则直接用工具在这里面找，如果我们只有bzImage文件，则需要用extract-vmlinux <a href="https://github.com/torvalds/linux/blob/master/scripts/extract-vmlinux">https://github.com/torvalds/linux/blob/master/scripts/extract-vmlinux</a>工具来解压出vmlinux文件，不过这个解压后的vmlinux是去符号的二进制文件，函数名都去掉了。</p>
 <p>我们得到的gadgets地址，如果开启了kaslr，则这个就不是绝对地址，那么就要在程序运行时，通过泄露或其他方法，计算出运行时的地址。</p>
-<img src="/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image3.JPG" class="">
+<img src="/2020/02/29/linux_kernel_pwn_ROP/image3.JPG" class="">
 
 <h2 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h2><p>使用gdb调试，首先是gdb –q vmlinux，这样能够进入gdb，并且加载vmlinux的符号。然后，找到我们需要的ko文件，还需要找到ko文件加载的地址，</p>
 <p>进入系统，输入lsmod，发现地址为0，这是因为在普通用户态下，不能查看这个地址。</p>
-<img src="/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image4.JPG" class="">
+<img src="/2020/02/29/linux_kernel_pwn_ROP/image4.JPG" class="">
 
 <p>在本地测试时，我们可以修改启动脚本，使得系统一开始就是root用户，然后我们可以查看模块的地址</p>
-<img src="/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image5.JPG" class="">
+<img src="/2020/02/29/linux_kernel_pwn_ROP/image5.JPG" class="">
 
 <p>得到地址后，我们就可以在gdb里输入</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//加载模块符号  </span></span><br><span class="line">add-symbol-file core.ko <span class="number">0xffffffffc020a000</span>  </span><br></pre></td></tr></table></figure>
@@ -304,13 +304,13 @@
 
 <p>我们看到，kallsyms被保存了一份到&#x2F;tmp目录下，而tmp目录下的文件我们普通用户也是可以读取的，于是，这就解决了地址的问题，我们有了地址了，那么就能计算出需要的东西的地址了。</p>
 <p>接下来，我们来分析一下驱动程序，ioctl函数定义了几个交互选项。</p>
-<img src="/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image6.JPG" class="">
+<img src="/2020/02/29/linux_kernel_pwn_ROP/image6.JPG" class="">
 
 <p>漏洞点在这里</p>
-<img src="/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image7.JPG" class="">
+<img src="/2020/02/29/linux_kernel_pwn_ROP/image7.JPG" class="">
 
 <p><strong>[a1是有符号数，我们只要传负数，即可绕过溢出检测]{.mark}</strong>，然后，后面qmemcpy的长度为a1的低2字节。我们可以在a1的低2字节写上长度，然后在a1的其他字节全部设置为0xF，这样，就能绕过检查，也能控制溢出长度了。v4是canary，和glibc下一样，我们需要想办法泄露canary。我们再看看其他函数</p>
-<img src="/ha1vk/2020/02/29/linux_kernel_pwn_ROP/image8.JPG" class="">
+<img src="/2020/02/29/linux_kernel_pwn_ROP/image8.JPG" class="">
 
 <p>off是我们能够控制的，于是，我们只要控制好off，就能把v7的值读出来。</p>
 <p>在rop里，我们得到root权限后，就应该返回用户态执行shell，而**[返回用户态用到swapgs和iretq这两条指令，在gadgets里能够找到。Iretq会恢复一系列的用户态寄存器值，因此，在程序一开始，我们就先利用内嵌汇编将几个重要的寄存器值保存到程序的变量里。]{.mark}**Iretq的时候再放到rop里。</p>
@@ -324,9 +324,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
-              <a href="/ha1vk/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
           </div>
 
         
@@ -335,11 +335,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/28/linux_kernel_%E6%BA%A2%E5%87%BA_0ctf2018-zerofs/" rel="prev" title="linux kernel 溢出之0ctf2018-zerofs">
+    <a href="/2020/02/28/linux_kernel_%E6%BA%A2%E5%87%BA_0ctf2018-zerofs/" rel="prev" title="linux kernel 溢出之0ctf2018-zerofs">
       <i class="fa fa-chevron-left"></i> linux kernel 溢出之0ctf2018-zerofs
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/29/linux_kernel_pwn_UAF/" rel="next" title="linux kernel pwn学习之UAF">
+    <a href="/2020/02/29/linux_kernel_pwn_UAF/" rel="next" title="linux kernel pwn学习之UAF">
       linux kernel pwn学习之UAF <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -412,20 +412,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -498,30 +498,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

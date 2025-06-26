@@ -5,39 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="一、binfmt_misc介绍binfmt_misc是Linux内核的一项功能，其使得内核可识别任意类型的可执行文件格式并传递至特定的用户空间应用程序，如模拟器和虚拟机。例如在装有qemu的x86-64的Linux中可以直接执行ARM64程序不需要指明使用qemu。   二、binfmt_misc机制分析要使用binfmt_misc机制，首先需要挂载binfmt_misc">
 <meta property="og:type" content="article">
 <meta property="og:title" content="利用binfmt_misc机制加快CGI的调试">
-<meta property="og:url" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/index.html">
+<meta property="og:url" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="一、binfmt_misc介绍binfmt_misc是Linux内核的一项功能，其使得内核可识别任意类型的可执行文件格式并传递至特定的用户空间应用程序，如模拟器和虚拟机。例如在装有qemu的x86-64的Linux中可以直接执行ARM64程序不需要指明使用qemu。   二、binfmt_misc机制分析要使用binfmt_misc机制，首先需要挂载binfmt_misc">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/7.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/8.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/9.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/10.png">
-<meta property="og:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/11.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/1.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/2.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/3.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/4.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/5.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/6.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/7.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/8.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/9.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/10.png">
+<meta property="og:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/11.png">
 <meta property="article:published_time" content="2025-06-19T07:34:03.000Z">
 <meta property="article:modified_time" content="2025-06-26T10:39:58.659Z">
 <meta property="article:author" content="ha1vk">
@@ -45,9 +45,9 @@
 <meta property="article:tag" content="CGI">
 <meta property="article:tag" content="binfmt_misc">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/1.png">
+<meta name="twitter:image" content="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/">
+<link rel="canonical" href="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/">
 
 
 <script id="page-configurations">
@@ -109,7 +109,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -130,27 +130,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -208,10 +208,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -246,7 +246,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                  <a href="/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
                 </span>
             </span>
 
@@ -269,14 +269,14 @@
 
       
         <h1 id="一、binfmt-misc介绍"><a href="#一、binfmt-misc介绍" class="headerlink" title="一、binfmt_misc介绍"></a>一、binfmt_misc介绍</h1><p>binfmt_misc是Linux内核的一项功能，其使得内核可识别任意类型的可执行文件格式并传递至特定的用户空间应用程序，如模拟器和虚拟机。例如在装有qemu的x86-64的Linux中可以直接执行ARM64程序不需要指明使用qemu。</p>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/1.png" class="" title="1.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/1.png" class="" title="1.png">
 
 <h1 id="二、binfmt-misc机制分析"><a href="#二、binfmt-misc机制分析" class="headerlink" title="二、binfmt_misc机制分析"></a>二、binfmt_misc机制分析</h1><p>要使用binfmt_misc机制，首先需要挂载<code>binfmt_misc</code></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc</span><br></pre></td></tr></table></figure>
 <p>在&#x2F;proc&#x2F;sys&#x2F;fs&#x2F;binfmt_misc文件夹下会有一些已经注册的配置文件，分别用来处理各种个样的二进制程序</p>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/2.png" class="" title="2.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/2.png" class="" title="2.png">
 <p>配置文件中的内容一般有<code>interpreter 文件交给哪个处理程序</code>、<code>magic 匹配文件头</code>、<code>mask 匹配文件头时使用的掩码</code></p>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/3.png" class="" title="3.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/3.png" class="" title="3.png">
 <p>type应为E或M类型</p>
 <ul>
 <li>若类型为E，则可执行文件格式由其文件扩展名进行识别：magic是与二进制格式相关联的文件扩展名；此时忽略offset和mask参数。</li>
@@ -296,24 +296,24 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;:hello:M:10:123456:\xff\xff\xff\xff\xff\xff:/bin/cat:O&quot; &gt; /proc/sys/fs/binfmt_misc/register</span><br></pre></td></tr></table></figure>
 <p>并使用这样的文件内容来触发</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aaaaaaaaaa123456bbbbbb</span><br></pre></td></tr></table></figure>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/4.png" class="" title="4.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/4.png" class="" title="4.png">
 <p>要取消注册一个配置文件，可以执行<code>echo -1 &gt; /proc/sys/fs/binfmt_misc/xxx</code></p>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/5.png" class="" title="5.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/5.png" class="" title="5.png">
 
 <p>我们还可以使用扩展名匹配的方式<br><code>echo &quot;:hello:E::log::/bin/cat:O&quot; &gt; /proc/sys/fs/binfmt_misc/register</code></p>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/6.png" class="" title="6.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/6.png" class="" title="6.png">
 
 <h1 id="四、binfmt-misc的利用"><a href="#四、binfmt-misc的利用" class="headerlink" title="四、binfmt_misc的利用"></a>四、binfmt_misc的利用</h1><h2 id="CGI程序调试"><a href="#CGI程序调试" class="headerlink" title="CGI程序调试"></a>CGI程序调试</h2><p>在调试CGI程序时，一般需要先用gdb附加到类似于httpd的主进程上，然后慢慢的跟踪子进程的创建，最后一步一步的才能调试到CGI程序；又或者是对CGI程序打补丁，加入sleep函数给gdb附加创造一个时机。有了binfmt_misc机制，CGI调试可以变得非常简单，对于带有<code>.cgi</code>后缀的，我们可以直接使用扩展名匹配的方式，将<code>.cgi</code>程序交给gdb来启动<br>为了过滤出想要调试的具体cgi程序，我们需要写一个中间代理程序。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;:cgi_test:E::cgi::/mnt/hgfs/works/share/debug:O&quot; &gt; /proc/sys/fs/binfmt_misc/register</span><br></pre></td></tr></table></figure>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/7.png" class="" title="7.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/7.png" class="" title="7.png">
 
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">100</span>];</span><br><span class="line">    <span class="type">char</span> tmp_exec[<span class="number">200</span>];</span><br><span class="line">    <span class="type">char</span> *gdb_path = <span class="string">&quot;/usr/bin/gdb&quot;</span>;</span><br><span class="line">    <span class="type">char</span> *target_config = <span class="string">&quot;test2.cgi&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 构建新的参数数组，保留所有原始参数</span></span><br><span class="line">    <span class="type">char</span> **new_argv = <span class="built_in">calloc</span>(argc + <span class="number">10</span>,<span class="keyword">sizeof</span>(<span class="type">char</span> *));</span><br><span class="line">    <span class="keyword">if</span> (!new_argv) &#123;</span><br><span class="line">        perror(<span class="string">&quot;calloc failed&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">char</span> *name = <span class="built_in">strrchr</span>(argv[<span class="number">1</span>],<span class="string">&#x27;/&#x27;</span>);</span><br><span class="line">    <span class="keyword">if</span> (name) &#123;</span><br><span class="line">        name = name + <span class="number">1</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        name = argv[<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">snprintf</span>(tmp_exec,<span class="number">200</span>,<span class="string">&quot;/tmp/%s.tmp&quot;</span>,name);</span><br><span class="line">    <span class="built_in">snprintf</span>(buf,<span class="number">100</span>,<span class="string">&quot;cp %s %s&quot;</span>,argv[<span class="number">1</span>],tmp_exec);</span><br><span class="line">    system(buf);</span><br><span class="line">    <span class="comment">// 检查第一个参数是否匹配目标配置</span></span><br><span class="line">    <span class="keyword">if</span> (argc &gt; <span class="number">1</span> &amp;&amp; <span class="built_in">strstr</span>(argv[<span class="number">1</span>], target_config)) &#123;</span><br><span class="line">        new_argv[<span class="number">0</span>] = <span class="string">&quot;/usr/bin/gdb&quot;</span>;</span><br><span class="line">        new_argv[<span class="number">1</span>] = <span class="string">&quot;-x&quot;</span>;</span><br><span class="line">        new_argv[<span class="number">2</span>] = <span class="string">&quot;/mnt/hgfs/works/share/script.gdb&quot;</span>;</span><br><span class="line">        new_argv[<span class="number">3</span>] = <span class="string">&quot;--args&quot;</span>;</span><br><span class="line">        new_argv[<span class="number">4</span>] = tmp_exec;</span><br><span class="line">        <span class="comment">// 复制剩余参数</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">2</span>; i &lt; argc; i++) &#123;</span><br><span class="line">            new_argv[i + <span class="number">3</span>] = argv[i];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 执行gdb</span></span><br><span class="line">        execv(gdb_path, new_argv);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        new_argv[<span class="number">0</span>] = tmp_exec;</span><br><span class="line">        <span class="comment">// 直接复制所有参数</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">2</span>; i &lt; argc; i++) &#123;</span><br><span class="line">            new_argv[i<span class="number">-1</span>] = argv[i];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 执行</span></span><br><span class="line">        execv(tmp_exec, new_argv);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果execv返回，说明出错了</span></span><br><span class="line">    perror(<span class="string">&quot;execv failed&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(new_argv);</span><br><span class="line">    <span class="keyword">return</span> EXIT_FAILURE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>中间代理程序会检查要执行的程序，如果是<code>test2.cgi</code>，那么就会使用<code>/usr/bin/gdb -x /mnt/hgfs/works/share/script.gdb --args /tmp/test2.cgi.tmp xxxx</code>，这里我们需要拷贝一份CGI程序，同时后缀要加上.tmp防止gdb启动CGI时再次匹配上<code>.cgi</code>后缀进入一个死循环。</p>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/8.png" class="" title="8.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/8.png" class="" title="8.png">
 
 <p>在实际调试时，我们应该使用gdbserver而不是gdb来启动CGI，因为CGI的标准输入输出不在终端，因此稍微修改一下</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">100</span>];</span><br><span class="line">    <span class="type">char</span> tmp_exec[<span class="number">200</span>];</span><br><span class="line">    <span class="type">char</span> *gdb_path = <span class="string">&quot;/usr/bin/gdbserver&quot;</span>;</span><br><span class="line">    <span class="type">char</span> *target_config = <span class="string">&quot;test2.cgi&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 构建新的参数数组，保留所有原始参数</span></span><br><span class="line">    <span class="type">char</span> **new_argv = <span class="built_in">calloc</span>(argc + <span class="number">10</span>,<span class="keyword">sizeof</span>(<span class="type">char</span> *));</span><br><span class="line">    <span class="keyword">if</span> (!new_argv) &#123;</span><br><span class="line">        perror(<span class="string">&quot;calloc failed&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">char</span> *name = <span class="built_in">strrchr</span>(argv[<span class="number">1</span>],<span class="string">&#x27;/&#x27;</span>);</span><br><span class="line">    <span class="keyword">if</span> (name) &#123;</span><br><span class="line">        name = name + <span class="number">1</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        name = argv[<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">snprintf</span>(tmp_exec,<span class="number">200</span>,<span class="string">&quot;/tmp/%s.tmp&quot;</span>,name);</span><br><span class="line">    <span class="built_in">snprintf</span>(buf,<span class="number">100</span>,<span class="string">&quot;cp %s %s&quot;</span>,argv[<span class="number">1</span>],tmp_exec);</span><br><span class="line">    system(buf);</span><br><span class="line">    <span class="comment">// 检查第一个参数是否匹配目标配置</span></span><br><span class="line">    <span class="keyword">if</span> (argc &gt; <span class="number">1</span> &amp;&amp; <span class="built_in">strstr</span>(argv[<span class="number">1</span>], target_config)) &#123;</span><br><span class="line">        new_argv[<span class="number">0</span>] = <span class="string">&quot;/usr/bin/gdbserver&quot;</span>;</span><br><span class="line">        new_argv[<span class="number">1</span>] = <span class="string">&quot;0.0.0.0:1234&quot;</span>;</span><br><span class="line">        new_argv[<span class="number">2</span>] = tmp_exec;</span><br><span class="line">        <span class="comment">// 复制剩余参数</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">2</span>; i &lt; argc; i++) &#123;</span><br><span class="line">            new_argv[i + <span class="number">1</span>] = argv[i];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 执行gdbserver</span></span><br><span class="line">        execv(gdb_path, new_argv);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        new_argv[<span class="number">0</span>] = tmp_exec;</span><br><span class="line">        <span class="comment">// 直接复制所有参数</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">2</span>; i &lt; argc; i++) &#123;</span><br><span class="line">            new_argv[i<span class="number">-1</span>] = argv[i];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 执行</span></span><br><span class="line">        execv(tmp_exec, new_argv);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果execv返回，说明出错了</span></span><br><span class="line">    perror(<span class="string">&quot;execv failed&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(new_argv);</span><br><span class="line">    <span class="keyword">return</span> EXIT_FAILURE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/9.png" class="" title="9.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/9.png" class="" title="9.png">
 
 <p>CGI被httpd等程序启动时，会自动进入gdbserver监听1234端口等待调试。</p>
 <h2 id="qemu-user模拟下的CGI调试"><a href="#qemu-user模拟下的CGI调试" class="headerlink" title="qemu-user模拟下的CGI调试"></a>qemu-user模拟下的CGI调试</h2><p>以模拟调试Cisco RV340的CGI为例，使用chroot + qemu-arm-static基本可以将根文件系统模拟起来，虽然有报错但是http服务可以正常启动。</p>
@@ -323,10 +323,10 @@
 <p>中间代理程序debug如下</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="type">char</span> *qemu_path = <span class="string">&quot;/qemu-arm-static&quot;</span>;</span><br><span class="line">    <span class="type">char</span> *target_config = <span class="string">&quot;/www/cgi-bin/upload.cgi&quot;</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 构建新的参数数组，保留所有原始参数</span></span><br><span class="line">    <span class="type">char</span> **new_argv = <span class="built_in">malloc</span>((argc + <span class="number">1</span>) * <span class="keyword">sizeof</span>(<span class="type">char</span> *));</span><br><span class="line">    <span class="keyword">if</span> (!new_argv) &#123;</span><br><span class="line">        perror(<span class="string">&quot;malloc failed&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 第一个参数是qemu路径</span></span><br><span class="line">    new_argv[<span class="number">0</span>] = qemu_path;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 检查第一个参数是否匹配目标配置</span></span><br><span class="line">    <span class="keyword">if</span> (argc &gt; <span class="number">1</span> &amp;&amp; <span class="built_in">strcmp</span>(argv[<span class="number">1</span>], target_config) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// 添加-g 1234参数</span></span><br><span class="line">        new_argv[<span class="number">1</span>] = <span class="string">&quot;-g&quot;</span>;</span><br><span class="line">        new_argv[<span class="number">2</span>] = <span class="string">&quot;1234&quot;</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 复制剩余参数</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt; argc; i++) &#123;</span><br><span class="line">            new_argv[i + <span class="number">2</span>] = argv[i];</span><br><span class="line">        &#125;</span><br><span class="line">        new_argv[argc + <span class="number">2</span>] = <span class="literal">NULL</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 执行qemu</span></span><br><span class="line">        execv(qemu_path, new_argv);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 直接复制所有参数</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt; argc; i++) &#123;</span><br><span class="line">            new_argv[i] = argv[i];</span><br><span class="line">        &#125;</span><br><span class="line">        new_argv[argc] = <span class="literal">NULL</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 执行qemu</span></span><br><span class="line">        execv(qemu_path, new_argv);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果execv返回，说明出错了</span></span><br><span class="line">    perror(<span class="string">&quot;execv failed&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(new_argv);</span><br><span class="line">    <span class="keyword">return</span> EXIT_FAILURE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>代理程序过滤了<code>/www/cgi-bin/upload.cgi</code>，如果匹配到这个CGI，就会执行<code>/qemu-arm-static -g 1234 /www/cgi-bin/upload.cgi</code>进入调试模式。</p>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/10.png" class="" title="10.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/10.png" class="" title="10.png">
 
 <p>此时可以直接使用<code>gdb-multiarch</code>进行远程附加，可以看到环境变量传递这些一个不漏，比手动执行CGI然后构造<code>REQUEST_METHOD=POST QUERY_STRING</code>的方式要更加的方便快捷，是服务器真实传递给CGI的参数。</p>
-<img src="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/11.png" class="" title="11.png">
+<img src="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/11.png" class="" title="11.png">
 
 <h1 id="五、小结"><a href="#五、小结" class="headerlink" title="五、小结"></a>五、小结</h1><p>binfmt-misc机制可以匹配任意格式的文件并将文件传递给注册的处理程序进行处理。我们可以借助binfmt-misc机制来对一些特定的程序进行处理，比如加入调试、监听程序的打开等操作。</p>
 <h1 id="六、参考"><a href="#六、参考" class="headerlink" title="六、参考"></a>六、参考</h1><p><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Binfmt_misc">binfmt_misc wiki</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_27565769/article/details/131219637">binfmt_misc CSDN</a></p>
@@ -339,9 +339,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/QEMU/" rel="tag"># QEMU</a>
-              <a href="/ha1vk/tags/CGI/" rel="tag"># CGI</a>
-              <a href="/ha1vk/tags/binfmt-misc/" rel="tag"># binfmt_misc</a>
+              <a href="/tags/QEMU/" rel="tag"># QEMU</a>
+              <a href="/tags/CGI/" rel="tag"># CGI</a>
+              <a href="/tags/binfmt-misc/" rel="tag"># binfmt_misc</a>
           </div>
 
         
@@ -350,7 +350,7 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/" rel="prev" title="Android保护机制及内核漏洞利用总结">
+    <a href="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/" rel="prev" title="Android保护机制及内核漏洞利用总结">
       <i class="fa fa-chevron-left"></i> Android保护机制及内核漏洞利用总结
     </a></div>
       <div class="post-nav-item"></div>
@@ -424,20 +424,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -510,30 +510,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

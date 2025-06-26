@@ -5,33 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，仅两个功能   其中，delete功能只能用3次，delete功能没有清空指针，存在double free漏洞。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ciscn_2019_sw_5(tcache下只有3次free限制时的巧妙利用手法)">
-<meta property="og:url" content="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/index.html">
+<meta property="og:url" content="https://github.com/2020/04/30/ciscn_2019_sw_5/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，仅两个功能   其中，delete功能只能用3次，delete功能没有清空指针，存在double free漏洞。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/image4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/image5.png">
+<meta property="og:image" content="https://github.com/2020/04/30/ciscn_2019_sw_5/image1.png">
+<meta property="og:image" content="https://github.com/2020/04/30/ciscn_2019_sw_5/image2.png">
+<meta property="og:image" content="https://github.com/2020/04/30/ciscn_2019_sw_5/image3.png">
+<meta property="og:image" content="https://github.com/2020/04/30/ciscn_2019_sw_5/image4.png">
+<meta property="og:image" content="https://github.com/2020/04/30/ciscn_2019_sw_5/image5.png">
 <meta property="article:published_time" content="2020-04-30T10:32:50.000Z">
 <meta property="article:modified_time" content="2025-06-25T12:20:03.978Z">
 <meta property="article:author" content="ha1vk">
@@ -40,9 +40,9 @@
 <meta property="article:tag" content="glibc 2.27">
 <meta property="article:tag" content="堆风水">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/04/30/ciscn_2019_sw_5/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/">
+<link rel="canonical" href="https://github.com/2020/04/30/ciscn_2019_sw_5/">
 
 
 <script id="page-configurations">
@@ -104,7 +104,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -125,27 +125,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -203,10 +203,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/04/30/ciscn_2019_sw_5/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/04/30/ciscn_2019_sw_5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -241,7 +241,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -264,16 +264,16 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/04/30/ciscn_2019_sw_5/image1.png" class="">
+<img src="/2020/04/30/ciscn_2019_sw_5/image1.png" class="">
 
 <p>然后，我们用IDA分析一下，仅两个功能</p>
-<img src="/ha1vk/2020/04/30/ciscn_2019_sw_5/image2.png" class="">
+<img src="/2020/04/30/ciscn_2019_sw_5/image2.png" class="">
 
 <p>其中，delete功能只能用3次，delete功能没有清空指针，存在double free漏洞。</p>
-<img src="/ha1vk/2020/04/30/ciscn_2019_sw_5/image3.png" class="">
+<img src="/2020/04/30/ciscn_2019_sw_5/image3.png" class="">
 
 <p>Add功能，size不可控，结尾printf可以输出堆内容。</p>
-<img src="/ha1vk/2020/04/30/ciscn_2019_sw_5/image4.png" class="">
+<img src="/2020/04/30/ciscn_2019_sw_5/image4.png" class="">
 
 <p>我们可以利用add结尾的printf输出，main_arean地址，那么，我们需要得到unsorted bin才行。由于delete功能仅有3次机会。Glibc版本为2.27，存在tcache，因此，我们先利用2次，构造一个double free，然后分配到tcache 的表头，篡改对应size的chunk count为-1，同时篡改对应0x80的chunk头chunk指针为伪造的chunk地址，由于不知道堆地址，因此，我们需要爆破半个字节。</p>
 <p>首先，申请三个堆</p>
@@ -286,7 +286,7 @@
 <p>接下来，第一次申请，申请到0原来的位置，我们开始伪造chunk</p>
 <p><em>#3伪造一个0x100的chunk，同时设置next指针仍然指向heap_base + 0x280，形成循环链表</em></p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#3伪造一个0x100的chunk，同时设置next指针仍然指向heap_base + 0x280，形成循环链表</span></span><br><span class="line">add(<span class="string">&#x27;t1&#x27;</span>,p64(heap_base + <span class="number">0x280</span>) + p64(heap_base + <span class="number">0x268</span>) + p64(<span class="number">0x101</span>) + p64(heap_base + <span class="number">0x270</span>))</span><br></pre></td></tr></table></figure>
-<img src="/ha1vk/2020/04/30/ciscn_2019_sw_5/image5.png" class="">
+<img src="/2020/04/30/ciscn_2019_sw_5/image5.png" class="">
 
 <p>我们伪造的chunk如上图，之所以这么伪造，是因为最后一次delete是要用来得到unsorted bin的，首先，当我们申请到0x280处时,0x100的tcache bin头变更为0x270。此时，我们delete掉0x100的伪造chunk后0x280处保留了main_arena地址。接下来我们申请0x270处，tcache bin头变更为0x268，我们填充数据到0x280，然后，就可以泄露出0x280处的main_arena值。接下来，我们申请到0x268，tcache bin头变更为0x280，然后我们从0x268处开始向后写数据，在0x280处写上malloc_hook的地址。此时，tcache链表的布局变成了</p>
 <p>0x280——malloc_hook</p>
@@ -303,10 +303,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/tcache/" rel="tag"># tcache</a>
-              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
-              <a href="/ha1vk/tags/glibc-2-27/" rel="tag"># glibc 2.27</a>
-              <a href="/ha1vk/tags/%E5%A0%86%E9%A3%8E%E6%B0%B4/" rel="tag"># 堆风水</a>
+              <a href="/tags/tcache/" rel="tag"># tcache</a>
+              <a href="/tags/UAF/" rel="tag"># UAF</a>
+              <a href="/tags/glibc-2-27/" rel="tag"># glibc 2.27</a>
+              <a href="/tags/%E5%A0%86%E9%A3%8E%E6%B0%B4/" rel="tag"># 堆风水</a>
           </div>
 
         
@@ -315,11 +315,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/04/30/ciscn_2019_ne_3/" rel="prev" title="ciscn_2019_ne_3(ROP长度过小技巧)">
+    <a href="/2020/04/30/ciscn_2019_ne_3/" rel="prev" title="ciscn_2019_ne_3(ROP长度过小技巧)">
       <i class="fa fa-chevron-left"></i> ciscn_2019_ne_3(ROP长度过小技巧)
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/04/30/ciscn_2019_sw_7/" rel="next" title="ciscn_2019_sw_7">
+    <a href="/2020/04/30/ciscn_2019_sw_7/" rel="next" title="ciscn_2019_sw_7">
       ciscn_2019_sw_7 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -391,20 +391,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -477,30 +477,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

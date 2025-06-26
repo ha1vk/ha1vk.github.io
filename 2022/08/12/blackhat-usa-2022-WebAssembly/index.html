@@ -5,68 +5,68 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="WebAssembly被用在浏览器、嵌入式、云计算等领域，它使用虚拟机和字节码技术，因此能够在多平台运行无需重新编译。之前也有许多有关WebAssembly的议题出现在BlackHat大会上，经过分析，它们大多是针对程序编译为WASM以后，这个程序的行为、漏洞能否利用等方面进行的研究。比如一个程序原本具有栈溢出，但是编译为WASM文件后运行，由于WASM的架构和运行方式，使得这个程序的栈溢出消失或">
 <meta property="og:type" content="article">
 <meta property="og:title" content="blackhat_usa_2022_WebAssembly">
-<meta property="og:url" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/index.html">
+<meta property="og:url" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="WebAssembly被用在浏览器、嵌入式、云计算等领域，它使用虚拟机和字节码技术，因此能够在多平台运行无需重新编译。之前也有许多有关WebAssembly的议题出现在BlackHat大会上，经过分析，它们大多是针对程序编译为WASM以后，这个程序的行为、漏洞能否利用等方面进行的研究。比如一个程序原本具有栈溢出，但是编译为WASM文件后运行，由于WASM的架构和运行方式，使得这个程序的栈溢出消失或">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-10.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-14.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-12.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-13.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-11.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-7.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-8.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-9.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-15.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-16.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-17.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-18.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-29.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-28.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-26.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-27.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-19.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-20.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-21.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-22.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-23.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-24.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-25.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-30.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-10.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-14.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-12.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-13.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-11.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-1.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-2.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-3.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-4.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-5.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-6.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-7.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-8.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-9.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-15.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-16.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-17.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-18.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-29.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-28.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-26.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-27.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-19.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-20.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-21.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-22.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-23.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-24.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-25.png">
+<meta property="og:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-30.png">
 <meta property="article:published_time" content="2022-08-12T08:04:45.000Z">
 <meta property="article:modified_time" content="2025-06-26T08:09:13.017Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="解释器&#x2F;简易虚拟机">
 <meta property="article:tag" content="wasm">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-10.png">
+<meta name="twitter:image" content="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/image-10.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/">
+<link rel="canonical" href="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/">
 
 
 <script id="page-configurations">
@@ -128,7 +128,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -149,27 +149,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -227,10 +227,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2022/08/12/blackhat-usa-2022-WebAssembly/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -265,7 +265,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                  <a href="/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
                 </span>
             </span>
 
@@ -288,42 +288,42 @@
 
       
         <p>WebAssembly被用在浏览器、嵌入式、云计算等领域，它使用虚拟机和字节码技术，因此能够在多平台运行无需重新编译。之前也有许多有关WebAssembly的议题出现在BlackHat大会上，经过分析，它们大多是针对程序编译为WASM以后，这个程序的行为、漏洞能否利用等方面进行的研究。比如一个程序原本具有栈溢出，但是编译为WASM文件后运行，由于WASM的架构和运行方式，使得这个程序的栈溢出消失或者变得无法利用。而我们的研究，则是侧重于如何挖掘WASM运行时的漏洞以及如何对WASM虚拟机方面的漏洞进行利用，并总结出通用的漏洞挖掘方向和利用思路。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-10.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-10.png" class="">
 
 <p>WebAssembly运行时的架构标准如图，首先通过<code>parser</code>对wasm文件进行解析，将它们解析为一个虚拟机实例，虚拟机用于两种堆栈，一个是<code>pc堆栈</code>，用于存储跟wasm虚拟机控制流有关的指令结构体或者函数指针等；另一个是<code>sp堆栈</code>，用于存储wasm程序中使用到的数据，比如变量、常量等。</p>
 <p><code>pc堆栈</code>是在<code>parser</code>阶段就确定好了的，指令运行时，所有的数据访问操作都只发生在<code>sp堆栈</code>和其他一些存储区。因此，传统的c语言溢出程序编译为wasm后，发生的溢出只影响了<code>sp堆栈</code>中的数据，程序流程不受影响，所有的指令访存的操作在虚拟机中的实现代码中都会进行边界检查。</p>
 <p>functions、tables、memories等对象可以通过<code>import</code>节进行导入,WASM虚拟机会解析<code>import</code>节并导入相关的对象，WASI是系统功能接口，类似于C语言下的<code>syscall</code>，里面提供了一些操作系统的函数，比如<code>read/write</code>等，WASI也是通过<code>import</code>节进行导入的，虚拟机在解析节的时候会根据<code>import</code>表导入对应的<code>WASI</code>函数，WASI函数不同的WASM虚拟机有不同的实现，都会有权限限制，比如<code>open</code>等只能限制访问设定好的目录等。</p>
 <p>WASM轻量化的虚拟机，并且还有WASI的加持，因此它能够当作容器，<code>Docker</code>的作者也曾经开玩笑说如果WASI早点出现，<code>docker</code>也许不会存在，这也说明了WASM+WASI具有较好的前途。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-14.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-14.png" class="">
 
 <p>通过分析，我们确定了三处最有可能出现的地方，第一个是<code>Parser</code>解析模块，这里主要是在解析<code>WASM</code>文件时可能会出现一些漏洞，对于这方面，AFL等现有工具非常适合对文件结构进行<code>Fuzz</code>；第二个是<code>WASI</code>接口函数，第三个则是字节码实现方面的边界检查器可能出现漏洞。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-12.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-12.png" class="">
 
 <p>我们针对上面三处可能出现漏洞的地方，设计了一款专门的<code>Fuzz</code>工具。现有的Fuzz工具不能很好的测试<code>WASI</code>和字节码实现方面的漏洞，因为这两方面的样本在构造时需要考虑上下文关系，比如一个字节码<code>i32.store</code>，这个指令是操作内存的，前提是必须要有一个<code>memory</code>的<code>section</code>存在，如果没有，则<code>i32.store</code>总是报没有<code>memory</code>对象存在，那么测试就不能深入下去；同理，对于<code>WASI</code>函数，首先需要构造一个<code>import</code>表将需要的函数导入，然后再使用字节码<code>call</code>去调用；这些上下文关系在现有的模糊测试中很难探测到。因此，我们需要自己开发<code>Fuzz</code>工具，将上下文考虑进去。</p>
 <p>实际上，我们是设计了一个<code>WASM</code>生成器，它从测试器生成的样本中读入数据，然后生成对应的wasm文件，可以说，每一个独立的样本都有一个与之对应的wasm文件，这是一种映射关系，那么当样本稍微改变以后，对应的wasm文件也会改变，因此生成的wasm文件具有覆盖率引导性。覆盖率引导的模糊测试是当今流行的高效测试方法，那么我们有了覆盖率引导的wasm文件样本后，测试也会高效。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-13.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-13.png" class="">
 
 
 
 <p>我们是如何实现生成器的呢？我们分为三个方面，首先来看如何生成WASM文件。</p>
 <p>我们将WASM文件抽象为一个类，那么它由N个<code>section</code>组成，每种不同的<code>section</code>中由各自的数据结构，结构中，有些字段可以随意的改变，有些字段只能是区间范围值，有些则是固定值。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-11.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-11.png" class="">
 
 <p>我们将这些规则写到生成器中，用于限定数据的生成。为了便于实现，我们抽象出<code>Section</code>类，对于每种不同类型的<code>Section</code>，我们实现不同的<code>Section</code>子类来处理各自的字段限定情况。其中<code>generate</code>函数用于生成当前<code>Section</code>对象中的数据，这个过程，它会从样本中读入数据，并根据数据的值来做不同的数据生成。<code>getEncode</code>函数用于将当前<code>Section</code>对象输出为<code>WASM</code>文件中的<code>Section</code>结构。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image.png" class="">
 
 <p>为了说明数据是如何生成的，下面举一个例子</p>
 <p>比如我们要生成一个整数，我们使用一个策略化的方面，首先，我们从<code>sample</code>文件中读入一个数据，并转化为整数，在这里用到了<code>range(0,6)</code>，它是读入了一个整数，然后将整数进行了求余得到的区间数，根据这个数，我们返回不同的数据，比如是7的时候，我们通过<code>range(0,50000)</code>读入整数并计算一个区间数，是5的时候，返回一个边界值<code>0xffffffff</code>等。因为所有的数据跟样本都具有对应性，因此是覆盖率引导的。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-1.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-1.png" class="">
 
 
 
 <p>接下来，我将要介绍如何对字节码进行<code>Fuzz</code></p>
 <p>我们根据<code>WASM</code>标准文档，提取所有的字节码，对于每一个不同类型的字节码，我们都实现一个对应的<code>Instruction</code>子类用来限定它们的一些参数，如图代码，<code>generate</code>函数用于生成当前对象中的数据，其中<code>Context</code>类用于保存上下文，比如某个字节码会影响上下文，那么我们在<code>generate</code>中数据生成好时，就把上下文数据更新到<code>context</code>对象中去，以后供其他指令生成使用；<code>getBytecode</code>函数用于将字节码对象输出为<code>WASM</code>文件中字节码的结构数据。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-2.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-2.png" class="">
 
 <p>下面说明如何限定一个字节码的数据生成行为，比如字节码<code>Call</code>，在<code>generate</code>的实现如下，我们想要避免<code>call self</code>这类的指令生成，因为这是递归调用，而在<code>Fuzz</code>中往往很难生成递归的退出条件，如果有<code>call self</code>出现，会导致虚拟机进入死循环，那么也就不能更好的测试这个语句后方的代码。因此我们直接将这种情况剔除，我们记录<code>call</code>的起点函数和目标函数，将它们以点表示放置与矩阵中，每次<code>generate</code>时，我们使用<code>DFS</code>算法检查当前生成的样本<code>call f.value</code>是否会造成流程的死循环，如果是的话我们将<code>f.value</code>加1，直到不再死循环。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-3.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-3.png" class="">
 
 
 
@@ -331,81 +331,81 @@
 <p>由于<code>WASI</code>是通过<code>import section</code>导入的，因此我们在生成器的<code>ImportSection</code>类中进行实现，首先我们有一个初始函数<code>initImportsFunction</code>，在这里，我们提前把所有的<code>WASI</code>函数名字符串添加到列表中，作为一个候选列表。</p>
 <p>在<code>ImportSection</code>的数据生成函数<code>generate</code>中，我们根据从样本中读入的区间整数，从候选列表中选择一个函数名字符串，将其作为<code>import</code>节中的name字段。</p>
 <p>这种候选列表数据生成方式，减少了<code>Fuzz</code>工具探索固定字符串的无用功。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-4.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-4.png" class="">
 
 <p>在字节码中，由于<code>call</code>会随机生成目标函数的下标，因此我们导入的<code>WASI</code>函数会被调用到，从而能够进行测试。</p>
 <p>下面展示这个生成器是怎么使用的，如图，通过<code>new WasmStructure(Data,Size)</code>将原始的样本数据映射为<code>WASM</code>文件数据，然后输出，并喂给目标程序进行测试。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-5.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-5.png" class="">
 
 
 
 <p>接下来将要介绍我们发现的漏洞以及漏洞的巧妙利用手法。</p>
 <p>首先是<code>CVE-2022-28990</code>，这是<code>wasm3</code>这款解释器的漏洞。如图，<code>buf</code>和<code>buflen</code>直接从参数中的<code>wasiiovs</code>中转化的，这个参数在底层是一个整数，代表数据位于<code>memory</code>对象中的偏移。因此这里代码实际上就是直接从<code>memory</code>中读取对应的数据并通过转化赋值给<code>buf</code>和<code>buflen</code>，它们没有做任何的边界检查。于是，接下来对<code>buf</code>进行读取时能够进行溢出，这是一个堆溢出。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-6.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-6.png" class="">
 
 <p>具体的POC如下，首先通过<code>i32.store</code>布置好<code>memory</code>中的数据，然后调用<code>fd_write</code>，可以看到，我们布置的<code>memory</code>中，<code>wasiiovs offset</code>为0x10000，那么在实现函数中，转为指针就是<code>&amp;memory + 0x10000</code>。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-7.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-7.png" class="">
 
 <p>在漏洞利用之前，我还需要介绍一下<code>wasm3</code>解释器的具体架构实现，wasm3的<code>pc stack</code>中，存储的是指令的实现函数，每一条指令，都有一个底层的实现函数，这些实现函数的地址被保存到<code>pc stack</code>中，对于每一个参数，它们存储在<code>sp stack</code>中，<code>pc stack</code>中存储的是参数数据在<code>sp stack</code>中的下标，这里也叫做<code>slot</code>。</p>
 <p>要想控制虚拟机的程序流，我们想要劫持<code>pc stack</code>，因此，通过<code>Heap Spray</code>布置内存布局，让<code>pc stack</code>位于<code>memory</code>的后方，这样我们就可以溢出到<code>pc stack</code>了，然后可以布置下一些<code>gadgets</code>完成代码执行。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-8.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-8.png" class="">
 
 <p>gadgets比较难找，有时候找不到合适的，这里介绍一种方法，利用<code>global.get</code>和<code>global.set</code>的实现函数来完成任意地址读写。如图，在<code>SetGlobal_i64</code>函数中，从<code>pc stack</code>中取了一个立即数并转化为指针，然后写入数据。当我们控制了<code>pc stack</code>中，我们就布置<code>SetGlobal_i64</code>和目标地址，就能够往目标地址处写数据了，同理使用<code>GetGlobal_i64</code>实现任意地址读。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-9.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-9.png" class="">
 
 <p>更难的挑战，如何在<code>Android</code>上成功利用，安卓使用了<code>scudo</code>分配器，通过调试发现<code>pc stack</code>的地址总是位于<code>memory</code>的前方，这意味着在<code>memory</code>中溢出不到<code>pc stack</code>了，得想办法进行堆布局，那么有什么办法呢？</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-15.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-15.png" class="">
 
 <p>通过分析代码实现，我们发现<code>wasm3</code>使用了<code>PagePC</code>的概念，即用了多个<code>pc stack</code>，当一个<code>pc stack</code>被填满以后，会申请一个新的<code>pc stack</code>，所有这些<code>pc stack</code>通过尾部的<code>jmp</code>指令相互连接起来。我们发现在解析<code>br_table</code>指令时，只要参数够多，就能够填满<code>pc stack</code>，那么我们通过这种方式来完成<code>pc stack</code>的堆喷。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-16.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-16.png" class="">
 
 <p>堆喷以后，我们布置好布局后就能够溢出到<code>pc stack</code>然后伪造好<code>SetGloabl</code>和<code>GetGlobal</code>完成任意地址读写。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-17.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-17.png" class="">
 
 
 
 <p>接下来介绍的漏洞是<code>CVE-2022-34529</code>，<code>slot missing in bytecode</code>，这也是<code>wasm3</code>解释器的一个漏洞，来看一下<code>mem.fill</code>指令的解析和实现函数，可以看到它需要3个参数，其中第一个参数位于<code>_r0</code>，其它的则位于<code>slot</code>插槽。看一下<code>Compile_Memory_CopyFill</code>函数，在解析时，首先往<code>pc stack</code>中写入指令的函数地址，然后将第一个参数放入到<code>r0</code>寄存器，接下来会使用<code>EmitSlotNumOfStackTopAndPop</code>来生成第二、三个参数的插槽，深入到<code>EmitSlotNumOfStackTopAndPop</code>函数，可以看到如果当前栈顶顶数据位于寄存器中，那么就不会生成插槽。该设计认为第一个参数在寄存器中，那么接下来的参数不可能在寄存器中，因为<code>r0</code>已经被占用。实际上，他忽略了<code>wasm3</code>还有另一个寄存器叫<code>fp0</code>，用于存储浮点数据的。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-18.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-18.png" class="">
 
 <p>那么如果数据中有一个位于浮点寄存器中，就不能生成这个插槽，但是<code>MemFill</code>实现中又要使用，这就导致了插槽缺失，后果是使用<code>pc stack</code>中的下一个数据作为插槽。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-29.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-29.png" class="">
 
 <p>由于下一个数据是其它指令的实现函数地址，并不是自由可控的，因此这个漏洞无法利用，只能导致段错位。</p>
 <p>接下来，我要介绍<code>WasmEdge</code>的漏洞利用，先来看一下<code>WasmEdge</code>的虚拟机架构实现</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-28.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-28.png" class="">
 
 <p>WasmEdge的实现与wasm3不一样，它的<code>pc stack</code>中存储的是<code>Instruction</code>结构体而不是实现函数的指针。它使用<code>while-switch</code>来对<code>opcode</code>进行调度。</p>
 <p>我们来关注一下<code>br</code>指令的调度函数，它调用了<code>branchToLabel</code>函数</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-26.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-26.png" class="">
 
 <p>我们进入<code>branchToLabel</code>函数查看，关注一下参数<code>PCOffset</code>的值，这是在<code>checkInstr</code>函数中计算出的</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-27.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-27.png" class="">
 
 <p>通过调试分析，PCOffset的值 &#x3D; target - cur，那么，当<code>br 0</code>时，<code>PCOffset=1</code>，于是给PC加上1，然后回到主<code>while-switch</code>时，结尾还有一个<code>PC++</code>，相当于<code>br 0 </code>直接给<code>PC</code>加上了2，而正常的逻辑应该是加上1，因此这相当于有一个<code>Off By One</code>漏洞。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-19.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-19.png" class="">
 
 <p>具体的PC变化过程如图</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-20.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-20.png" class="">
 
 <p>那么，PC现在指向的是一个未知的区域。我们如果能够控制这个区域，就能够伪造<code>Instruction</code>结构体来完成一些操作。</p>
 <p>如何控制此处的内容？我们使用了<code>i64.const</code>指令，我们发现<code>i64.const</code>能够影响此处内存中的数据，同时，我们通过<code>drop</code>来平衡堆栈，否则过不了wasm虚拟机的前置安全检查。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-21.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-21.png" class="">
 
 <p>经过这一番操作过后，内存中数据如下</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-22.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-22.png" class="">
 
 <p>可以看到内容能够被控制了，但是不是很自由的控制，后方其它内存仍然没有堆喷上。经过多次尝试也是一样。</p>
 <p>经过分析，发现一个方法，0x154对应了<code>Instruction</code>结构体中的<code>JumpEnd</code>，那么我们找一下谁用到了这个字段。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-23.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-23.png" class="">
 
 <p>发现<code>Else</code>指令用到了，并且它能够将<code>PC</code>加上<code>JumpEnd</code>，那么<code>PC</code>能够指向更后方的内存，经过调试分析，那里正好是<code>sp stack</code>，<code>sp stack</code>是完全可控的，那么我们就能够在里面自由的布局多个假的<code>Instruction</code>完成想要的操作。</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-24.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-24.png" class="">
 
 <p>如图，通过<code>v128.const</code>来控制<code>sp stack</code>中的内容</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-25.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-25.png" class="">
 
 <p>有了这个，我们就能够伪造任意指令了，伪造<code>GlobalGet</code>和<code>GlobalSet</code>完成任意地址读写</p>
-<img src="/ha1vk/2022/08/12/blackhat-usa-2022-WebAssembly/image-30.png" class="">
+<img src="/2022/08/12/blackhat-usa-2022-WebAssembly/image-30.png" class="">
 
 <p>结论</p>
 <p>模糊测试工具的思路来源于我在做毕业论文时看到的一篇文章《FREEDOM: Engineering a State-of-the-Art DOM Fuzzer (ACM CSS 2020)》，它讲解了如何进行上下文相关的，具有语法结构的样本生成和Fuzz方法，他的思路非常巧妙。</p>
@@ -421,8 +421,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E8%A7%A3%E9%87%8A%E5%99%A8-%E7%AE%80%E6%98%93%E8%99%9A%E6%8B%9F%E6%9C%BA/" rel="tag"># 解释器/简易虚拟机</a>
-              <a href="/ha1vk/tags/wasm/" rel="tag"># wasm</a>
+              <a href="/tags/%E8%A7%A3%E9%87%8A%E5%99%A8-%E7%AE%80%E6%98%93%E8%99%9A%E6%8B%9F%E6%9C%BA/" rel="tag"># 解释器/简易虚拟机</a>
+              <a href="/tags/wasm/" rel="tag"># wasm</a>
           </div>
 
         
@@ -431,11 +431,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-arm-protocol/" rel="prev" title="鹏城杯2022_arm_protocol">
+    <a href="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-arm-protocol/" rel="prev" title="鹏城杯2022_arm_protocol">
       <i class="fa fa-chevron-left"></i> 鹏城杯2022_arm_protocol
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2022/08/12/qwb2022-UserManager/" rel="next" title="qwb2022_UserManager">
+    <a href="/2022/08/12/qwb2022-UserManager/" rel="next" title="qwb2022_UserManager">
       qwb2022_UserManager <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -507,20 +507,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -593,30 +593,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

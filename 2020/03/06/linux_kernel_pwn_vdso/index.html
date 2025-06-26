@@ -5,32 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="VDSO就是Virtual Dynamic Shared Object，是内核提供的虚拟的.so,这个.so文件不在磁盘上，而是在内核里头。内核把包含某.so的内存页在程序启动的时候映射入其内存空间，对应的程序就可以当普通的.so来使用里面的函数。Vdso里面封装了这几个函数，其作用主要是加快对于某些对速度要求很高的系统调用，更多详细信息可以查看https:&#x2F;&#x2F;blog.csdn.net&#x2F;juan">
 <meta property="og:type" content="article">
 <meta property="og:title" content="linux kernel pwn学习之劫持vdso">
-<meta property="og:url" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_vdso/index.html">
+<meta property="og:url" content="https://github.com/2020/03/06/linux_kernel_pwn_vdso/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="VDSO就是Virtual Dynamic Shared Object，是内核提供的虚拟的.so,这个.so文件不在磁盘上，而是在内核里头。内核把包含某.so的内存页在程序启动的时候映射入其内存空间，对应的程序就可以当普通的.so来使用里面的函数。Vdso里面封装了这几个函数，其作用主要是加快对于某些对速度要求很高的系统调用，更多详细信息可以查看https:&#x2F;&#x2F;blog.csdn.net&#x2F;juan">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_vdso/image1.png">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_vdso/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_vdso/image3.JPG">
+<meta property="og:image" content="https://github.com/2020/03/06/linux_kernel_pwn_vdso/image4.JPG">
 <meta property="article:published_time" content="2020-03-06T05:26:11.000Z">
 <meta property="article:modified_time" content="2025-06-26T03:55:37.899Z">
 <meta property="article:author" content="ha1vk">
@@ -39,9 +39,9 @@
 <meta property="article:tag" content="Linux内核堆">
 <meta property="article:tag" content="VDSO">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/03/06/linux_kernel_pwn_vdso/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_vdso/">
+<link rel="canonical" href="https://github.com/2020/03/06/linux_kernel_pwn_vdso/">
 
 
 <script id="page-configurations">
@@ -103,7 +103,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -124,27 +124,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -202,10 +202,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_vdso/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/03/06/linux_kernel_pwn_vdso/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -240,7 +240,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -263,7 +263,7 @@
 
       
         <p>VDSO就是Virtual Dynamic Shared Object，是内核提供的虚拟的.so,这个.so文件不在磁盘上，而是在内核里头。内核把包含某.so的内存页在程序启动的时候映射入其内存空间，对应的程序就可以当普通的.so来使用里面的函数。Vdso里面封装了这几个函数，其作用主要是加快对于某些对速度要求很高的系统调用，更多详细信息可以查看<a target="_blank" rel="noopener" href="https://blog.csdn.net/juana1/article/details/6904932">https://blog.csdn.net/juana1/article/details/6904932</a></p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image1.png" class="">
+<img src="/2020/03/06/linux_kernel_pwn_vdso/image1.png" class="">
 
 <p>由于vdso是在内核里，每个程序使用的时候，从内核里映射给程序，如果我们<strong>事先在内核里把vdso给劫持了，并把相应的函数覆盖成我们的shellcode</strong>，然后，当其他程序要用的时候，从内核把我们篡改过的vdso映射过去，如果它正好调用了对应的函数，就会执行我们对应位置布下的shellcode。当然普通权限的程序，调用我们的shellcode，也只是普通权限；如果有r<strong>oot权限的程序，调用我们的shellcode，那么我们的shellcode也是以root权限执行</strong>。在linux中，<strong>crontab是带有root权限的，并且它会不断的调用vdso里的gettimeofday函数</strong>，因此，我们如果把gettimeofday函数劫持为shellcode，等待被调用即可。至于为什么可以劫持vdso，因为<strong>vdso对于用户程序，只读、执行，而对于内核，它是RWX的</strong>，可以修改。因此只要利用漏洞，将对于函数修改为shellcode，布置在vdso的shellcode可以为反弹shell的shellcode，也可以是再运行一个其他程序，其他程序将继承权限。以CSAW-2015-StringIPC为例。</p>
 <h1 id="CSAW-2015-StringIPC"><a href="#CSAW-2015-StringIPC" class="headerlink" title="CSAW-2015-StringIPC"></a>CSAW-2015-StringIPC</h1><p>为了劫持vdso，首先需要知道vdso在内核里的地址，查看内核映射图，vdso在内核附近，因此我们确定范围<strong>0xffffffff80000000——0xffffffffffffefff</strong></p>
@@ -276,13 +276,13 @@
 <p>我们先确定字符串，比如gettimeofday在vdso.so里的偏移，通过这段代码，即可确定，然后我们在指定的范围内，<strong>一页一页(0x1000字节)的搜索</strong>，<strong>如果在当前一页数据处偏移offset后是gettimeofday字符串</strong>，那么，我们就能确定当前页起始地址就是vdso在内核里的地址。<strong>我们必须一页一页的搜索，这样成功率高</strong>，因为vdso的映射就一页。</p>
 <p>当我们搜索到vdso在内核的地址后，接下来，准备劫持gettimeofday函数，那么，我们需要先确定gettimeofday在vdso内的偏移。我们可以<strong>用gdb把vdso给dump出来，再来分析。</strong></p>
 <p>首先，运行我们未写完的exploit，得到vdso在内核中的地址</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image2.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_vdso/image2.JPG" class="">
 
 <p>然后，我们用gdb target到虚拟机</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image3.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_vdso/image3.JPG" class="">
 
 <p>接着dump出vdso.so,dump一页大小即可</p>
-<img src="/ha1vk/2020/03/06/linux_kernel_pwn_vdso/image4.JPG" class="">
+<img src="/2020/03/06/linux_kernel_pwn_vdso/image4.JPG" class="">
 
 <p>这样，我们得到vdso.so，拖到IDA中，**查看gettimeofday函数的偏移为0xCB0,**由此，我们计算出gettimeofday函数在内核中的地址，利用任意读写漏洞，覆盖这里为我们shellcode即可。我们的shellcode是一个反弹shell的shellcode，它将shell反弹到本地端口3333。我们只需nc 本地端口3333即可。Shellcode可以自己编写，也可以用现成的<a target="_blank" rel="noopener" href="https://gist.github.com/itsZN/1ab36391d1849f15b785">https://gist.github.com/itsZN/1ab36391d1849f15b785</a></p>
 <p>综上，我们exploit.c程序</p>
@@ -301,10 +301,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
-              <a href="/ha1vk/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
-              <a href="/ha1vk/tags/Linux%E5%86%85%E6%A0%B8%E5%A0%86/" rel="tag"># Linux内核堆</a>
-              <a href="/ha1vk/tags/VDSO/" rel="tag"># VDSO</a>
+              <a href="/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
+              <a href="/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+              <a href="/tags/Linux%E5%86%85%E6%A0%B8%E5%A0%86/" rel="tag"># Linux内核堆</a>
+              <a href="/tags/VDSO/" rel="tag"># VDSO</a>
           </div>
 
         
@@ -313,11 +313,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/" rel="prev" title="CSAW-2015-StringIPC解法一搜索修改cred结构">
+    <a href="/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/" rel="prev" title="CSAW-2015-StringIPC解法一搜索修改cred结构">
       <i class="fa fa-chevron-left"></i> CSAW-2015-StringIPC解法一搜索修改cred结构
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/" rel="next" title="linux kernel pwn学习之hijack prctl">
+    <a href="/2020/03/06/linux_kernel_pwn_hijack_prctl/" rel="next" title="linux kernel pwn学习之hijack prctl">
       linux kernel pwn学习之hijack prctl <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -390,20 +390,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -476,30 +476,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

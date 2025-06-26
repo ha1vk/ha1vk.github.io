@@ -5,56 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="前言本文总结了在Android上利用漏洞时遇到的一些新的保护机制以及在真机上的内核漏洞利用和调试技巧。虽然Android底层为Linux内核，但是相比较下Android内核更加难利用，主要体现在真机不能实时调试，可能开启了BTI保护、PAC保护和CFI保护，同时在近年新出的一些手机如Pixel 10开启了内存标记访问保护Memory Tagging Extension(MTE)，本文还将介绍MTE">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Android保护机制及内核漏洞利用总结">
-<meta property="og:url" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:url" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="前言本文总结了在Android上利用漏洞时遇到的一些新的保护机制以及在真机上的内核漏洞利用和调试技巧。虽然Android底层为Linux内核，但是相比较下Android内核更加难利用，主要体现在真机不能实时调试，可能开启了BTI保护、PAC保护和CFI保护，同时在近年新出的一些手机如Pixel 10开启了内存标记访问保护Memory Tagging Extension(MTE)，本文还将介绍MTE">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/7.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/8.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/9.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/10.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/11.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/12.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/13.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/14.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/16.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/17_1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/17_2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/18.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/19.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/20.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/21.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/22.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/23.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/24.png">
-<meta property="og:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/25.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/1.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/2.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/3.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/4.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/5.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/6.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/7.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/8.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/9.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/10.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/11.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/12.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/13.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/14.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_1.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_2.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_3.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/16.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/17_1.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/17_2.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/18.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/19.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/20.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/21.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/22.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/23.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/24.png">
+<meta property="og:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/25.png">
 <meta property="article:published_time" content="2024-12-12T08:07:39.000Z">
 <meta property="article:modified_time" content="2025-06-26T10:37:32.971Z">
 <meta property="article:author" content="ha1vk">
@@ -62,9 +62,9 @@
 <meta property="article:tag" content="aarch64">
 <meta property="article:tag" content="selinux">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/1.png">
+<meta name="twitter:image" content="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/">
+<link rel="canonical" href="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/">
 
 
 <script id="page-configurations">
@@ -126,7 +126,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -147,27 +147,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -225,10 +225,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -263,7 +263,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                  <a href="/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
                 </span>
             </span>
 
@@ -291,49 +291,49 @@
 
 <h1 id="SELinux"><a href="#SELinux" class="headerlink" title="SELinux"></a>SELinux</h1><p>SELinux是一个强制访问控制安全机制，它提供了一种灵活的、细粒度的访问控制策略，用于提高Linux系统的安全性。Android上默认开启了SeLinux，因此某些漏洞利用方法在编译的Linux内核中能够使用但是在Android上测试却失效了。</p>
 <h2 id="SELinux原理"><a href="#SELinux原理" class="headerlink" title="SELinux原理"></a>SELinux原理</h2><p>SELinux实际上是对系统中所有的关键函数注册了HOOK</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/1.png" class="" title="1.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/1.png" class="" title="1.png">
 <p>这些HOOK函数会在函数中被调用，它们一般以<code>security_</code>开头。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/2.png" class="" title="2.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/2.png" class="" title="2.png">
 <p>如果SELinux没有开启，这些<code>security_</code>函数默认返回0让程序继续程序，如果开启了则跳转到HOOK函数执行。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/3.png" class="" title="3.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/3.png" class="" title="3.png">
 <p>这些HOOK函数根据SELinux配置的规则对参数进行审计，以此来让一个函数执行或者拒绝。</p>
 <h2 id="SELinux绕过"><a href="#SELinux绕过" class="headerlink" title="SELinux绕过"></a>SELinux绕过</h2><p>当开启SELinux时，改写modprobe_path或者core_pattern后不能触发提权脚本的执行，这是因为我们指向的脚本不在SELinux规则中规定的可执行路径。为了绕过SELinux的检查，我们查看审计函数的代码，<code>avc_has_perm</code>函数的子调用链为<code>avc_has_perm-&gt;avc_has_perm_noaudit</code></p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/4.png" class="" title="4.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/4.png" class="" title="4.png">
 <p>如果<code>avc_has_perm_noaudit</code>函数审计出当前的操作是被禁止的，那么调用<code>avc_denied</code>函数。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/5.png" class="" title="5.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/5.png" class="" title="5.png">
 <p>从<code>avc_denied</code>函数来看，如果<code>selinux_enforcing</code>全局变量为0，则仍然可以使得<code>avc_denied</code>返回0，进而让<code>selinux_</code>函数放行，因此可以利用漏洞改写<code>selinux_enforcing</code>这个全局变量来绕过SELinux。</p>
 <p>在高版本Linux中，判断方式采用了函数，实际上判断的是<code>state-&gt;enforce</code></p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/6.png" class="" title="6.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/6.png" class="" title="6.png">
 <p>而state指针指向的仍然是一个全局变量结构体。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/7.png" class="" title="7.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/7.png" class="" title="7.png">
 <p>因此可以修改selinux_state.enforce变量。</p>
 <h1 id="CFI保护"><a href="#CFI保护" class="headerlink" title="CFI保护"></a>CFI保护</h1><p>CFI保护是Android内核中引入的，目的是保护函数指针，如果函数指针被篡改为任意地址，会被检测出来然后终止执行。开启了CFI保护的内核如下所示，会有很多以<code>.cfi</code>结尾的函数</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/8.png" class="" title="8.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/8.png" class="" title="8.png">
 <p>还存在着不带<code>.cfi</code>结尾的同名函数</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/9.png" class="" title="9.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/9.png" class="" title="9.png">
 <p>不带<code>.cfi</code>的函数中只会有一条<code>B</code>跳转指令，不会再有其他任何人指令。实际上这些函数是一张类似于<code>PLT</code>跳转表的东西，我们可以把它命名为<code>CFI表</code>。</p>
 <h2 id="函数指针检查"><a href="#函数指针检查" class="headerlink" title="函数指针检查"></a>函数指针检查</h2><p>CFI的检测实际上就是对每一个函数指针调用的位置进行了插桩，判断函数指针是否在<code>CFI表</code>中，如下是<code>CFI</code>的桩代码</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/10.png" class="" title="10.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/10.png" class="" title="10.png">
 <p>如果函数指针发生了篡改，则将进入<code>_cfi_slowpath</code>函数，<code>_cfi_slowpath</code>函数调用<code>_cfi_check</code>进行检查</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/11.png" class="" title="11.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/11.png" class="" title="11.png">
 <p><code>_cfi_check</code>根据<code>_cfi_slowpath</code>函数的第一个参数传入的<code>MAGIC</code>值，会再一次的判断函数指针是否能够通过检查。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/12.png" class="" title="12.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/12.png" class="" title="12.png">
 <p>如果函数指针与预期值不等，则调用<code>__cfi_check_fail</code>函数让内核崩溃。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/13.png" class="" title="13.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/13.png" class="" title="13.png">
 
 <h2 id="函数指针多值的处理"><a href="#函数指针多值的处理" class="headerlink" title="函数指针多值的处理"></a>函数指针多值的处理</h2><p>某些函数指针可能有多个指向的目标，因此不能对函数指针进行固定值比较，CFI采用了运算的方式将指针值限定在一个范围内</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/14.png" class="" title="14.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/14.png" class="" title="14.png">
 <p>即只能在<code>CFI</code>表中的<code>single_step_handler</code>附近</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_1.png" class="" title="15_1.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_1.png" class="" title="15_1.png">
 <p>显然，在编译时，生成的这张<code>CFI表</code>中函数的排列顺序是精心计算安排的，把一个函数指针所有可能的指向地址排列成相邻的。</p>
 <h2 id="CFI绕过的可能思路"><a href="#CFI绕过的可能思路" class="headerlink" title="CFI绕过的可能思路"></a>CFI绕过的可能思路</h2><p>对于ARM架构，目前无法绕过CFI，因为ARM架构的指令是对齐且定长的，不能在<code>CFI表</code>中跳转到错位的地址进而构造出<code>ROP gadget</code>。如果是在<code>x86</code>架构下，对于函数指针多值的CFI检查，由于指针值限定在<code>CFI表</code>的一个范围区间，可以在区间内寻找是否有合适的<code>gadget</code>能够控制执行流。</p>
 <h2 id="CFI例题"><a href="#CFI例题" class="headerlink" title="CFI例题"></a>CFI例题</h2><p>在GeekCon的<code>ksocket pixel3</code>题目中，实现了一个自定义的socket，我们可以通过UAF控制这个socket对象的结构。由于开启了CFI，我们不能去控制函数指针</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_2.png" class="" title="15_2.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_2.png" class="" title="15_2.png">
 <p>我们观察到，在close时触发的<code>avss_release</code>函数中有以下的链表unlink操作</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_3.png" class="" title="15_3.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/15_3.png" class="" title="15_3.png">
 <p>我们可以把unlink用来做任意地址写，由于两个数据都必须为合法的内存指针，因此不能直接写数据。但是可以用错位的思路，CPU为小端，因此指针的最低一个字节存放在最前面，我们每次只需要保证指针的最低一个字节被写入到目标地址即可。令*(v3 + 112) &#x3D; addr,<br>*(v3 + 104) &#x3D; bss | byte，则可以在addr处写上一个字节byte。其中bss为bss的地址，用于保证两个数据都为合法的内存指针不会崩溃。<br>在实现了任意地址写以后，改写selinux_enforcing为0关闭selinux，改写modprobe_path为提权脚本。然后触发modprobe_path的执行。</p>
 <h1 id="BTI保护"><a href="#BTI保护" class="headerlink" title="BTI保护"></a>BTI保护</h1><p>在 AArch64（ARMv8-A 架构的 64 位模式）中，BTI 指令用于验证间接跳转的目标是否有效。它的主要作用是确保程序控制流只能跳转到预期的代码位置（即合法的分支目标）。即<code>BLR/BR Rn</code>寄存器跳转指令跳转的目标位置的第一条指令必须为<code>BTI</code>否则函数无法继续向下执行。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/16.png" class="" title="16.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/16.png" class="" title="16.png">
 
 <h1 id="PAC保护"><a href="#PAC保护" class="headerlink" title="PAC保护"></a>PAC保护</h1><h2 id="PAC原理"><a href="#PAC原理" class="headerlink" title="PAC原理"></a>PAC原理</h2><p>PAC（Pointer Authentication） 技术，用于验证和保护返回地址及其他指针数据的完整性。ARMv8.3-A 新引入了三类指令：</p>
 <ul>
@@ -342,10 +342,10 @@
 <li>XPAC* 类指令可以移除一个指针的 PAC 并且在不验证指针有效性的前提下恢复指针的原始值。<br>PAC的加密生成算法不同的硬件有不同的实现。</li>
 </ul>
 <p>在Android中，开启了PAC保护的函数如图所示，<code>PACIASP</code>指令会基于当前的栈指针（SP）、私有密钥（APIAKey）以及返回地址生成认证码,认证码被嵌入到给定的函数返回地址中,在函数返回时，使用对应的 AUTIASP 指令对返回地址进行验证。如果地址合法且未被篡改，验证成功；否则，程序会触发异常（SIGILL 或其他非法指令异常）。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/17_1.png" class="" title="17_1.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/17_1.png" class="" title="17_1.png">
 
 <h2 id="PAC绕过"><a href="#PAC绕过" class="headerlink" title="PAC绕过"></a>PAC绕过</h2><p>PAC绕过是困难的，PAC的密钥通过特定的系统寄存器存储和操作。内核态使用的密钥是<code>APIXKey_EL1</code>，用户态使用的密钥是<code>APIXKey_EL0</code>，因此在用户态计算出的PAC值不能给内核态使用。<br>内核态下可以操作访问<code>APIXKey_EL1</code>、<code>APIXKey_EL0</code>等寄存器修改或者读取密钥</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/17_2.png" class="" title="17_2.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/17_2.png" class="" title="17_2.png">
 <p>因此有一种可能的情形就是在内核态中某个gadget可以将用户态的<code>APIXKey_EL0</code>修改成与内核态一样的数值，那么就可以在用户态执行PAC指令计算PAC值然后填入ROP链。</p>
 <h1 id="MTE保护"><a href="#MTE保护" class="headerlink" title="MTE保护"></a>MTE保护</h1><h2 id="MTE原理"><a href="#MTE原理" class="headerlink" title="MTE原理"></a>MTE原理</h2><p>MTE (Memory Tagging Extension)是ARMv8.5-A 架构引入的一项硬件支持的内存安全技术，旨在检测和防止内存相关的错误和漏洞，例如越界访问和使用已释放内存（Use-After-Free, UAF）。<br>MTE 的基本原理</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">IRG &lt;Xd&gt;, &lt;Xn&gt;, &lt;Xm&gt;</span><br><span class="line">stg  Xd, [Xn]</span><br><span class="line">ldr  Xd, [Xn]</span><br></pre></td></tr></table></figure>
@@ -354,23 +354,23 @@
 <li>STG (Store Allocation Tag) 指令将tag应用至内存中，生效的长度取决于颗粒度，一般为16字节。</li>
 <li>LDR (Load Register) 使用带有tag的指针读取内存。</li>
 </ul>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/18.png" class="" title="18.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/18.png" class="" title="18.png">
 <p>如图，IRG指令执行后，X0比X8在高位多了一个<code>TAG</code>值。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/19.png" class="" title="19.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/19.png" class="" title="19.png">
 <p>STG指令执行后，以后访问这段内存需要带上正确的TAG值的指针才能访问，否则指令会执行错误。</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/20.png" class="" title="20.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/20.png" class="" title="20.png">
 
 <h2 id="MTE应用"><a href="#MTE应用" class="headerlink" title="MTE应用"></a>MTE应用</h2><p>在堆分配器中，malloc后，通过对申请的堆地址打上标签返回，free后对堆地址重新打标签。这样就能阻止UAF这类的漏洞，因为free后指针重新打了标签，导致UAF残留的指针无效，通过UAF的指针访问内存时就会崩溃。不同的堆分配器在malloc和free时有着不同的处理内存标签的方式。<br>有关内存分配器处理MTE标签的分析可以参考文章GeekCon的文章<a target="_blank" rel="noopener" href="https://www.darknavy.org/zh/blog/strengthening_the_shield_mte_in_memory_allocators/">填补盾牌的裂缝：堆分配器中的MTE</a>。</p>
 <h2 id="MTE爆破"><a href="#MTE爆破" class="headerlink" title="MTE爆破"></a>MTE爆破</h2><p>如果给系统调用直接传一个带有错误TAG的指针，会发生什么？如图，假设buf指向的内存已经被free导致重新打标签，现在传给Sys_write的是一个无效的指针</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/21.png" class="" title="21.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/21.png" class="" title="21.png">
 <p>单步进入会触发内核的<code>Error EL1h</code></p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/22.png" class="" title="22.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/22.png" class="" title="22.png">
 <p>错误会被<code>el0t_64_sync</code>函数捕捉处理</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/23.png" class="" title="23.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/23.png" class="" title="23.png">
 <p>异常处理会调用<code>el0_svc</code>函数，并不会退出程序</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/24.png" class="" title="24.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/24.png" class="" title="24.png">
 <p>异常处理完成后，调用<code>ret_to_user</code>返回到了用户态</p>
-<img src="/ha1vk/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/25.png" class="" title="25.png">
+<img src="/2024/12/12/Android%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6%E5%8F%8A%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%80%BB%E7%BB%93/25.png" class="" title="25.png">
 <p>可见，当一个不正确的MTE指针进入系统调用，系统调用执行不成功，同时进程不会崩溃；我们可以利用这种特性来对TAG值进行爆破。一般的，我们在用户态利用UAF漏洞时，在已知指针值但是不知道TAG，我们可以用这样的方法爆破</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#我们想泄漏leak_ptr_addr地址处的数据，但是这段内存的TAG不知道是多少？</span></span><br><span class="line"><span class="comment">#guess tag</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0x10</span>):</span><br><span class="line">   <span class="comment">#fake 31 Node struct</span></span><br><span class="line">   edit(<span class="number">0</span>,<span class="string">b&#x27;a&#x27;</span>*<span class="number">0x8</span> + p32(<span class="number">0x8</span>) + p32(<span class="number">0</span>) + p64((i &lt;&lt; <span class="number">56</span>) + leak_ptr_addr) + <span class="string">b&#x27;\n&#x27;</span>)</span><br><span class="line">   show(<span class="number">31</span>) <span class="comment">#调用Sys_write</span></span><br><span class="line">   sh.recv(<span class="number">1</span>)</span><br><span class="line">   leak_value = u64(sh.recv(<span class="number">8</span>)) <span class="comment">#如果Sys_write调用成功，会有预期的数据</span></span><br><span class="line">   <span class="keyword">if</span> leak_value &amp; <span class="number">0xFF</span> == <span class="number">0xdc</span>: <span class="comment">#判断是否有预期的数据</span></span><br><span class="line">      <span class="built_in">print</span>(<span class="string">&#x27;found TAG=&#x27;</span>,<span class="built_in">hex</span>(i))</span><br><span class="line">      <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
 <p>上述代码来源于我在<code>GeekCon Shanghai 2024</code>上解出的MTE题的EXP。</p>
@@ -396,9 +396,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/android/" rel="tag"># android</a>
-              <a href="/ha1vk/tags/aarch64/" rel="tag"># aarch64</a>
-              <a href="/ha1vk/tags/selinux/" rel="tag"># selinux</a>
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/aarch64/" rel="tag"># aarch64</a>
+              <a href="/tags/selinux/" rel="tag"># selinux</a>
           </div>
 
         
@@ -407,11 +407,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2024/11/03/qwb2024-prpr/" rel="prev" title="qwb2024_prpr">
+    <a href="/2024/11/03/qwb2024-prpr/" rel="prev" title="qwb2024_prpr">
       <i class="fa fa-chevron-left"></i> qwb2024_prpr
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/" rel="next" title="利用binfmt_misc机制加快CGI的调试">
+    <a href="/2025/06/19/%E5%88%A9%E7%94%A8binfmt-misc%E6%9C%BA%E5%88%B6%E5%8A%A0%E5%BF%ABCGI%E7%9A%84%E8%B0%83%E8%AF%95/" rel="next" title="利用binfmt_misc机制加快CGI的调试">
       利用binfmt_misc机制加快CGI的调试 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -484,20 +484,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -570,30 +570,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

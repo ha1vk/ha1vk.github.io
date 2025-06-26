@@ -5,35 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="Libc2.26以下的解法使用的是double free的unlink漏洞 unlink是利用glibc malloc 的内存回收机制造成攻击的，核心就在于当两个free的堆块在物理上相邻时，会将他们合并，并将原来free的堆块在原来的链表中解链，加入新的链表中，但这样的合并是有条件的，向前或向后合并。 Unsorted bin使用双向链表维护被释放的空间，如果有一个堆块准备释放，它的物理相邻地址">
 <meta property="og:type" content="article">
 <meta property="og:title" content="4-ReeHY-main">
-<meta property="og:url" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/index.html">
+<meta property="og:url" content="https://github.com/2019/11/04/4-ReeHY-main/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="Libc2.26以下的解法使用的是double free的unlink漏洞 unlink是利用glibc malloc 的内存回收机制造成攻击的，核心就在于当两个free的堆块在物理上相邻时，会将他们合并，并将原来free的堆块在原来的链表中解链，加入新的链表中，但这样的合并是有条件的，向前或向后合并。 Unsorted bin使用双向链表维护被释放的空间，如果有一个堆块准备释放，它的物理相邻地址">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/7.png">
+<meta property="og:image" content="https://github.com/2019/11/04/4-ReeHY-main/1.png">
+<meta property="og:image" content="https://github.com/2019/11/04/4-ReeHY-main/2.png">
+<meta property="og:image" content="https://github.com/2019/11/04/4-ReeHY-main/3.png">
+<meta property="og:image" content="https://github.com/2019/11/04/4-ReeHY-main/4.png">
+<meta property="og:image" content="https://github.com/2019/11/04/4-ReeHY-main/5.png">
+<meta property="og:image" content="https://github.com/2019/11/04/4-ReeHY-main/6.png">
+<meta property="og:image" content="https://github.com/2019/11/04/4-ReeHY-main/7.png">
 <meta property="article:published_time" content="2019-11-04T14:40:44.000Z">
 <meta property="article:modified_time" content="2025-06-21T04:31:18.550Z">
 <meta property="article:author" content="ha1vk">
@@ -44,9 +44,9 @@
 <meta property="article:tag" content="glibc &lt;&#x3D; 2.26">
 <meta property="article:tag" content="glibc &gt;&#x3D; 2.26">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/1.png">
+<meta name="twitter:image" content="https://github.com/2019/11/04/4-ReeHY-main/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/">
+<link rel="canonical" href="https://github.com/2019/11/04/4-ReeHY-main/">
 
 
 <script id="page-configurations">
@@ -108,7 +108,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -129,27 +129,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -207,10 +207,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2019/11/04/4-ReeHY-main/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -245,7 +245,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -272,11 +272,11 @@
 <p>Unsorted bin使用双向链表维护被释放的空间，如果有一个堆块准备释放，它的物理相邻地址处如果有空闲堆块，并且空闲堆块不是TOP块，则会与相邻的堆块合并，即unlink后。相当于从双向链表里删除P，这里的<strong>关键就是<br>FD-&gt;bk &#x3D; BK<br>BK-&gt;fd &#x3D; FD</strong></p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> unlink(P, BK, FD) &#123; \  </span></span><br><span class="line"> FD = P-&gt;fd; \  </span><br><span class="line"> BK = P-&gt;bk; \  </span><br><span class="line"> <span class="keyword">if</span> (__builtin_expect (FD-&gt;bk != P || BK-&gt;fd != P, <span class="number">0</span>)) \  </span><br><span class="line">   malloc_printerr (check_action, <span class="string">&quot;corrupted double-linked list&quot;</span>, P); \  </span><br><span class="line"> <span class="keyword">else</span> &#123; \  </span><br><span class="line">   FD-&gt;bk = BK; \  </span><br><span class="line">   BK-&gt;fd = FD; \  </span><br><span class="line">   ........  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 <p>以本题为例</p>
-<img src="/ha1vk/2019/11/04/4-ReeHY-main/1.png" class="" title="1.png">
+<img src="/2019/11/04/4-ReeHY-main/1.png" class="" title="1.png">
 
 <p><strong>0x6020E0</strong>处是一个数组，用于保存4个堆的地址，<strong>当我们需要编辑时，程序从这个数组里找到对应的堆地址，去访问。假如我们有办法让这个数组里存的是其他地址(比如某些函数的GOT表地址)，那么当我们编辑的时候，不就可以对GOT表修改了吗。</strong></p>
 <p>那么，我们如何做到修改这个数组的内容呢?这个数组只有在创建堆的时候，才有赋值。</p>
-<img src="/ha1vk/2019/11/04/4-ReeHY-main/2.png" class="" title="2.png">
+<img src="/2019/11/04/4-ReeHY-main/2.png" class="" title="2.png">
 
 <p>我们可以利用unlink，<strong>先想办法让数组里某一个堆地址指向这个数组的附近，那么我们对那个堆编辑时就是编辑这个数组附近的那个地址。</strong></p>
 <p>假如我们有一个这样的堆</p>
@@ -292,22 +292,22 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">FD-&gt;bk = BK即*(0x6020E0) = 0x6020D0</span><br><span class="line">BK-&gt;fd = FD即*(0x6020E0) = 0x6020C8</span><br></pre></td></tr></table></figure>
 
 <p><strong>即数组的第1个元素被我们改成了0x6020C8，也就是相当于堆0指向了0x6020C8</strong></p>
-<img src="/ha1vk/2019/11/04/4-ReeHY-main/3.png" class="" title="3.png">
+<img src="/2019/11/04/4-ReeHY-main/3.png" class="" title="3.png">
 
 <p><strong>那么，我们编辑堆0也就是在编辑0x6020C8处，而此处的下方就是保存堆指针的数组，那么就可以构造payload来修改这个数组，这就是原理</strong></p>
 <p>通过以上分析，我们可以这样，在真正的chunk0里，构造一个假的chunk，并伪造它的状态为释放的状态。</p>
 <p><strong>要达到这个目的，就需要堆溢出，覆盖chunk1的头信息</strong></p>
 <p>首先，这个程序的delete功能没有检查下标为负数的情况</p>
-<img src="/ha1vk/2019/11/04/4-ReeHY-main/4.png" class="" title="4.png">
+<img src="/2019/11/04/4-ReeHY-main/4.png" class="" title="4.png">
 
 <p>经过调试，当我们delete(-2)时，释放的正好是0x6020C0处元素指向的堆(保存4个堆大小的堆)</p>
-<img src="/ha1vk/2019/11/04/4-ReeHY-main/5.png" class="" title="5.png">
+<img src="/2019/11/04/4-ReeHY-main/5.png" class="" title="5.png">
 
 <p>它的大小为0x14，释放后归于fastbin</p>
-<img src="/ha1vk/2019/11/04/4-ReeHY-main/6.png" class="" title="6.png">
+<img src="/2019/11/04/4-ReeHY-main/6.png" class="" title="6.png">
 
 <p><strong>当我们再次malloc(0x14)申请时，便会返回这个释放后的堆的地址(fastbin的特性，使用单向链表维护释放后的块，再次申请时最先返回最后放入的那个块，类似于栈)，于是我们编辑申请的这个堆，就是编辑保存4个堆大小的堆，这个大小信息在 编辑功能时会用到，我们要先溢出堆，就需要修改大小限制</strong></p>
-<img src="/ha1vk/2019/11/04/4-ReeHY-main/7.png" class="" title="7.png">
+<img src="/2019/11/04/4-ReeHY-main/7.png" class="" title="7.png">
 
 <p>我们edit申请的这个堆，构造payload，修改第一个堆的大小信息为0x200，这样我们在edit第一个堆时，就能溢出了</p>
 <p>那么接下来，就是构造假的堆，来触发unlink了。</p>
@@ -349,12 +349,12 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/double-free/" rel="tag"># double free</a>
-              <a href="/ha1vk/tags/unlink/" rel="tag"># unlink</a>
-              <a href="/ha1vk/tags/tcache/" rel="tag"># tcache</a>
-              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
-              <a href="/ha1vk/tags/glibc-2-26/" rel="tag"># glibc <= 2.26</a>
-              <a href="/ha1vk/tags/glibc-2-26/" rel="tag"># glibc >= 2.26</a>
+              <a href="/tags/double-free/" rel="tag"># double free</a>
+              <a href="/tags/unlink/" rel="tag"># unlink</a>
+              <a href="/tags/tcache/" rel="tag"># tcache</a>
+              <a href="/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/tags/glibc-2-26/" rel="tag"># glibc <= 2.26</a>
+              <a href="/tags/glibc-2-26/" rel="tag"># glibc >= 2.26</a>
           </div>
 
         
@@ -363,11 +363,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/10/30/pwnh9/" rel="prev" title="pwnh9">
+    <a href="/2019/10/30/pwnh9/" rel="prev" title="pwnh9">
       <i class="fa fa-chevron-left"></i> pwnh9
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/11/06/babyfengshui/" rel="next" title="babyfengshui">
+    <a href="/2019/11/06/babyfengshui/" rel="next" title="babyfengshui">
       babyfengshui <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -440,20 +440,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -526,30 +526,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

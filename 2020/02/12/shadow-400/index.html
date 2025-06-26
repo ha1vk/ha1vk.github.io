@@ -5,46 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下 程序里面自己实现了call和ret">
 <meta property="og:type" content="article">
 <meta property="og:title" content="shadow-400(自己实现的call、ret)">
-<meta property="og:url" content="https://github.com/ha1vk/2020/02/12/shadow-400/index.html">
+<meta property="og:url" content="https://github.com/2020/02/12/shadow-400/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下 程序里面自己实现了call和ret">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image5.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image6.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image7.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image8.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image9.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image1.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image3.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image5.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image6.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image7.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image8.JPG">
+<meta property="og:image" content="https://github.com/2020/02/12/shadow-400/image9.JPG">
 <meta property="article:published_time" content="2020-02-12T10:24:50.000Z">
 <meta property="article:modified_time" content="2025-06-21T12:03:41.179Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="栈溢出">
 <meta property="article:tag" content="ret2lib">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/02/12/shadow-400/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2020/02/12/shadow-400/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/02/12/shadow-400/">
+<link rel="canonical" href="https://github.com/2020/02/12/shadow-400/">
 
 
 <script id="page-configurations">
@@ -106,7 +106,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -127,27 +127,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -205,10 +205,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/02/12/shadow-400/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/02/12/shadow-400/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -243,7 +243,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -266,30 +266,30 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image1.JPG" class="">
+<img src="/2020/02/12/shadow-400/image1.JPG" class="">
 
 <p>然后，我们用IDA分析一下</p>
 <p>程序里面自己实现了call和ret</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image2.JPG" class="">
+<img src="/2020/02/12/shadow-400/image2.JPG" class="">
 
 <p>call函数</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image3.JPG" class="">
+<img src="/2020/02/12/shadow-400/image3.JPG" class="">
 
 <p>push函数</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image4.JPG" class="">
+<img src="/2020/02/12/shadow-400/image4.JPG" class="">
 
 <p>这是主功能区</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image5.JPG" class="">
+<img src="/2020/02/12/shadow-400/image5.JPG" class="">
 
 <p>看不出什么，我们来分析汇编代码</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image6.JPG" class="">
+<img src="/2020/02/12/shadow-400/image6.JPG" class="">
 
 <p><strong>[atoi的结果是一个有符号的数，而getline的长度参数为无符号数，为了绕过0x20个长度的限制，我们只需输入负数，即可，就可以栈溢出了。]{.mark}</strong></p>
 <p>首先，我们需要泄露libc地址，那么我们只需泄露任意一个libc函数地址即可，我们可以栈溢出，覆盖ebp+arg_0里面的指针为函数的got表，即可泄露了，同时，为了增加利用次数，我们把[ebp+arg8]覆盖为一个很大的数，比如0x100</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image7.JPG" class="">
+<img src="/2020/02/12/shadow-400/image7.JPG" class="">
 
 <p>原本只能利用3次，现在，我们覆盖了[ebp+arg_8]的值，就可以多次利用了</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image8.JPG" class="">
+<img src="/2020/02/12/shadow-400/image8.JPG" class="">
 
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#覆盖指针,覆盖getline的长度,覆盖循环最大次数，用于泄露函数地址及多次利用  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x34</span> + p32(atoi_got) + p32(<span class="number">0x100</span>) + p32(<span class="number">0x100</span>)  </span><br><span class="line">setMessage(payload)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;&lt;&#x27;</span>)  </span><br><span class="line">atoi_addr = u32(sh.recv(<span class="number">4</span>))  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;atoi_addr=&#x27;</span>,<span class="built_in">hex</span>(atoi_addr)  </span><br><span class="line">libc = LibcSearcher(<span class="string">&#x27;atoi&#x27;</span>,atoi_addr)  </span><br><span class="line">libc_base = atoi_addr - libc.dump(<span class="string">&#x27;atoi&#x27;</span>)  </span><br><span class="line">system_addr = libc_base + libc.dump(<span class="string">&#x27;system&#x27;</span>)  </span><br><span class="line">binsh_addr = libc_base + libc.dump(<span class="string">&#x27;str_bin_sh&#x27;</span>)  </span><br></pre></td></tr></table></figure>
 
@@ -297,7 +297,7 @@
 <p>也就是说，只要是这个二进制里的几个函数都不行，那么我们可以考虑**[劫持libc中的函数的返回地址。因为libc中没有使用这个shadow call和ret。]{.mark}**</p>
 <p>我们可以直接劫持read的返回地址，这样read结束后直接就执行ROP了。</p>
 <p>注意到这里，利用之前的栈溢出，我们覆盖[ebp+arg_0]指针可以实现任意地址读写，如果本题没有FULL RELRO，我们都可以直接在这里修改GOT表了。</p>
-<img src="/ha1vk/2020/02/12/shadow-400/image9.JPG" class="">
+<img src="/2020/02/12/shadow-400/image9.JPG" class="">
 
 <p>我们**[只需把[ebp+arg_0覆盖为] read的返回地址在栈里存放的位置，然后在这里输入ROP即可]{.mark}**</p>
 <p>因此，我们还需要泄露栈地址，这样才能确定read返回地址存放的位置。有两种方法泄露栈地址</p>
@@ -313,8 +313,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/ret2lib/" rel="tag"># ret2lib</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/ret2lib/" rel="tag"># ret2lib</a>
           </div>
 
         
@@ -323,11 +323,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/09/shaxian/" rel="prev" title="shaxian">
+    <a href="/2020/02/09/shaxian/" rel="prev" title="shaxian">
       <i class="fa fa-chevron-left"></i> shaxian
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/12/sentosa/" rel="next" title="Sentosa">
+    <a href="/2020/02/12/sentosa/" rel="next" title="Sentosa">
       Sentosa <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -400,20 +400,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -486,30 +486,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

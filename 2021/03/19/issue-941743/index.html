@@ -5,41 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;234429 0x00 前言Issue 941743是2019年的一个v8方面的历史漏洞，其漏洞发生在对Array.prototype.map函数的Reduce过程，之前介绍过Array.prototype.map的一个回调漏洞，本文将介绍其在JIT层的一个优化漏洞。 0x01 前置知识Array.protot">
 <meta property="og:type" content="article">
 <meta property="og:title" content="issue_941743">
-<meta property="og:url" content="https://github.com/ha1vk/2021/03/19/issue-941743/index.html">
+<meta property="og:url" content="https://github.com/2021/03/19/issue-941743/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;234429 0x00 前言Issue 941743是2019年的一个v8方面的历史漏洞，其漏洞发生在对Array.prototype.map函数的Reduce过程，之前介绍过Array.prototype.map的一个回调漏洞，本文将介绍其在JIT层的一个优化漏洞。 0x01 前置知识Array.protot">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/3.jpg">
-<meta property="og:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/4.jpg">
+<meta property="og:image" content="https://github.com/2021/03/19/issue-941743/1.png">
+<meta property="og:image" content="https://github.com/2021/03/19/issue-941743/2.png">
+<meta property="og:image" content="https://github.com/2021/03/19/issue-941743/3.jpg">
+<meta property="og:image" content="https://github.com/2021/03/19/issue-941743/4.jpg">
 <meta property="article:published_time" content="2021-03-19T02:30:20.000Z">
 <meta property="article:modified_time" content="2025-06-26T09:40:28.952Z">
 <meta property="article:author" content="ha1vk">
 <meta property="article:tag" content="JS引擎漏洞">
 <meta property="article:tag" content="类型混淆">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/1.png">
+<meta name="twitter:image" content="https://github.com/2021/03/19/issue-941743/1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2021/03/19/issue-941743/">
+<link rel="canonical" href="https://github.com/2021/03/19/issue-941743/">
 
 
 <script id="page-configurations">
@@ -101,7 +101,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -122,27 +122,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -200,10 +200,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2021/03/19/issue-941743/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2021/03/19/issue-941743/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -238,11 +238,11 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                  <a href="/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
                 </span>
             </span>
 
@@ -292,9 +292,9 @@
 <h3 id="IR图分析"><a href="#IR图分析" class="headerlink" title="IR图分析"></a>IR图分析</h3><p>首先，我们的测试代码如下，需要知道的一点是Array.prototype.map内部会调用JSCreateArray来创建新数组存放结果</p>
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//将can_inline_array_constructor设置为false</span></span><br><span class="line"><span class="title class_">Array</span>(<span class="number">2</span>**<span class="number">30</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">opt</span>(<span class="params"></span>) &#123;</span><br><span class="line">   <span class="keyword">var</span> a = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>];</span><br><span class="line">   <span class="keyword">var</span> b = a.<span class="title function_">map</span>(<span class="function">(<span class="params">value,index</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> value;</span><br><span class="line">   &#125;);</span><br><span class="line">   <span class="keyword">return</span> b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> i=<span class="number">0</span>;i&lt;<span class="number">0x10000</span>;i++) &#123;</span><br><span class="line">   <span class="title function_">opt</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>其IR图如下，可以看到，在typed lowering阶段，JSCreateArray并没有被优化为JIT代码，其仍然为JS层的代码调用。</p>
-<img src="/ha1vk/2021/03/19/issue-941743/1.png" class="">
+<img src="/2021/03/19/issue-941743/1.png" class="">
 <p>接下来，我们去除测试脚本里的Array(2**30);这句，然后重新查看IR图，可以发现，其被优化成了本地代码了。</p>
-<img src="/ha1vk/2021/03/19/issue-941743/2.png" class="">
+<img src="/2021/03/19/issue-941743/2.png" class="">
 <h1 id="0x02-漏洞分析"><a href="#0x02-漏洞分析" class="headerlink" title="0x02 漏洞分析"></a>0x02 漏洞分析</h1><h2 id="patch分析"><a href="#patch分析" class="headerlink" title="patch分析"></a>patch分析</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/compiler/js-call-reducer.cc b/src/compiler/js-call-reducer.cc</span><br><span class="line">index <span class="number">636</span>bdc<span class="number">1.</span>.d37f461 <span class="number">100644</span></span><br><span class="line">--- a/src/compiler/js-call-reducer.cc</span><br><span class="line">+++ b/src/compiler/js-call-reducer.cc</span><br><span class="line">@@ <span class="number">-1538</span>,<span class="number">6</span> <span class="number">+1538</span>,<span class="number">13</span> @@</span><br><span class="line">       <span class="built_in">simplified</span>()-&gt;<span class="built_in">LoadField</span>(AccessBuilder::<span class="built_in">ForJSArrayLength</span>(kind)), receiver,</span><br><span class="line">       effect, control);</span><br><span class="line"></span><br><span class="line">+  <span class="comment">// If the array length &gt;= kMaxFastArrayLength, then CreateArray</span></span><br><span class="line">+  <span class="comment">// will create a dictionary. We should deopt in this case, and make sure</span></span><br><span class="line">+  <span class="comment">// not to attempt inlining again.</span></span><br><span class="line">+  original_length = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">+      <span class="built_in">simplified</span>()-&gt;<span class="built_in">CheckBounds</span>(p.<span class="built_in">feedback</span>()), original_length,</span><br><span class="line">+      <span class="built_in">jsgraph</span>()-&gt;<span class="built_in">Constant</span>(JSArray::kMaxFastArrayLength), effect, control);</span><br><span class="line">+</span><br><span class="line">   <span class="comment">// Even though &#123;JSCreateArray&#125; is not marked as &#123;kNoThrow&#125;, we can elide the</span></span><br><span class="line">   <span class="comment">// exceptional projections because it cannot throw with the given parameters.</span></span><br><span class="line">   Node* a = control = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br></pre></td></tr></table></figure>
 <p>该patch用于修复漏洞，patch位于src&#x2F;compiler&#x2F;js-call-reducer.cc文件中的JSCallReducer::ReduceArrayMap函数，该函数是对Array.prototype.map函数进行优化的，patch中主要增加了一个对源数组的长度进行检查，检查其是否大于kMaxFastArrayLength，因为添加的是一个CheckBounds节点，所以如果大于的话将deoptimization bailout从而不使用其生成的JIT代码。<br>我们来分析一下代码</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br></pre></td><td class="code"><pre><span class="line">  Node* original_length = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">      <span class="built_in">simplified</span>()-&gt;<span class="built_in">LoadField</span>(AccessBuilder::<span class="built_in">ForJSArrayLength</span>(kind)), receiver,</span><br><span class="line">      effect, control);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 根据original_length，调用JSCreateArray创建一个新数组</span></span><br><span class="line">  Node* a = control = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">      <span class="built_in">javascript</span>()-&gt;<span class="built_in">CreateArray</span>(<span class="number">1</span>, <span class="built_in">MaybeHandle</span>&lt;AllocationSite&gt;()),</span><br><span class="line">      array_constructor, array_constructor, original_length, context,</span><br><span class="line">      outer_frame_state, effect, control);</span><br><span class="line"></span><br><span class="line">  Node* checkpoint_params[] = &#123;receiver, fncallback, this_arg,</span><br><span class="line">                               a,        k,          original_length&#125;;</span><br><span class="line">  <span class="type">const</span> <span class="type">int</span> stack_parameters = <span class="built_in">arraysize</span>(checkpoint_params);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 检查map的回调函数是否可用，如果可以，就进行调用</span></span><br><span class="line">  Node* check_frame_state = <span class="built_in">CreateJavaScriptBuiltinContinuationFrameState</span>(</span><br><span class="line">      <span class="built_in">jsgraph</span>(), shared, Builtins::kArrayMapLoopLazyDeoptContinuation,</span><br><span class="line">      node-&gt;<span class="built_in">InputAt</span>(<span class="number">0</span>), context, &amp;checkpoint_params[<span class="number">0</span>], stack_parameters,</span><br><span class="line">      outer_frame_state, ContinuationFrameStateMode::LAZY);</span><br><span class="line">  Node* check_fail = <span class="literal">nullptr</span>;</span><br><span class="line">  Node* check_throw = <span class="literal">nullptr</span>;</span><br><span class="line">  <span class="built_in">WireInCallbackIsCallableCheck</span>(fncallback, context, check_frame_state, effect,</span><br><span class="line">                                &amp;control, &amp;check_fail, &amp;check_throw);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 调用回调函数生成映射值</span></span><br><span class="line">  Node* vloop = k = <span class="built_in">WireInLoopStart</span>(k, &amp;control, &amp;effect);</span><br><span class="line">  Node *loop = control, *eloop = effect;</span><br><span class="line">  checkpoint_params[<span class="number">4</span>] = k;</span><br><span class="line"></span><br><span class="line">  Node* continue_test =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">NumberLessThan</span>(), k, original_length);</span><br><span class="line">  Node* continue_branch = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Branch</span>(BranchHint::kNone),</span><br><span class="line">                                           continue_test, control);</span><br><span class="line"></span><br><span class="line">  Node* if_true = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">IfTrue</span>(), continue_branch);</span><br><span class="line">  Node* if_false = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">IfFalse</span>(), continue_branch);</span><br><span class="line">  control = if_true;</span><br><span class="line"></span><br><span class="line">  Node* frame_state = <span class="built_in">CreateJavaScriptBuiltinContinuationFrameState</span>(</span><br><span class="line">      <span class="built_in">jsgraph</span>(), shared, Builtins::kArrayMapLoopEagerDeoptContinuation,</span><br><span class="line">      node-&gt;<span class="built_in">InputAt</span>(<span class="number">0</span>), context, &amp;checkpoint_params[<span class="number">0</span>], stack_parameters,</span><br><span class="line">      outer_frame_state, ContinuationFrameStateMode::EAGER);</span><br><span class="line"></span><br><span class="line">  effect =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Checkpoint</span>(), frame_state, effect, control);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Make sure the map hasn&#x27;t changed during the iteration</span></span><br><span class="line">  effect =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">CheckMaps</span>(CheckMapsFlag::kNone,</span><br><span class="line">                                               receiver_maps, p.<span class="built_in">feedback</span>()),</span><br><span class="line">                       receiver, effect, control);</span><br><span class="line"></span><br><span class="line">  Node* element =</span><br><span class="line">      <span class="built_in">SafeLoadElement</span>(kind, receiver, control, &amp;effect, &amp;k, p.<span class="built_in">feedback</span>());</span><br><span class="line"></span><br><span class="line">  Node* next_k =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">NumberAdd</span>(), k, <span class="built_in">jsgraph</span>()-&gt;<span class="built_in">OneConstant</span>());</span><br><span class="line"></span><br><span class="line">  Node* hole_true = <span class="literal">nullptr</span>;</span><br><span class="line">  Node* hole_false = <span class="literal">nullptr</span>;</span><br><span class="line">  Node* effect_true = effect;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">IsHoleyElementsKind</span>(kind)) &#123;</span><br><span class="line">    <span class="comment">// 跳过无值的空洞</span></span><br><span class="line">    Node* check;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">IsDoubleElementsKind</span>(kind)) &#123;</span><br><span class="line">      check = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">NumberIsFloat64Hole</span>(), element);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      check = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">ReferenceEqual</span>(), element,</span><br><span class="line">                               <span class="built_in">jsgraph</span>()-&gt;<span class="built_in">TheHoleConstant</span>());</span><br><span class="line">    &#125;</span><br><span class="line">    Node* branch =</span><br><span class="line">        <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Branch</span>(BranchHint::kFalse), check, control);</span><br><span class="line">    hole_true = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">IfTrue</span>(), branch);</span><br><span class="line">    hole_false = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">IfFalse</span>(), branch);</span><br><span class="line">    control = hole_false;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The contract is that we don&#x27;t leak &quot;the hole&quot; into &quot;user JavaScript&quot;,</span></span><br><span class="line">    <span class="comment">// so we must rename the &#123;element&#125; here to explicitly exclude &quot;the hole&quot;</span></span><br><span class="line">    <span class="comment">// from the type of &#123;element&#125;.</span></span><br><span class="line">    element = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">        <span class="built_in">common</span>()-&gt;<span class="built_in">TypeGuard</span>(Type::<span class="built_in">NonInternal</span>()), element, effect, control);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// This frame state is dealt with by hand in</span></span><br><span class="line">  <span class="comment">// ArrayMapLoopLazyDeoptContinuation.</span></span><br><span class="line">  frame_state = <span class="built_in">CreateJavaScriptBuiltinContinuationFrameState</span>(</span><br><span class="line">      <span class="built_in">jsgraph</span>(), shared, Builtins::kArrayMapLoopLazyDeoptContinuation,</span><br><span class="line">      node-&gt;<span class="built_in">InputAt</span>(<span class="number">0</span>), context, &amp;checkpoint_params[<span class="number">0</span>], stack_parameters,</span><br><span class="line">      outer_frame_state, ContinuationFrameStateMode::LAZY);</span><br><span class="line"></span><br><span class="line">  Node* callback_value = control = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">      <span class="built_in">javascript</span>()-&gt;<span class="built_in">Call</span>(<span class="number">5</span>, p.<span class="built_in">frequency</span>()), fncallback, this_arg, element, k,</span><br><span class="line">      receiver, context, frame_state, effect, control);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Rewire potential exception edges.</span></span><br><span class="line">  Node* on_exception = <span class="literal">nullptr</span>;</span><br><span class="line">  <span class="keyword">if</span> (NodeProperties::<span class="built_in">IsExceptionalCall</span>(node, &amp;on_exception)) &#123;</span><br><span class="line">    <span class="built_in">RewirePostCallbackExceptionEdges</span>(check_throw, on_exception, effect,</span><br><span class="line">                                     &amp;check_fail, &amp;control);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// The array &#123;a&#125; should be HOLEY_SMI_ELEMENTS because we&#x27;d only come into this</span></span><br><span class="line">  <span class="comment">// loop if the input array length is non-zero, and &quot;new Array(&#123;x &gt; 0&#125;)&quot; always</span></span><br><span class="line">  <span class="comment">// produces a HOLEY array.</span></span><br><span class="line">  MapRef holey_double_map =</span><br><span class="line">      <span class="built_in">native_context</span>().<span class="built_in">GetInitialJSArrayMap</span>(HOLEY_DOUBLE_ELEMENTS);</span><br><span class="line">  MapRef holey_map = <span class="built_in">native_context</span>().<span class="built_in">GetInitialJSArrayMap</span>(HOLEY_ELEMENTS);</span><br><span class="line">  <span class="comment">//将值存入数组</span></span><br><span class="line">  effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">TransitionAndStoreElement</span>(</span><br><span class="line">                                holey_double_map.<span class="built_in">object</span>(), holey_map.<span class="built_in">object</span>()),</span><br><span class="line">                            a, k, callback_value, effect, control);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">IsHoleyElementsKind</span>(kind)) &#123;</span><br><span class="line">    Node* after_call_and_store_control = control;</span><br><span class="line">    Node* after_call_and_store_effect = effect;</span><br><span class="line">    control = hole_true;</span><br><span class="line">    effect = effect_true;</span><br><span class="line"></span><br><span class="line">    control = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Merge</span>(<span class="number">2</span>), control,</span><br><span class="line">                               after_call_and_store_control);</span><br><span class="line">    effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">EffectPhi</span>(<span class="number">2</span>), effect,</span><br><span class="line">                              after_call_and_store_effect, control);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">WireInLoopEnd</span>(loop, eloop, vloop, next_k, control, effect);</span><br><span class="line"></span><br><span class="line">  control = if_false;</span><br><span class="line">  effect = eloop;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Wire up the branch for the case when IsCallable fails for the callback.</span></span><br><span class="line">  <span class="comment">// Since &#123;check_throw&#125; is an unconditional throw, it&#x27;s impossible to</span></span><br><span class="line">  <span class="comment">// return a successful completion. Therefore, we simply connect the successful</span></span><br><span class="line">  <span class="comment">// completion to the graph end.</span></span><br><span class="line">  Node* throw_node =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Throw</span>(), check_throw, check_fail);</span><br><span class="line">  NodeProperties::<span class="built_in">MergeControlToEnd</span>(<span class="built_in">graph</span>(), <span class="built_in">common</span>(), throw_node);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">ReplaceWithValue</span>(node, a, effect, control);</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Replace</span>(a);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -307,9 +307,9 @@
 <h2 id="疑难问题"><a href="#疑难问题" class="headerlink" title="疑难问题"></a>疑难问题</h2><p>我们还注意到一个细节，我们的数组是HOLEY_SMI_ELEMENTS，首先，SMI是为了满足JSCreateArray不内联的条件，而HOLEY是为了能够溢出方便控制内存，因为空洞的原因，不会对某块区域进行写，从而不至于破坏内存中其他地方，仅去覆盖我们需要的地方。</p>
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,,,,<span class="number">4</span>];</span><br></pre></td></tr></table></figure>
 <p>另一个问题是为何要防止JSCreateArray内联，首先，我们去除开头的Array(2**30)，然后观察IR图。没内联时是这样的</p>
-<img src="/ha1vk/2021/03/19/issue-941743/3.jpg" class="">
+<img src="/2021/03/19/issue-941743/3.jpg" class="">
 <p>内联以后是这样的，因为内联多了个CheckBound，且我们触发漏洞的length显然超过这个范围，这将导致直接deoptimization bailout。</p>
-<img src="/ha1vk/2021/03/19/issue-941743/4.jpg" class="">
+<img src="/2021/03/19/issue-941743/4.jpg" class="">
 
 <p>gdb调试如下</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">0x00003bbfbc0830fb in ?? ()</span><br><span class="line">LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA</span><br><span class="line">─────────────────────────────────────────────────────────────────────────────────[ REGISTERS ]──────────────────────────────────────────────────────────────────────────────────</span><br><span class="line"> RAX  0x1caece4004d1 ◂— 0x1caece4005</span><br><span class="line"> RBX  0x7fa156f631b0 ◂— push   rbp</span><br><span class="line"> RCX  0x335e74882b69 ◂— 0x21000029b2ef682e</span><br><span class="line"> RDX  0x560d0e592ac0 —▸ 0x560d0e607a30 ◂— 0x1baddead0baddeaf</span><br><span class="line"> RDI  0x29b2ef682e89 ◂— 0x400001caece4001</span><br><span class="line"> RSI  0x3a04229817d9 ◂— 0x1caece400f</span><br><span class="line"> R8   0x2000066</span><br><span class="line"> R9   0x200006600000000</span><br><span class="line"> R10  0x100000000</span><br><span class="line"> R11  0x7fa156b61270 (v8::internal::IncrementalMarking::RetainMaps()) ◂— push   rbp</span><br><span class="line"> R12  0x7fffe6d138b0 —▸ 0x7fffe6d138d8 —▸ 0x7fffe6d13940 —▸ 0x7fffe6d13990 —▸ 0x7fffe6d13cc0 ◂— ...</span><br><span class="line"> R13  0x560d0e588e70 —▸ 0x1caece400751 ◂— 0xde00001caece4004</span><br><span class="line"> R14  0x1caece4005b1 ◂— 0xff00001caece4005</span><br><span class="line"> R15  0x7fffe6d13810 —▸ 0x3bbfbc08304a ◂— jmp    0x3bbfbc082e16</span><br><span class="line"> RBP  0x7fffe6d13848 —▸ 0x7fffe6d138b0 —▸ 0x7fffe6d138d8 —▸ 0x7fffe6d13940 —▸ 0x7fffe6d13990 ◂— ...</span><br><span class="line"> RSP  0x7fffe6d13818 —▸ 0x3a042299f563 ◂— 0x1caece</span><br><span class="line">*RIP  0x3bbfbc0830fb ◂— mov    r13, 2</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────────[ DISASM ]───────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">   0x3bbfbc082e48    jae    0x3bbfbc082e5c &lt;0x3bbfbc082e5c&gt;</span><br><span class="line">    ↓</span><br><span class="line">   0x3bbfbc082e5c    mov    r9, r8</span><br><span class="line">   0x3bbfbc082e5f    shl    r9, 0x20</span><br><span class="line">   0x3bbfbc082e63    cmp    r8d, 0x7ff8</span><br><span class="line">   0x3bbfbc082e6a    jae    0x3bbfbc0830fb &lt;0x3bbfbc0830fb&gt;</span><br><span class="line">    ↓</span><br><span class="line"> ► 0x3bbfbc0830fb    mov    r13, 2</span><br><span class="line">   0x3bbfbc083102    call   0x3bbfbc102040 &lt;0x3bbfbc102040&gt;</span><br></pre></td></tr></table></figure>
@@ -327,8 +327,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
-              <a href="/ha1vk/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
+              <a href="/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
           </div>
 
         
@@ -337,11 +337,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2021/03/17/CVE-2016-5168/" rel="prev" title="Chrome Issue 659475(CVE-2016-5168)漏洞分析">
+    <a href="/2021/03/17/CVE-2016-5168/" rel="prev" title="Chrome Issue 659475(CVE-2016-5168)漏洞分析">
       <i class="fa fa-chevron-left"></i> Chrome Issue 659475(CVE-2016-5168)漏洞分析
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2021/04/07/CVE-2017-15399/" rel="next" title="CVE-2017-15399">
+    <a href="/2021/04/07/CVE-2017-15399/" rel="next" title="CVE-2017-15399">
       CVE-2017-15399 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -414,20 +414,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -500,30 +500,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 

