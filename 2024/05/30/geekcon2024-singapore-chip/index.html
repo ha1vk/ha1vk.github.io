@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="2024年5月25日，奇安信天工实验室安全研究员赵海，出席国际知名极客大会GEEKCON 2024 INTERNATIONAL，发表《TI C2000 DSP Chip Hacking》的议题演讲并作技术展示。 议题披露了TI C2000 DSP芯片下隐藏了20多年之久的CSM&#x2F;DCSM锁密机制绕过漏洞，该漏洞由于设计缺陷难以修复。 芯片介绍DSP芯片（Digital Signal Pr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GEEKCON 2024 TI C2000 DSP Chip Hacking： 绕过德州仪器C2000芯片的CSM&#x2F;DCSM安全保护机制">
+<meta property="og:url" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="2024年5月25日，奇安信天工实验室安全研究员赵海，出席国际知名极客大会GEEKCON 2024 INTERNATIONAL，发表《TI C2000 DSP Chip Hacking》的议题演讲并作技术展示。 议题披露了TI C2000 DSP芯片下隐藏了20多年之久的CSM&#x2F;DCSM锁密机制绕过漏洞，该漏洞由于设计缺陷难以修复。 芯片介绍DSP芯片（Digital Signal Pr">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/13.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/3.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/5.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/4.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/6.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/7.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/8.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/9.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/10.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/11.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/12.png">
+<meta property="og:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/14.png">
+<meta property="article:published_time" content="2024-05-30T02:43:05.000Z">
+<meta property="article:modified_time" content="2025-06-26T10:48:58.879Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="芯片">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/13.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>GEEKCON 2024 TI C2000 DSP Chip Hacking： 绕过德州仪器C2000芯片的CSM/DCSM安全保护机制 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2024/05/30/geekcon2024-singapore-chip/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GEEKCON 2024 TI C2000 DSP Chip Hacking： 绕过德州仪器C2000芯片的CSM/DCSM安全保护机制
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-05-30 10:43:05" itemprop="dateCreated datePublished" datetime="2024-05-30T10:43:05+08:00">2024-05-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 18:48:58" itemprop="dateModified" datetime="2025-06-26T18:48:58+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>2024年5月25日，奇安信天工实验室安全研究员赵海，出席国际知名极客大会GEEKCON 2024 INTERNATIONAL，发表《TI C2000 DSP Chip Hacking》的议题演讲并作技术展示。</p>
+<p>议题披露了TI C2000 DSP芯片下隐藏了20多年之久的CSM&#x2F;DCSM锁密机制绕过漏洞，该漏洞由于设计缺陷难以修复。</p>
+<h1 id="芯片介绍"><a href="#芯片介绍" class="headerlink" title="芯片介绍"></a>芯片介绍</h1><p>DSP芯片（Digital Signal Processing Chip）是一种专门用于数字信号处理的微处理器或微控制器。C2000™产品作为TI乃至业界最为悠久的MCU产品线之一，至今已有25年历史，从高铁到电动汽车、从数控机床到机械臂、从逆变器到服务器，哪里都有C2000的身影。TMS320F28x是C2000系列中最新的一批芯片，目前广泛使用。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/13.png" class="" title="13.png">
+<h1 id="CSM保护机制"><a href="#CSM保护机制" class="headerlink" title="CSM保护机制"></a>CSM保护机制</h1><p>代码安全模块(CSM)是C2000芯片内置的一种数据访问保护机制，开发者在芯片指定位置刷入CSM密码给芯片上锁，可以防止内部flash中的固件被UnSecureZone(JTAG调试器、BOOTROM等)读取。</p>
+<p>TMS320F28x系列CSM密码为128位（8个16位字），分别是KEY0、KEY1、KEY2、KEY3到KEY7，映射到 FLASH 的地址中，这一地址位置是由 TI 设计的时候设计好的，使用者不能改变，如果加密位置都为 1,那么该芯片为非加密状态，可以访问用户存储区，如果加密位在全 0 的状态，该芯片就处于锁死状态，无法继续使用。</p>
+<p>在芯片处于加密状态，无论是使用硬件的 JTAG 调试还是软件指令去读取加密区，得到的结果都是 0。如下使用JTAG调试器查看内存数据，此处看似是空数据，实际上这里是被CSM保护的内存区域，在不知道密码的情况下无法被读取。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/1.png" class="" title="1.png">
+<p>使用CSM密码解锁后，可以正常读取到数据</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/2.png" class="" title="2.png">
+<p>CSM机制的流程如图所示，如果要访问SecureZone区，则需要使用CSM密码进行<code>unlock</code>，<code>unlock</code>的过程是在硬件中实现的，用户只需要对相关硬件寄存器传入密码即可自动进行。为了防止在运行时调试器附加提取数据，CSM机制规定了UnsecureZone无需解锁可以直接执行SecureZone中的代码，因此BOOTROM在启动固件时，也不需要知道密码。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/3.png" class="" title="3.png">
+
+<h1 id="DCSM保护机制"><a href="#DCSM保护机制" class="headerlink" title="DCSM保护机制"></a>DCSM保护机制</h1><p>双代码安全模块(DCSM)存在于C2000系列中一些新推出的型号产品，该功能支持将芯片中的memory划为两个独立区域(SecureZone1、SecureZone2)，并设置各自独立的的128位CSM密码进行保护。通过烧写DCSM相关寄存器，可以对内存区域进行划分保护，例如将Flash Sector A、Sector C、RAMLS01划分到SecureZone1，Flash Sector B、Sector D、RANLS02、RAMLS03划分到SecureZone2。带有DCSM机制的芯片还具有SecureROM，这是内置于芯片中的一段代码，提供了一些对DCSM保护区操作的API函数，例如<code>SafeCrc</code>函数可以在无需解锁CSM的情况下被<code>UnSecureZone</code>中的代码调用计算一个SecureZone中数据的CRC。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/5.png" class="" title="5.png">
+
+<h1 id="CSM-DCSM解锁"><a href="#CSM-DCSM解锁" class="headerlink" title="CSM&#x2F;DCSM解锁"></a>CSM&#x2F;DCSM解锁</h1><p>知道了CSM的加锁方式，对研究CSM解锁思路就有两条。第一，想办法得到128位密码，如果拥有了密码，那么就可以访问用户存储区。第二，在无法得到的情况下如何让芯片编程不加密状态呢？刚才说过如果是全为1就为不加密状态，那么就想办法让该位置全变为 1，只要达到了这个状态，就破解掉了DSP的加密。市面上的芯片解密公司使用的是第二种方法：将芯片开盖，使用高精密仪器修改 OTP 存储区的电路，让加密位全部置 1 达到解密的状态。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/4.png" class="" title="4.png">
+<p>这种解锁方式造价高且流程复杂容易毁坏芯片。我们研究发现CSM&#x2F;DCSM在软件层面上存在漏洞，保护区的数据可以利用漏洞间接访问。</p>
+<h1 id="CSM-DCSM安全漏洞"><a href="#CSM-DCSM安全漏洞" class="headerlink" title="CSM&#x2F;DCSM安全漏洞"></a>CSM&#x2F;DCSM安全漏洞</h1><p>前面在介绍CSM时提到可以在无需解锁的情况下去执行SecureZone中的代码，漏洞在于<strong>可以执行SecureZone中任意地址的代码即使该地址不是一个函数的开头位置。</strong></p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/6.png" class="" title="6.png">
+<p>SecureZone内部的代码是有权限直接访问这个SecureZone本身的数据的，因此可以调用内部的一些<code>ROP Gadgets</code>去间接读写这个SecureZone。如图所示，调用了<code>MOVL ACC,*+XAR5[0]</code>这样的一个内存加载的<code>gadget</code>，可以读取<code>SecureZone</code>中4字节数据到ACC寄存器中。而<code>MOVL *+XAR4[0], ACC</code>这样的数据存储的<code>gadget</code>则可以被用于写<code>SecureZone</code>。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/7.png" class="" title="7.png">
+<p>由于事先不知道<code>SecureZone</code>的内容，那么如何获取<code>gadget</code>的地址是一个问题。将思路转变为<code>CTF</code>的盲打题，我们可以直接从一块未知内容区爆破出想要的<code>ROP Gadget</code>。如下图流程所示，我们使用BOOTROM的下载模式上传我们的代码到RAM执行，想要爆破出数据加载到寄存器的<code>gadget</code>，先在一个地址处存入数据，例如在<code>0x100</code>地址处存入一个<code>Magic Value</code>，接着设置寄存器<code>XAR4、XAR5</code>寄存器（这两个寄存器出现在内存读写的指令中比较频繁）为地址<code>0x100</code>，清空其他寄存器，然后从<code>SecureZone</code>开始的位置进行函数调用执行，如果执行错误没有成功返回，则说明当前地址不是我们需要的，下一轮对函数地址增1继续调用；如果函数调用成功返回，则检查哪一个寄存器中的值变成了<code>Magic Value</code>，如果有，说明我们成功找到一个能够从内存加载数据到寄存器的<code>gadget</code>，利用这个<code>gadget</code>可以把数据全部读取，然后反汇编后寻找<code>内存写的gadget</code>。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/8.png" class="" title="8.png">
+<p>CSM&#x2F;DCSM保护机制都可以使用这种方式来绕过读写保护，由于DCSM增加了SecureROM且SecureROM拥有对SecureZone的读写权限，我们也可以去调用<code>SecureROM</code>中的gadgets。SecureROM无法被JTAG提取但是可以在TI官方的<code>C2000Wave SDK</code>包中找到二进制文件，可以对其进行逆向提取需要的<code>ROP gadgets</code>，这样无需爆破，且适配多种产品而不依赖于<code>flash</code>中的代码变化。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/9.png" class="" title="9.png">
+
+<h1 id="EXEONLY保护绕过"><a href="#EXEONLY保护绕过" class="headerlink" title="EXEONLY保护绕过"></a>EXEONLY保护绕过</h1><p>如果对DCSM中的EXEONLY寄存器进行烧写，可以对指定内存进行<code>只可执行</code>保护，例如设置Flash Sector A、RAMLS01为<code>EXEONLY</code>，开了该保护，即使同一个<code>SecureZone</code>的代码也不能对<code>EXEONLY</code>保护区进行读写，因此上面的绕过方法就失效了。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/10.png" class="" title="10.png">
+<p>翻阅德州仪器官方的文档，SecureROM提供了两个API可以对<code>EXEONLY</code>区进行读写，但是参数有很严格的限制，也不能被利用。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/11.png" class="" title="11.png">
+<p>通过对<code>SecureROM</code>的逆向分析，我们发现内部的关键代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">_SafeCopyCodeZ1:</span><br><span class="line">...</span><br><span class="line">MOVW DP, #0x17c0</span><br><span class="line">OR @0x22, #0x0001</span><br><span class="line">...</span><br><span class="line">do some R/W</span><br></pre></td></tr></table></figure>
+<p>这里地址计算一下，实际上是对<code>0x5f022</code>地址处写入了一个标志位1，然后就可以正常的进行读写了。经过测试，写入标志位和读写数据必须由<code>SecureROM</code>中的代码来完成才能成功，并且两个操作中途不能返回到<code>UnSecureZone</code>中否则也会失败。我们可以使用ROP来完成这个操作。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/12.png" class="" title="12.png">
+<p>我们找到了合适的gadgets，先用<code>VMOV32 *+XAR5[0], VCC</code>来设置标志位，然后ROP到数据拷贝的<code>gadget</code>处。</p>
+<h1 id="Flash刷写保护绕过"><a href="#Flash刷写保护绕过" class="headerlink" title="Flash刷写保护绕过"></a>Flash刷写保护绕过</h1><p>对于开了CSM保护的芯片，我们可以利用漏洞读取位于<code>Sector A</code>中的CSM密码，然后进行解锁即可直接刷写flash。对于<code>DCSM</code>，密码在<code>OTP</code>中不可被读取，但是可以在不解锁的情况下刷写flash：在同一个<code>SecureZone</code>中的代码，如果设置了<code>DcsmCommonRegs.FLSEM.all = 0xA501;</code>这个特殊的寄存器，则后续代码可以直接刷写flash。我们可以先利用漏洞绕过DCSM的读写保护，将flash刷写代码写入到<code>SecureZone</code>中的RAM区，然后再去执行RAM中的代码即可对同一个SecureZone中的flash sector进行刷写。</p>
+<h1 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h1><p>C2000的CSM&#x2F;DCSM漏洞究其原因是UnSecureZone可以调用SecureZone中任意位置的代码，这是保护机制实现上的缺陷。相比之下，ARM在SecureZone的实现中加入了NSC(Non-secure Callable)这个中间跳板，UnsecureZone只能通过中间跳板进入SecureZone。</p>
+<img src="/ha1vk/2024/05/30/geekcon2024-singapore-chip/14.png" class="" title="14.png">
+
+<h1 id="相关链接"><a href="#相关链接" class="headerlink" title="相关链接"></a>相关链接</h1><p><a target="_blank" rel="noopener" href="https://www.ti.com/lit/ca/swra800/swra800.pdf">PSIRT Notification C2000 DCSM ROM Gadget&#x2F;ROP Vulnerability</a><br><a target="_blank" rel="noopener" href="https://www.ti.com/lit/ab/swpb019d/swpb019d.pdf">Understanding Security Features for C2000 Real-Time Control MCUs</a><br><a target="_blank" rel="noopener" href="https://e2echina.ti.com/blogs_/b/the_process/posts/dcsm">DCSM模块使用说明</a><br><a target="_blank" rel="noopener" href="https://community.nxp.com/pwmxy87654/attachments/pwmxy87654/lpc/39306/1/04_LPC5500_TrustZone_v1.4.pdf">TRUSTZONE TECHNOLOGY</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E8%8A%AF%E7%89%87/" rel="tag"># 芯片</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2024/04/18/CVE-2024-3400/" rel="prev" title="Palo Alto CVE-2024-3400漏洞分析">
+      <i class="fa fa-chevron-left"></i> Palo Alto CVE-2024-3400漏洞分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2024/10/22/GeekCon2024_AVSS_WriteUP/" rel="next" title="GeekCon2024 AVSS Writeup">
+      GeekCon2024 AVSS Writeup <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%8A%AF%E7%89%87%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">芯片介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CSM%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">CSM保护机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DCSM%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6"><span class="nav-number">3.</span> <span class="nav-text">DCSM保护机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CSM-DCSM%E8%A7%A3%E9%94%81"><span class="nav-number">4.</span> <span class="nav-text">CSM&#x2F;DCSM解锁</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CSM-DCSM%E5%AE%89%E5%85%A8%E6%BC%8F%E6%B4%9E"><span class="nav-number">5.</span> <span class="nav-text">CSM&#x2F;DCSM安全漏洞</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#EXEONLY%E4%BF%9D%E6%8A%A4%E7%BB%95%E8%BF%87"><span class="nav-number">6.</span> <span class="nav-text">EXEONLY保护绕过</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Flash%E5%88%B7%E5%86%99%E4%BF%9D%E6%8A%A4%E7%BB%95%E8%BF%87"><span class="nav-number">7.</span> <span class="nav-text">Flash刷写保护绕过</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">8.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E9%93%BE%E6%8E%A5"><span class="nav-number">9.</span> <span class="nav-text">相关链接</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

