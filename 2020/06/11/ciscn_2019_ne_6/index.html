@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
-  <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，在delete功能里，ptr指针存在未初始化的漏洞，因此其ptr的值可以通过其他函数来控制，造成任意地址free。   我们可以利用check函数来控制ptr未初始化之前的值">
+  <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，在delete功能里，ptr指针存在未初始化的漏洞，因此其ptr的值可以通过其他函数来控制，造成任意地址free。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ciscn_2019_ne_6(指针未初始化漏洞)">
 <meta property="og:url" content="https://github.com/2020/06/11/ciscn_2019_ne_6/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
-<meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，在delete功能里，ptr指针存在未初始化的漏洞，因此其ptr的值可以通过其他函数来控制，造成任意地址free。   我们可以利用check函数来控制ptr未初始化之前的值">
+<meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，在delete功能里，ptr指针存在未初始化的漏洞，因此其ptr的值可以通过其他函数来控制，造成任意地址free。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://github.com/2020/06/11/ciscn_2019_ne_6/image1.png">
 <meta property="og:image" content="https://github.com/2020/06/11/ciscn_2019_ne_6/image2.png">
@@ -225,13 +225,6 @@
 
               <time title="创建时间：2020-06-11 13:20:50" itemprop="dateCreated datePublished" datetime="2020-06-11T13:20:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 21:10:43" itemprop="dateModified" datetime="2025-06-24T21:10:43+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>

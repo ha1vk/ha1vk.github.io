@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
-  <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，edit函数里使用了abs函数，abs函数接收4字节有符号int数，当传入0x80000000时，其返回结果仍然是0x80000000，由于4字节int正数将无法表示这么大，因此，其值是一个负数，由此，可以造成堆溢出。   然后就可以利用了">
+  <meta name="description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，edit函数里使用了abs函数，abs函数接收4字节有符号int数，当传入0x80000000时，其返回结果仍然是0x80000000，由于4字节int正数将无法表示这么大，因此，其值是一个负数，由此，可以造成堆溢出。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="shanghai2019_boringheap">
 <meta property="og:url" content="https://github.com/2020/06/10/shanghai2019_boringheap(abs%E5%87%BD%E6%95%B0%E6%BA%A2%E5%87%BA%E7%82%B9)/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
-<meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，edit函数里使用了abs函数，abs函数接收4字节有符号int数，当传入0x80000000时，其返回结果仍然是0x80000000，由于4字节int正数将无法表示这么大，因此，其值是一个负数，由此，可以造成堆溢出。   然后就可以利用了">
+<meta property="og:description" content="首先，检查一下程序的保护机制   然后，我们用IDA分析一下，edit函数里使用了abs函数，abs函数接收4字节有符号int数，当传入0x80000000时，其返回结果仍然是0x80000000，由于4字节int正数将无法表示这么大，因此，其值是一个负数，由此，可以造成堆溢出。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://github.com/2020/06/10/shanghai2019_boringheap(abs%E5%87%BD%E6%95%B0%E6%BA%A2%E5%87%BA%E7%82%B9)/image1.png">
 <meta property="og:image" content="https://github.com/2020/06/10/shanghai2019_boringheap(abs%E5%87%BD%E6%95%B0%E6%BA%A2%E5%87%BA%E7%82%B9)/image2.png">
@@ -224,13 +224,6 @@
 
               <time title="创建时间：2020-06-10 20:51:50" itemprop="dateCreated datePublished" datetime="2020-06-10T20:51:50+08:00">2020-06-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 20:53:27" itemprop="dateModified" datetime="2025-06-24T20:53:27+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>

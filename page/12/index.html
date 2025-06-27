@@ -214,13 +214,6 @@
 
               <time title="创建时间：2020-06-10 22:55:28" itemprop="dateCreated datePublished" datetime="2020-06-10T22:55:28+08:00">2020-06-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 12:35:36" itemprop="dateModified" datetime="2025-06-26T12:35:36+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -245,9 +238,14 @@
           <p>C++的vector的erase函数实现如下</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">iterator <span class="title">erase</span><span class="params">(iterator position)</span></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (position + <span class="number">1</span> != <span class="built_in">end</span>())</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 把从 position+1 到 finish 之间的元素一个一个复制到从 position 指向</span></span><br><span class="line">        <span class="comment">//的空间，这样，就把 position 原来指向的元素个覆盖了</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">copy</span>(position + <span class="number">1</span>, finish, position);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    --finish;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">destroy</span>(finish);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> position;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>就是将position+1 到 finish 之间的元素一个一个复制到从 position 指向的空间，这样，就把 position 原来指向的元素个覆盖了。同时注意到<code>destroy(finish);</code>释放最后一个元素，因此position位置的元素不会被释放，最后一个元素会被释放造成UAF。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">//假设有如下的一个列表，其内存空间表示如下:</span><br><span class="line"> //---------------------------------------------------------</span><br><span class="line"> //| 1 | 2 | 3 | 4 | 5 |  |  |</span><br><span class="line"> //---------------------------------------------------------</span><br><span class="line"> //           |</span><br><span class="line"> //                  finish</span><br><span class="line"> //现在，要删除第二个元素 2 这个对象。</span><br><span class="line"> //所以，执行 copy 之后，把 3， 4， 5 对象往前移动，其内存空间如下:</span><br><span class="line"> //---------------------------------------------------------</span><br><span class="line"> //| 1 | 3 | 4 | 5 | 5 |  |  |</span><br><span class="line"> //---------------------------------------------------------</span><br><span class="line"> //           |</span><br><span class="line"> //                 finish</span><br><span class="line"> //注意，第 5 个元素的内存空间还是原来的对象 5 这个对象。</span><br><span class="line"> //然后，执行 --finish; 操作，移动指针，如下:</span><br><span class="line"> //---------------------------------------------------------</span><br><span class="line"> //| 1 | 3 | 4 | 5 | 5 |  |  |</span><br><span class="line"> //---------------------------------------------------------</span><br><span class="line"> //         |</span><br><span class="line"> //               finish  </span><br><span class="line"> //然后，执行 destroy(finish); 操作，执行的是第 5 个元素的析构函数，而</span><br><span class="line"> //我们删除的第2个对象，并没有执行其析构函数，只是把它在内存空间给覆盖了。</span><br></pre></td></tr></table></figure>
-
-
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/06/10/De1CTF-2020-stl-container/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -292,13 +290,6 @@
 
               <time title="创建时间：2020-06-10 22:46:50" itemprop="dateCreated datePublished" datetime="2020-06-10T22:46:50+08:00">2020-06-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 21:03:01" itemprop="dateModified" datetime="2025-06-24T21:03:01+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -324,9 +315,6 @@
 <img src="/2020/06/10/wdb_2018_1st_blind/image1.png" class>
 
 <p>然后，我们用IDA分析一下，程序里没有show功能</p>
-<img src="/2020/06/10/wdb_2018_1st_blind/image2.png" class>
-
-<p>有一个后门函数</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/10/wdb_2018_1st_blind/#more" rel="contents">
@@ -379,13 +367,6 @@
 
               <time title="创建时间：2020-06-10 22:00:50" itemprop="dateCreated datePublished" datetime="2020-06-10T22:00:50+08:00">2020-06-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 20:40:40" itemprop="dateModified" datetime="2025-06-25T20:40:40+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -411,9 +392,6 @@
 <img src="/2020/06/10/rec_33c3_2016/image1.png" class>
 
 <p>然后，我们用IDA分析一下，功能1可以用于栈数据泄露，轻松得到glibc地址</p>
-<img src="/2020/06/10/rec_33c3_2016/image2.png" class>
-
-<p>功能5有一个函数指针，当输入为0时，其值未初始化</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/10/rec_33c3_2016/#more" rel="contents">
@@ -466,13 +444,6 @@
 
               <time title="创建时间：2020-06-10 21:27:50" itemprop="dateCreated datePublished" datetime="2020-06-10T21:27:50+08:00">2020-06-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 21:00:19" itemprop="dateModified" datetime="2025-06-24T21:00:19+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -498,9 +469,6 @@
 <img src="/2020/06/10/hctf2016_fheap/image1.png" class>
 
 <p>然后，我们用IDA分析一下，add函数中，如果字符串长度大于15，则单独malloc一块内存存放字符串，否则直接存结点里。</p>
-<img src="/2020/06/10/hctf2016_fheap/image2.png" class>
-
-<p>Delete功能没有清空指针，因此，存在UAF， </p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/10/hctf2016_fheap/#more" rel="contents">
@@ -553,13 +521,6 @@
 
               <time title="创建时间：2020-06-10 21:05:50" itemprop="dateCreated datePublished" datetime="2020-06-10T21:05:50+08:00">2020-06-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 20:56:38" itemprop="dateModified" datetime="2025-06-24T20:56:38+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -585,9 +546,6 @@
 <img src="/2020/06/10/rctf2018_rnote4/image1.png" class>
 
 <p>然后，我们用IDA分析一下，edit功能里可以自由控制长度，存在溢出</p>
-<img src="/2020/06/10/rctf2018_rnote4/image2.png" class>
-
-<p>整个程序**[没有任何的输出]{.mark}**</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/10/rctf2018_rnote4/#more" rel="contents">
@@ -640,13 +598,6 @@
 
               <time title="创建时间：2020-06-10 20:51:50" itemprop="dateCreated datePublished" datetime="2020-06-10T20:51:50+08:00">2020-06-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 20:53:27" itemprop="dateModified" datetime="2025-06-24T20:53:27+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -672,9 +623,6 @@
 <img src="/2020/06/10/shanghai2019_boringheap(abs%E5%87%BD%E6%95%B0%E6%BA%A2%E5%87%BA%E7%82%B9)/image1.png" class>
 
 <p>然后，我们用IDA分析一下，edit函数里使用了abs函数，<strong>abs函数接收4字节有符号int数，当传入0x80000000时，其返回结果仍然是0x80000000</strong>，由于4字节int正数将无法表示这么大，因此，其值是一个负数，由此，可以造成堆溢出。</p>
-<img src="/2020/06/10/shanghai2019_boringheap(abs%E5%87%BD%E6%95%B0%E6%BA%A2%E5%87%BA%E7%82%B9)/image2.png" class>
-
-<p>然后就可以利用了</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/10/shanghai2019_boringheap(abs%E5%87%BD%E6%95%B0%E6%BA%A2%E5%87%BA%E7%82%B9)/#more" rel="contents">
@@ -727,13 +675,6 @@
 
               <time title="创建时间：2020-04-30 21:48:50" itemprop="dateCreated datePublished" datetime="2020-04-30T21:48:50+08:00">2020-04-30</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 20:34:48" itemprop="dateModified" datetime="2025-06-25T20:34:48+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -759,8 +700,6 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* </span></span><br><span class="line"><span class="comment">     If a small request, check regular bin.  Since these &quot;smallbins&quot; </span></span><br><span class="line"><span class="comment">     hold one size each, no searching within bins is necessary. </span></span><br><span class="line"><span class="comment">     (For a large request, we need to wait until unsorted chunks are </span></span><br><span class="line"><span class="comment">     processed to find best fit. But for small ones, fits are exact </span></span><br><span class="line"><span class="comment">     anyway, so we can check now, which is faster.) </span></span><br><span class="line"><span class="comment">   */</span>  </span><br><span class="line">  </span><br><span class="line">  <span class="keyword">if</span> (in_smallbin_range (nb))  </span><br><span class="line">    &#123;  </span><br><span class="line">      idx = smallbin_index (nb);  </span><br><span class="line">      bin = bin_at (av, idx);  </span><br><span class="line">  </span><br><span class="line">      <span class="keyword">if</span> ((victim = last (bin)) != bin) <span class="comment">//取该索引对应的small bin中最后一个chunk  </span></span><br><span class="line">        &#123;  </span><br><span class="line">          bck = victim-&gt;bk;  <span class="comment">//获取倒数第二个chunk  </span></span><br><span class="line">      <span class="keyword">if</span> (__glibc_unlikely (bck-&gt;fd != victim)) <span class="comment">//检查双向链表完整性  </span></span><br><span class="line">        malloc_printerr (<span class="string">&quot;malloc(): smallbin double linked list corrupted&quot;</span>);  </span><br><span class="line">          set_inuse_bit_at_offset (victim, nb);  </span><br><span class="line">          bin-&gt;bk = bck; <span class="comment">//将victim从small bin的链表中卸下  </span></span><br><span class="line">          bck-&gt;fd = bin;  </span><br><span class="line">  </span><br><span class="line">          <span class="keyword">if</span> (av != &amp;main_arena)  </span><br><span class="line">        set_non_main_arena (victim);  </span><br><span class="line">          check_malloced_chunk (av, victim, nb);  </span><br><span class="line"><span class="meta">#<span class="keyword">if</span> USE_TCACHE  </span></span><br><span class="line">      <span class="comment">/* While we&#x27;re here, if we see other chunks of the same size, </span></span><br><span class="line"><span class="comment">         stash them in the tcache.  */</span>  </span><br><span class="line">      <span class="type">size_t</span> tc_idx = csize2tidx (nb); <span class="comment">//获取对应size的tcache索引  </span></span><br><span class="line">      <span class="keyword">if</span> (tcache &amp;&amp; tc_idx &lt; mp_.tcache_bins) <span class="comment">//如果该索引在tcache bin范围  </span></span><br><span class="line">        &#123;  </span><br><span class="line">          mchunkptr tc_victim;  </span><br><span class="line">  </span><br><span class="line">          <span class="comment">/* While bin not empty and tcache not full, copy chunks over.  */</span>  </span><br><span class="line">          <span class="keyword">while</span> (tcache-&gt;counts[tc_idx] &lt; mp_.tcache_count  <span class="comment">//当tcache bin不为空并且没满，并且small bin不为空，则依次取最后一个chunk插入到tcache bin里  </span></span><br><span class="line">             &amp;&amp; (tc_victim = last (bin)) != bin)  </span><br><span class="line">        &#123;  </span><br><span class="line">          <span class="keyword">if</span> (tc_victim != <span class="number">0</span>)  </span><br><span class="line">            &#123;  </span><br><span class="line">              bck = tc_victim-&gt;bk;  </span><br><span class="line">              set_inuse_bit_at_offset (tc_victim, nb);  </span><br><span class="line">              <span class="keyword">if</span> (av != &amp;main_arena)  </span><br><span class="line">            set_non_main_arena (tc_victim);  </span><br><span class="line">              bin-&gt;bk = bck; <span class="comment">//将当前chunk从small bin里卸下  </span></span><br><span class="line">              bck-&gt;fd = bin;  </span><br><span class="line">                      <span class="comment">//放入tcache bin里  </span></span><br><span class="line">              tcache_put (tc_victim, tc_idx);  </span><br><span class="line">                &#125;  </span><br><span class="line">        &#125;  </span><br><span class="line">        &#125;  </span><br><span class="line"><span class="meta">#<span class="keyword">endif</span>  </span></span><br><span class="line">          <span class="type">void</span> *p = chunk2mem (victim);  </span><br><span class="line">          alloc_perturb (p, bytes);  </span><br><span class="line">          <span class="keyword">return</span> p;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br></pre></td></tr></table></figure>
 
 <p>如上，我们看到，从small bin中取出最后一个chunk的时候，对双向链表做了完整性的检查，<strong>然而，后面将剩余chunk放入tcache bin的时候却没有这个检查</strong>。然后，<strong>bck-&gt;fd &#x3D; bin</strong>这句代码，可以将bck-&gt;fd处写一个main_arena地址。如果我们可以控制bck，那么就能实现任意地址处写一个main_arena的地址。同理，如果我们能够控制small bin的bck，并且保证vuln_addr-&gt;fd &#x3D; bck，那么就能分配到vuln_addr处。</p>
-<p>为了加深理解，我们从两道题来巩固一下。</p>
-<h2 id="hitcon-ctf-2019-one-punch"><a href="#hitcon-ctf-2019-one-punch" class="headerlink" title="hitcon_ctf_2019_one_punch"></a>hitcon_ctf_2019_one_punch</h2>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/30/Tcache_Stashing_Unlink_Attack/#more" rel="contents">
@@ -813,13 +752,6 @@
 
               <time title="创建时间：2020-04-30 18:42:50" itemprop="dateCreated datePublished" datetime="2020-04-30T18:42:50+08:00">2020-04-30</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 20:50:36" itemprop="dateModified" datetime="2025-06-24T20:50:36+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -845,9 +777,6 @@
 <img src="/2020/04/30/ciscn_2019_sw_7/image1.png" class>
 
 <p>然后，我们用IDA分析一下，最多创建10个堆，并且size不能超过0x60</p>
-<img src="/2020/04/30/ciscn_2019_sw_7/image2.png" class>
-
-<p>Delete功能没有清空指针，因此可以double free。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/30/ciscn_2019_sw_7/#more" rel="contents">
@@ -900,13 +829,6 @@
 
               <time title="创建时间：2020-04-30 18:32:50" itemprop="dateCreated datePublished" datetime="2020-04-30T18:32:50+08:00">2020-04-30</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 20:20:03" itemprop="dateModified" datetime="2025-06-25T20:20:03+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -932,9 +854,6 @@
 <img src="/2020/04/30/ciscn_2019_sw_5/image1.png" class>
 
 <p>然后，我们用IDA分析一下，仅两个功能</p>
-<img src="/2020/04/30/ciscn_2019_sw_5/image2.png" class>
-
-<p>其中，delete功能只能用3次，delete功能没有清空指针，存在double free漏洞。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/30/ciscn_2019_sw_5/#more" rel="contents">
@@ -987,13 +906,6 @@
 
               <time title="创建时间：2020-04-30 17:19:11" itemprop="dateCreated datePublished" datetime="2020-04-30T17:19:11+08:00">2020-04-30</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 17:57:14" itemprop="dateModified" datetime="2025-06-25T17:57:14+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1019,9 +931,6 @@
 <img src="/2020/04/30/ciscn_2019_ne_3/image1.png" class>
 
 <p>然后，我们用IDA分析一下，32位栈溢出，难点在于结束变更了两次esp，因此，我们单纯的溢出，直接会造成esp变更到一个无效的地址处。</p>
-<img src="/2020/04/30/ciscn_2019_ne_3/image2.png" class>
-
-<p>因此，我们需要将将ecx覆盖为bss段，将栈切换到bss上进行rop。但是切换到bss之前，需要先在bss段布置好rop才行。由此，程序一开始处，叫我们输入长度时，能够输入16字节，并且数据保存在bss段，16字节，前4字节，我们用来存储长度值-1，然后，我们可以布置下3条rop gadget。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/30/ciscn_2019_ne_3/#more" rel="contents">

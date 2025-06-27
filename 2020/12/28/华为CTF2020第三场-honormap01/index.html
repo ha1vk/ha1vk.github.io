@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
-  <meta name="description" content="在输入width时使用的是%x格式化字符串，会输入4字节内存  而w位于h之上，那么就可以把h覆盖，从而绕过了对h的大小限制。  修改h以后，就能进行堆溢出了，首先越界读，泄露func指针，计算程序基址，计算后门函数。然后利用越界写将func指针修改为后门函数地址。接下来调用后面函数时，由于第一个参数是这个结构体本身，而w和h不能自由控制。因此我们使用堆喷构造好堆布局，使得有两个堆正好相邻，然后利">
+  <meta name="description" content="在输入width时使用的是%x格式化字符串，会输入4字节内存  而w位于h之上，那么就可以把h覆盖，从而绕过了对h的大小限制。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="华为CTF2020第三场_honormap01">
 <meta property="og:url" content="https://github.com/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-honormap01/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
-<meta property="og:description" content="在输入width时使用的是%x格式化字符串，会输入4字节内存  而w位于h之上，那么就可以把h覆盖，从而绕过了对h的大小限制。  修改h以后，就能进行堆溢出了，首先越界读，泄露func指针，计算程序基址，计算后门函数。然后利用越界写将func指针修改为后门函数地址。接下来调用后面函数时，由于第一个参数是这个结构体本身，而w和h不能自由控制。因此我们使用堆喷构造好堆布局，使得有两个堆正好相邻，然后利">
+<meta property="og:description" content="在输入width时使用的是%x格式化字符串，会输入4字节内存  而w位于h之上，那么就可以把h覆盖，从而绕过了对h的大小限制。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://github.com/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-honormap01/1.png">
 <meta property="og:image" content="https://github.com/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-honormap01/2.png">
@@ -223,13 +223,6 @@
 
               <time title="创建时间：2020-12-28 08:38:31" itemprop="dateCreated datePublished" datetime="2020-12-28T08:38:31+08:00">2020-12-28</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 14:11:14" itemprop="dateModified" datetime="2025-06-26T14:11:14+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>

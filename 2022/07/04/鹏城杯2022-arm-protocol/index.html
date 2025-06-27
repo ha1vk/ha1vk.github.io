@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
-  <meta name="description" content="首先使用md5进行比较，但使用的是strcmp，比较的字符串中含有\0，可以导致截断  于是可以爆破出符合的keyedit中存在off by one，可以通过溢出来扩大tcache bin chunk的size，然后delete后申请回来，就能制造overlap chunk，然后控制func指针和参数即可  其中malloc_usable_size函数源码如下">
+  <meta name="description" content="首先使用md5进行比较，但使用的是strcmp，比较的字符串中含有\0，可以导致截断  于是可以爆破出符合的keyedit中存在off by one，可以通过溢出来扩大tcache bin chunk的size，然后delete后申请回来，就能制造overlap chunk，然后控制func指针和参数即可">
 <meta property="og:type" content="article">
 <meta property="og:title" content="鹏城杯2022_arm_protocol">
 <meta property="og:url" content="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-arm-protocol/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
-<meta property="og:description" content="首先使用md5进行比较，但使用的是strcmp，比较的字符串中含有\0，可以导致截断  于是可以爆破出符合的keyedit中存在off by one，可以通过溢出来扩大tcache bin chunk的size，然后delete后申请回来，就能制造overlap chunk，然后控制func指针和参数即可  其中malloc_usable_size函数源码如下">
+<meta property="og:description" content="首先使用md5进行比较，但使用的是strcmp，比较的字符串中含有\0，可以导致截断  于是可以爆破出符合的keyedit中存在off by one，可以通过溢出来扩大tcache bin chunk的size，然后delete后申请回来，就能制造overlap chunk，然后控制func指针和参数即可">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-arm-protocol/1.png">
 <meta property="og:image" content="https://github.com/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-arm-protocol/2.png">
@@ -224,13 +224,6 @@
 
               <time title="创建时间：2022-07-04 15:12:43" itemprop="dateCreated datePublished" datetime="2022-07-04T15:12:43+08:00">2022-07-04</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 15:28:58" itemprop="dateModified" datetime="2025-06-26T15:28:58+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>

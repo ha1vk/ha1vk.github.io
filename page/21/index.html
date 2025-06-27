@@ -214,13 +214,6 @@
 
               <time title="创建时间：2019-12-19 15:57:50" itemprop="dateCreated datePublished" datetime="2019-12-19T15:57:50+08:00">2019-12-19</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 19:04:05" itemprop="dateModified" datetime="2025-06-21T19:04:05+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -246,9 +239,6 @@
 <img src="/2019/12/19/play/image1.JPG" class>
 
 <p>然后，我们用IDA分析，发现一个很明显的栈溢出漏洞</p>
-<img src="/2019/12/19/play/image2.JPG" class>
-
-<p>但是，要想执行这个漏洞函数，就必须打赢游戏</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/12/19/play/#more" rel="contents">
@@ -301,13 +291,6 @@
 
               <time title="创建时间：2019-12-12 22:03:50" itemprop="dateCreated datePublished" datetime="2019-12-12T22:03:50+08:00">2019-12-12</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 18:57:01" itemprop="dateModified" datetime="2025-06-21T18:57:01+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -333,9 +316,6 @@
 <img src="/2019/12/12/calc2_calc/image1.JPG" class>
 
 <p>然后，我们用IDA分析一下，发现libc被静态编译进了程序中，又由于**[没有开启PIE,，所以，我们就直接可以获得需要的函数的地址]{.mark}<strong>。然而，我们发现，system、execve这些函数都没有，有没有one_gadget，那么我们只能</strong>[通过系统调用来构造ROP执行&#x2F;bin&#x2F;sh来getshell]{.mark}**</p>
-<img src="/2019/12/12/calc2_calc/image2.JPG" class>
-
-<p>发现，该程序是一个四则运算表达式计算程序</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/12/12/calc2_calc/#more" rel="contents">
@@ -388,13 +368,6 @@
 
               <time title="创建时间：2019-12-09 16:40:50" itemprop="dateCreated datePublished" datetime="2019-12-09T16:40:50+08:00">2019-12-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 18:45:21" itemprop="dateModified" datetime="2025-06-21T18:45:21+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -420,9 +393,6 @@
 <img src="/2019/12/09/house_of_grey/image1.JPG" class>
 
 <p>然后，我们用IDA分析一下</p>
-<img src="/2019/12/09/house_of_grey/image2.JPG" class>
-
-<p>发现是一个读取文件并显示的程序，除了flag文件，其他文件都可以读取</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/12/09/house_of_grey/#more" rel="contents">
@@ -475,13 +445,6 @@
 
               <time title="创建时间：2019-12-09 15:06:50" itemprop="dateCreated datePublished" datetime="2019-12-09T15:06:50+08:00">2019-12-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 18:36:30" itemprop="dateModified" datetime="2025-06-21T18:36:30+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -506,9 +469,6 @@
           <p>这是swpuctf2019的第二道pwn题，主要考点就是**[非栈上的字符串格式化漏洞利用]{.mark}**。</p>
 <p>首先，我们检查一下程序的保护机制</p>
 <img src="/2019/12/09/swpuctf2019_login/image1.JPG" class>
-
-<p>PIE和RELRO没有开启，那么我们可以轻易的利用漏洞修改GOT表</p>
-<p>我们用IDA分析一下</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/12/09/swpuctf2019_login/#more" rel="contents">
@@ -561,13 +521,6 @@
 
               <time title="创建时间：2019-12-08 22:52:50" itemprop="dateCreated datePublished" datetime="2019-12-08T22:52:50+08:00">2019-12-08</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 18:30:49" itemprop="dateModified" datetime="2025-06-21T18:30:49+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -592,9 +545,6 @@
           <p>这是swpuctf2019的一题，让我们来详细分析一下</p>
 <p>首先，我们检查一下程序的保护机制，发现保护全开</p>
 <img src="/2019/12/08/swpuctf2019_p1KkHeap/image1.JPG" class>
-
-<p>然后，我们用IDA分析一下</p>
-<p><strong>最大允许创建0x100的堆，并且最多有8个堆</strong></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/12/08/swpuctf2019_p1KkHeap/#more" rel="contents">
@@ -647,13 +597,6 @@
 
               <time title="创建时间：2019-11-30 14:02:50" itemprop="dateCreated datePublished" datetime="2019-11-30T14:02:50+08:00">2019-11-30</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 18:21:18" itemprop="dateModified" datetime="2025-06-21T18:21:18+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -678,9 +621,6 @@
           <p>这是2019 d3ctf的一道pwn题，由于当时知识储备不够没做出来，赛后就好好研究，从中学到了新的知识</p>
 <p>首先，我们检查一下程序的保护机制</p>
 <img src="/2019/11/30/d3ctf_unprintableV/image1.JPG" class>
-
-<p>除了canary，其它的保护都开了</p>
-<p>然后，我们用IDA分析一下</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/11/30/d3ctf_unprintableV/#more" rel="contents">
@@ -733,13 +673,6 @@
 
               <time title="创建时间：2019-11-28 23:07:50" itemprop="dateCreated datePublished" datetime="2019-11-28T23:07:50+08:00">2019-11-28</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 18:06:12" itemprop="dateModified" datetime="2025-06-21T18:06:12+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -764,9 +697,6 @@
           <p>这题是2019 d3ctf赛的一题，当时没做出来，后来看了大佬的exp脚本，慢慢研究，终于明白了原理，现在，我们就来详细的解析一下这题</p>
 <p>首先，我们还是检查一下程序的保护机制,<strong>保护全开</strong></p>
 <img src="/2019/11/28/d3ctf_new_heap/image1.JPG" class>
-
-<p>再看一下给我们的libc.so.6的版本,可见是glibc2.29，那么对于堆的管理，就存在<strong>tcache机制</strong></p>
-<img src="/2019/11/28/d3ctf_new_heap/image2.JPG" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/11/28/d3ctf_new_heap/#more" rel="contents">
@@ -819,13 +749,6 @@
 
               <time title="创建时间：2019-11-22 13:08:50" itemprop="dateCreated datePublished" datetime="2019-11-22T13:08:50+08:00">2019-11-22</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 20:11:09" itemprop="dateModified" datetime="2025-06-21T20:11:09+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -851,9 +774,6 @@
 <img src="/2019/11/22/shell/image1.JPG" class>
 
 <p>然后，我们用IDA分析</p>
-<img src="/2019/11/22/shell/image2.JPG" class>
-
-<p>存在栈溢出漏洞</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/11/22/shell/#more" rel="contents">
@@ -906,13 +826,6 @@
 
               <time title="创建时间：2019-11-21 21:59:50" itemprop="dateCreated datePublished" datetime="2019-11-21T21:59:50+08:00">2019-11-21</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 17:52:26" itemprop="dateModified" datetime="2025-06-21T17:52:26+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -938,9 +851,6 @@
 <img src="/2019/11/21/notebook/image1.JPG" class>
 
 <p>然后，我们用IDA分析一下,看起来好复杂的样子</p>
-<img src="/2019/11/21/notebook/image2.JPG" class>
-
-<p>发现有溢出和格式化字符串漏洞</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/11/21/notebook/#more" rel="contents">
@@ -993,13 +903,6 @@
 
               <time title="创建时间：2019-11-20 22:52:50" itemprop="dateCreated datePublished" datetime="2019-11-20T22:52:50+08:00">2019-11-20</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 17:22:22" itemprop="dateModified" datetime="2025-06-21T17:22:22+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1025,9 +928,6 @@
 <img src="/2019/11/20/babyheap/image1.JPG" class>
 
 <p>然后用IDA分析，发现在创建并读入数据时，有一个<strong>null off by one漏洞</strong></p>
-<img src="/2019/11/20/babyheap/image2.JPG" class>
-
-<p>我们所能利用的也就是这个漏洞</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/11/20/babyheap/#more" rel="contents">

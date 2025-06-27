@@ -214,13 +214,6 @@
 
               <time title="创建时间：2020-02-26 22:33:11" itemprop="dateCreated datePublished" datetime="2020-02-26T22:33:11+08:00">2020-02-26</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:41:17" itemprop="dateModified" datetime="2025-06-25T16:41:17+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -246,9 +239,6 @@
 <img src="/2020/02/26/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9signin/image1.JPG" class>
 
 <p>然后，我们用IDA分析一下，存在一个后门函数，要执行后面函数，需要ptr不为0</p>
-<img src="/2020/02/26/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9signin/image2.JPG" class>
-
-<img src="/2020/02/26/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9signin/image3.JPG" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/26/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9signin/#more" rel="contents">
@@ -301,13 +291,6 @@
 
               <time title="创建时间：2020-02-26 17:30:11" itemprop="dateCreated datePublished" datetime="2020-02-26T17:30:11+08:00">2020-02-26</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:32:23" itemprop="dateModified" datetime="2025-06-25T16:32:23+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -332,9 +315,6 @@
           <p>Angr求解CTF逆向问题</p>
 <p>以i春秋2020新春战役EasyVM为例，我们用IDA分析一下</p>
 <img src="/2020/02/26/angr%E6%B1%82%E8%A7%A3%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/image1.JPG" class>
-
-<p>是一个模拟VM计算flag的程序，如果我们人工去推算，分析，再写个程序求解，太费时间，于是，我们使用angr来求解</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8  </span></span><br><span class="line"><span class="keyword">import</span> angr  </span><br><span class="line"><span class="keyword">import</span> claripy  </span><br><span class="line">  </span><br><span class="line">base=<span class="number">0x400000</span>  </span><br><span class="line">proj = angr.Project(<span class="string">&quot;./EasyVM&quot;</span>,auto_load_libs=<span class="literal">False</span>)  </span><br><span class="line">st = proj.factory.entry_state()  </span><br><span class="line">simgr = proj.factory.simulation_manager(st)  </span><br><span class="line"><span class="comment">#0xB73是正确的分支,0xB81是错误的分支  </span></span><br><span class="line">simgr.explore(find=base+<span class="number">0xB73</span>,avoid=base+<span class="number">0xB81</span>) <span class="comment">#find就是正确的那条路 avoid错误的  </span></span><br><span class="line">  </span><br><span class="line"><span class="built_in">print</span> (simgr.found[<span class="number">0</span>].posix.dumps(<span class="number">0</span>)) <span class="comment">#flag </span></span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/26/angr%E6%B1%82%E8%A7%A3%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/#more" rel="contents">
@@ -387,13 +367,6 @@
 
               <time title="创建时间：2020-02-26 14:50:11" itemprop="dateCreated datePublished" datetime="2020-02-26T14:50:11+08:00">2020-02-26</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:29:55" itemprop="dateModified" datetime="2025-06-25T16:29:55+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -425,7 +398,6 @@
 </li>
 </ol>
 <p>详细见CTF-WIKI<a target="_blank" rel="noopener" href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/glibc-heap/house_of_force-zh/">https://ctf-wiki.github.io/ctf-wiki/pwn/linux/glibc-heap/house_of_force-zh/</a></p>
-<h1 id="Force"><a href="#Force" class="headerlink" title="Force"></a>Force</h1><p>我们以i春秋2020新春战役的force这题为例</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/26/house_of_force_i%E6%98%A5%E7%A7%8Bforce/#more" rel="contents">
@@ -478,13 +450,6 @@
 
               <time title="创建时间：2020-02-24 15:48:11" itemprop="dateCreated datePublished" datetime="2020-02-24T15:48:11+08:00">2020-02-24</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:24:19" itemprop="dateModified" datetime="2025-06-25T16:24:19+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -510,9 +475,6 @@
 <img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image1.JPG" class>
 
 <p>然后，我们用IDA分析一下</p>
-<img src="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/image2.JPG" class>
-
-<p>一开始处，有一个栈溢出漏洞，但是由于开启了canary保护，得想办法绕过canary。下方的堆溢出，<strong>[不仔细看还发现不了，v4只有一开始被初始化，在循环里，只有i被重新赋值，v4没变，而下方又用到了v4。]{.mark}</strong></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/24/i%E6%98%A5%E7%A7%8B2020%E6%96%B0%E6%98%A5%E6%88%98%E5%BD%B9PWN_BFnote/#more" rel="contents">
@@ -565,13 +527,6 @@
 
               <time title="创建时间：2020-02-24 14:27:11" itemprop="dateCreated datePublished" datetime="2020-02-24T14:27:11+08:00">2020-02-24</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:18:34" itemprop="dateModified" datetime="2025-06-25T16:18:34+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -596,9 +551,6 @@
           <p>在linux下，二进制引用的外部符号加载方式有三种，FULL_RELRO、PARTIAL_RELRO、NO_RELRO，在PARTIAL_RELRO和NO_RELRO的情况下，外部符号的地址延迟加载，并且，在NO_RELRO下，ELF的dynamic段可读写。</p>
 <p>ELF有plt表和got表，程序调用外部函数函数时，call的是plt表项，而plt表中，是这样的</p>
 <img src="/2020/02/24/ret2dl-runtime_resolve/image1.JPG" class>
-
-<p>plt表里，取出了got表对应函数的地址，然后jmp到地址处。</p>
-<p>我们看看got表是什么样子的</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/24/ret2dl-runtime_resolve/#more" rel="contents">
@@ -651,13 +603,6 @@
 
               <time title="创建时间：2020-02-20 11:13:11" itemprop="dateCreated datePublished" datetime="2020-02-20T11:13:11+08:00">2020-02-20</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:07:21" itemprop="dateModified" datetime="2025-06-25T16:07:21+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -682,8 +627,6 @@
           <p>shellcode是一段用于利用软件漏洞而执行的代码，在实际的软件中，某些软件对允许输入的字符范围做了限制，导致检测到非法字符，从而无法成功输入shellcode。这时就需要加密shellcode。谷歌有一个开源工具ALPHA 3，可以将shellcode加密为全ascii可见字符。其大致原理根本文我们讲的是差不多的。</p>
 <p>本文，我们要自己实现一个shellcode加密。我们就从攻防世界的一题holy_shellcode来看吧。这题的附件，攻防世界上没有，到这里下载<a target="_blank" rel="noopener" href="https://pwn-1253291247.cos.ap-chengdu.myqcloud.com/holy_shellcode">https://pwn-1253291247.cos.ap-chengdu.myqcloud.com/holy_shellcode</a></p>
 <p>我们用IDA分析一下</p>
-<p>这里会把shellcode[i]和shellcode[i+1]替换为固定值</p>
-<img src="/2020/02/20/shellcode_enc/image1.JPG" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/20/shellcode_enc/#more" rel="contents">
@@ -736,13 +679,6 @@
 
               <time title="创建时间：2020-02-19 14:34:50" itemprop="dateCreated datePublished" datetime="2020-02-19T14:34:50+08:00">2020-02-19</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 21:00:38" itemprop="dateModified" datetime="2025-06-21T21:00:38+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -768,9 +704,6 @@
 <img src="/2020/02/19/Poisonous_Milk/image1.JPG" class>
 
 <p>然后，我们用IDA分析一下，发现是c++写的程序，看起来复杂了很多，这些一大堆，作用只是打印菜单，那么我们把这个函数重命名为menu。</p>
-<img src="/2020/02/19/Poisonous_Milk/image2.JPG" class>
-
-<img src="/2020/02/19/Poisonous_Milk/image3.JPG" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/19/Poisonous_Milk/#more" rel="contents">
@@ -823,13 +756,6 @@
 
               <time title="创建时间：2020-02-19 13:16:50" itemprop="dateCreated datePublished" datetime="2020-02-19T13:16:50+08:00">2020-02-19</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 20:50:34" itemprop="dateModified" datetime="2025-06-21T20:50:34+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -855,8 +781,6 @@
 <img src="/2020/02/19/bufoverflow_b/image1.JPG" class>
 
 <p><strong>[遇到空字符就会截断，这将不利于我们在chunk里伪造数据。]{.mark}</strong></p>
-<p>另外增加了一个功能，不过我没有使用到。</p>
-<img src="/2020/02/19/bufoverflow_b/image2.JPG" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/19/bufoverflow_b/#more" rel="contents">
@@ -909,13 +833,6 @@
 
               <time title="创建时间：2020-02-19 12:37:50" itemprop="dateCreated datePublished" datetime="2020-02-19T12:37:50+08:00">2020-02-19</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 20:47:51" itemprop="dateModified" datetime="2025-06-21T20:47:51+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -941,9 +858,6 @@
 <img src="/2020/02/19/bufoverflow_a/image1.JPG" class>
 
 <p>然后，我们用IDA分析一下，是一个经典的增删改查的程序，然后我们看到创建堆时，<strong>[前两个堆是用malloc创建，后面的堆用calloc创建]{.mark}</strong>，这意味着，如果要泄露libc地址，只能靠前两个堆，后面的堆从bin里取出后会清空里面的信息。</p>
-<img src="/2020/02/19/bufoverflow_a/image2.JPG" class>
-
-<p>Fill功能存在一个**[null off by one漏洞]{.mark}**</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/19/bufoverflow_a/#more" rel="contents">
@@ -996,13 +910,6 @@
 
               <time title="创建时间：2020-02-17 13:02:50" itemprop="dateCreated datePublished" datetime="2020-02-17T13:02:50+08:00">2020-02-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 20:33:35" itemprop="dateModified" datetime="2025-06-21T20:33:35+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1027,8 +934,7 @@
           <p>首先，我们检查一下程序的保护机制</p>
 <img src="/2020/02/17/waterdrop/image1.JPG" class>
 
-<h2 id="解法一"><a href="#解法一" class="headerlink" title="解法一"></a>解法一</h2><p>然后，我们用IDA分析一下，在guess_secret函数里，存在一个**[伪条件竞争的漏洞]{.mark}**</p>
-<img src="/2020/02/17/waterdrop/image2.JPG" class>
+<h2 id="解法一"><a href="#解法一" class="headerlink" title="解法一"></a>解法一</h2>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/17/waterdrop/#more" rel="contents">

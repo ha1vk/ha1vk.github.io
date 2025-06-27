@@ -214,13 +214,6 @@
 
               <time title="创建时间：2020-06-11 17:40:50" itemprop="dateCreated datePublished" datetime="2020-06-11T17:40:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 21:09:02" itemprop="dateModified" datetime="2025-06-25T21:09:02+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -246,9 +239,6 @@
 <img src="/2020/06/11/arr_sun_2016/image1.png" class>
 
 <p>然后，我们用IDA分析一下，v2为有符号数，因此，这里存在下标越界的漏洞，但是是向上越界。</p>
-<img src="/2020/06/11/arr_sun_2016/image2.png" class>
-
-<p>看似只能向上越界，实际，我们可以利用整数溢出，来达到劫持栈里的返回地址处。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/arr_sun_2016/#more" rel="contents">
@@ -301,13 +291,6 @@
 
               <time title="创建时间：2020-06-11 14:23:50" itemprop="dateCreated datePublished" datetime="2020-06-11T14:23:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 21:06:09" itemprop="dateModified" datetime="2025-06-25T21:06:09+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -333,9 +316,6 @@
 <img src="/2020/06/11/d3ctf_2019_ezfile/image1.png" class>
 
 <p>然后，我们用IDA分析一下，delete功能存在UAF</p>
-<img src="/2020/06/11/d3ctf_2019_ezfile/image2.png" class>
-
-<p>程序里使用的是write输出，因此劫持IO_2_1_stdout泄露不了数据。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/d3ctf_2019_ezfile/#more" rel="contents">
@@ -388,13 +368,6 @@
 
               <time title="创建时间：2020-06-11 14:11:31" itemprop="dateCreated datePublished" datetime="2020-06-11T14:11:31+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 11:00:32" itemprop="dateModified" datetime="2025-06-26T11:00:32+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -463,13 +436,6 @@
 
               <time title="创建时间：2020-06-11 14:01:50" itemprop="dateCreated datePublished" datetime="2020-06-11T14:01:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 21:02:18" itemprop="dateModified" datetime="2025-06-25T21:02:18+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -495,9 +461,6 @@
 <img src="/2020/06/11/hfctf_2020_sucurebox/image1.png" class>
 
 <p>然后，我们用IDA分析一下，在add功能里，size的判断不准确，导致size可以很大，使得malloc(size)返回0，但是没有检查malloc的返回值</p>
-<img src="/2020/06/11/hfctf_2020_sucurebox/image2.png" class>
-
-<p>然后，edit功能里可以指定offset和len，这样，我们就能在整个内存里进行读写了。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/hfctf_2020_sucurebox/#more" rel="contents">
@@ -550,13 +513,6 @@
 
               <time title="创建时间：2020-06-11 13:50:50" itemprop="dateCreated datePublished" datetime="2020-06-11T13:50:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 20:59:16" itemprop="dateModified" datetime="2025-06-25T20:59:16+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -582,9 +538,6 @@
 <img src="/2020/06/11/ciscn_final_9/image1.png" class>
 
 <p>然后，我们用IDA分析一下,safe_read函数存在一个null off by one漏洞</p>
-<img src="/2020/06/11/ciscn_final_9/image2.png" class>
-
-<p>Delete函数里在free之前会清空堆的内容， <img src="/2020/06/11/ciscn_final_9/image3.png" class></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/ciscn_final_9/#more" rel="contents">
@@ -637,13 +590,6 @@
 
               <time title="创建时间：2020-06-11 13:29:50" itemprop="dateCreated datePublished" datetime="2020-06-11T13:29:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 21:12:44" itemprop="dateModified" datetime="2025-06-24T21:12:44+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -669,9 +615,6 @@
 <img src="/2020/06/11/ciscn_final_6/image1.png" class>
 
 <p>然后，我们IDA分析一下，在store_game函数里的getInput存在null off by one漏洞</p>
-<img src="/2020/06/11/ciscn_final_6/image2.png" class>
-
-<p>常规的null off by one漏洞，只是本题逻辑复杂了一点，需要精心构造一下。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/ciscn_final_6/#more" rel="contents">
@@ -724,13 +667,6 @@
 
               <time title="创建时间：2020-06-11 13:20:50" itemprop="dateCreated datePublished" datetime="2020-06-11T13:20:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 21:10:43" itemprop="dateModified" datetime="2025-06-24T21:10:43+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -756,9 +692,6 @@
 <img src="/2020/06/11/ciscn_2019_ne_6/image1.png" class>
 
 <p>然后，我们用IDA分析一下，在delete功能里，ptr指针存在未初始化的漏洞，因此其ptr的值可以通过其他函数来控制，造成任意地址free。</p>
-<img src="/2020/06/11/ciscn_2019_ne_6/image2.png" class>
-
-<p>我们可以利用check函数来控制ptr未初始化之前的值</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/ciscn_2019_ne_6/#more" rel="contents">
@@ -811,13 +744,6 @@
 
               <time title="创建时间：2020-06-11 12:03:50" itemprop="dateCreated datePublished" datetime="2020-06-11T12:03:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-24 21:07:01" itemprop="dateModified" datetime="2025-06-24T21:07:01+08:00">2025-06-24</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -843,9 +769,6 @@
 <img src="/2020/06/11/qwb2019_one/image1.png" class>
 
 <p>然后，我们用IDA分析一下，test功能里abs函数存在溢出，由此可以造成下标越界，进而可以泄露程序的地址。</p>
-<img src="/2020/06/11/qwb2019_one/image2.png" class>
-
-<p>在edit功能里，strchr可以返回字符串结尾的’0’的位置，因此可以造成off by one，我们每一次进行off by one将结尾的0改掉，这样，我们就可以一步一步的逼近下一个chunk的size处，进而可以修改size</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/qwb2019_one/#more" rel="contents">
@@ -898,13 +821,6 @@
 
               <time title="创建时间：2020-06-11 11:48:50" itemprop="dateCreated datePublished" datetime="2020-06-11T11:48:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 20:50:30" itemprop="dateModified" datetime="2025-06-25T20:50:30+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -930,9 +846,6 @@
 <img src="/2020/06/11/RCTF2020_nowrite/image1.png" class>
 
 <p>检测一下沙箱，发现仅能进行open、read、exit操作，write操作都不行。</p>
-<img src="/2020/06/11/RCTF2020_nowrite/image2.png" class>
-
-<p>然后，我们用IDA分析一下，是一个及其简短的栈溢出程序</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/RCTF2020_nowrite/#more" rel="contents">
@@ -985,13 +898,6 @@
 
               <time title="创建时间：2020-06-11 11:20:50" itemprop="dateCreated datePublished" datetime="2020-06-11T11:20:50+08:00">2020-06-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 20:45:11" itemprop="dateModified" datetime="2025-06-25T20:45:11+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1017,8 +923,6 @@
 <img src="/2020/06/11/RCTF2020_bf/image1.png" class>
 
 <p>然后，我们用IDA分析一下，发现是一个brain fuck语言的解释器，其中在&gt;指令操作中，存在一个off by one，ptr指针可以指向string对象， <img src="/2020/06/11/RCTF2020_bf/image2.png" class></p>
-<p>然后，通过后面的read等操作，可以控制string内部第一个指针的低1字节</p>
-<img src="/2020/06/11/RCTF2020_bf/image3.png" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/06/11/RCTF2020_bf/#more" rel="contents">

@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
-  <meta name="description" content="首先，检查一下程序的保护机制   PIE和NX没开，那么，我们可以轻松的布置shellcode到栈里或bss段或堆里，然后跳转。免去了泄露libc地址这些。 然后，我们用IDA分析一下">
+  <meta name="description" content="首先，检查一下程序的保护机制   PIE和NX没开，那么，我们可以轻松的布置shellcode到栈里或bss段或堆里，然后跳转。免去了泄露libc地址这些。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Nobug">
 <meta property="og:url" content="https://github.com/2019/12/20/NoBug/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
-<meta property="og:description" content="首先，检查一下程序的保护机制   PIE和NX没开，那么，我们可以轻松的布置shellcode到栈里或bss段或堆里，然后跳转。免去了泄露libc地址这些。 然后，我们用IDA分析一下">
+<meta property="og:description" content="首先，检查一下程序的保护机制   PIE和NX没开，那么，我们可以轻松的布置shellcode到栈里或bss段或堆里，然后跳转。免去了泄露libc地址这些。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://github.com/2019/12/20/NoBug/image1.JPG">
 <meta property="og:image" content="https://github.com/2019/12/20/NoBug/image2.JPG">
@@ -230,13 +230,6 @@
 
               <time title="创建时间：2019-12-20 13:13:50" itemprop="dateCreated datePublished" datetime="2019-12-20T13:13:50+08:00">2019-12-20</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 19:08:54" itemprop="dateModified" datetime="2025-06-21T19:08:54+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>

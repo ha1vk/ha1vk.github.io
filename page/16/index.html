@@ -214,13 +214,6 @@
 
               <time title="创建时间：2020-04-09 11:16:50" itemprop="dateCreated datePublished" datetime="2020-04-09T11:16:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-23 22:05:02" itemprop="dateModified" datetime="2025-06-23T22:05:02+08:00">2025-06-23</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -246,9 +239,6 @@
 <img src="/2020/04/09/hitcon2014_stkof/image1.png" class>
 
 <p>然后，我们用IDA分析一下,edit功能存在溢出。</p>
-<img src="/2020/04/09/hitcon2014_stkof/image2.png" class>
-
-<p>程序没有show功能。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/hitcon2014_stkof/#more" rel="contents">
@@ -301,13 +291,6 @@
 
               <time title="创建时间：2020-04-09 10:55:50" itemprop="dateCreated datePublished" datetime="2020-04-09T10:55:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-23 22:02:21" itemprop="dateModified" datetime="2025-06-23T22:02:21+08:00">2025-06-23</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -333,9 +316,6 @@
 <img src="/2020/04/09/ciscn_final_2/image1.png" class>
 
 <p>然后，我们用IDA分析一下</p>
-<img src="/2020/04/09/ciscn_final_2/image2.png" class>
-
-<p>创建堆，我们只能写入一个4字节或2字节整数。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/ciscn_final_2/#more" rel="contents">
@@ -388,13 +368,6 @@
 
               <time title="创建时间：2020-04-09 10:40:50" itemprop="dateCreated datePublished" datetime="2020-04-09T10:40:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-23 21:58:44" itemprop="dateModified" datetime="2025-06-23T21:58:44+08:00">2025-06-23</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -419,9 +392,6 @@
           <p>程序给的glibc版本为2.27，存在tcache机制</p>
 <p>首先检查一下程序的保护机制</p>
 <img src="/2020/04/09/ciscn_final_3/image1.png" class>
-
-<p>然后，我们用IDA分析一下</p>
-<p>Delete功能存在UAF漏洞</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/ciscn_final_3/#more" rel="contents">
@@ -474,13 +444,6 @@
 
               <time title="创建时间：2020-04-09 10:29:50" itemprop="dateCreated datePublished" datetime="2020-04-09T10:29:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-23 21:56:01" itemprop="dateModified" datetime="2025-06-23T21:56:01+08:00">2025-06-23</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -506,9 +469,6 @@
 <img src="/2020/04/09/vn_pwn_babybabypwn_1/image1.png" class>
 
 <p>然后，我们用IDA分析一下</p>
-<img src="/2020/04/09/vn_pwn_babybabypwn_1/image2.png" class>
-
-<p>显然一个signreturn的系统调用，因此可以做SROP。由于开启了PIE，因此，我们不考虑程序的bss段，而是考虑glibc的bss段，因为程序一开始告诉了我们puts函数的地址，我们就可以知道glibc的地址。我们先利用read在glibc的bss段布置下rop，然后栈迁移过去即可。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/vn_pwn_babybabypwn_1/#more" rel="contents">
@@ -561,13 +521,6 @@
 
               <time title="创建时间：2020-04-09 10:22:50" itemprop="dateCreated datePublished" datetime="2020-04-09T10:22:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-23 21:52:26" itemprop="dateModified" datetime="2025-06-23T21:52:26+08:00">2025-06-23</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -593,9 +546,6 @@
 <img src="/2020/04/09/vn_pwn_warmup/image1.png" class>
 
 <p>程序开启了沙箱保护</p>
-<img src="/2020/04/09/vn_pwn_warmup/image2.png" class>
-
-<p>禁用了execve调用。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/vn_pwn_warmup/#more" rel="contents">
@@ -648,13 +598,6 @@
 
               <time title="创建时间：2020-04-09 10:06:50" itemprop="dateCreated datePublished" datetime="2020-04-09T10:06:50+08:00">2020-04-09</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-23 21:48:08" itemprop="dateModified" datetime="2025-06-23T21:48:08+08:00">2025-06-23</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -679,9 +622,6 @@
           <p>首先，已知libc版本为2.27，所以存在tcache机制，并且可以随意的double free tcache bin的chunk。</p>
 <p>然后，我们检查一下程序的保护机制</p>
 <img src="/2020/04/09/vn_pwn_easyTHeap/image1.png" class>
-
-<p>然后，我们用IDA分析一下程序</p>
-<p>存在UAF漏洞，因此可以double free，对于glibc 2.27，可以很轻松的利用</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/09/vn_pwn_easyTHeap/#more" rel="contents">
@@ -734,13 +674,6 @@
 
               <time title="创建时间：2020-04-05 23:27:11" itemprop="dateCreated datePublished" datetime="2020-04-05T23:27:11+08:00">2020-04-05</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:51:12" itemprop="dateModified" datetime="2025-06-25T16:51:12+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -764,9 +697,6 @@
       
           <p>SROP可以在gadgets很少的时候的栈利用里使用，近期学习linux后，明白了程序进行系统调用时，状态会从用户态切换到内核态。而切换的实质是将用户态的寄存器保存。而返回的时候，再重新恢复用户态的寄存器。系统调用signreturn，是内核态恢复到用户态；它的具体操作是**[从用户的栈中弹出寄存器的值]{.mark}**。因此，如果栈能被我们控制，然后我们能够构造signreturn的系统调用，那么就能完成利用。我们的目的就是可以借助signreturn来控制全部的寄存器。</p>
 <h1 id="例题ciscn-2019-s-3"><a href="#例题ciscn-2019-s-3" class="headerlink" title="例题ciscn_2019_s_3"></a>例题ciscn_2019_s_3</h1><p>首先，检查一下程序的保护机制</p>
-<img src="/2020/04/05/SROP/image1.png" class>
-
-<p>然后，我们用IDA分析一下，存在一个栈溢出漏洞。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/05/SROP/#more" rel="contents">
@@ -819,13 +749,6 @@
 
               <time title="创建时间：2020-04-02 22:45:11" itemprop="dateCreated datePublished" datetime="2020-04-02T22:45:11+08:00">2020-04-02</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-25 16:47:32" itemprop="dateModified" datetime="2025-06-25T16:47:32+08:00">2025-06-25</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -852,7 +775,7 @@
 
       
           <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>厌倦了x86&#x2F;x64 平台下的二进制漏洞利用，来看看mips&#x2F;arm平台下的pwn是如何达到利用的。众所周知，mips&#x2F;arm架构cpu主要用于嵌入式设备，比如路由器这些。当我们在x86&#x2F;x64平台练习到一定境界后，再去探索一个新的平台下的漏洞利用，我们可以借鉴以前的方法，总之，思想都是一样的。只不过是指令的样子不同而已。</p>
-<h2 id="MIPS架构的pwn"><a href="#MIPS架构的pwn" class="headerlink" title="MIPS架构的pwn"></a>MIPS架构的pwn</h2><h3 id="mips、mipsel的区别"><a href="#mips、mipsel的区别" class="headerlink" title="mips、mipsel的区别"></a>mips、mipsel的区别</h3><p>mips是大端(big-endian)架构，而mipsel是小端(little-endian)架构。指令的用法是差不多的。</p>
+<h2 id="MIPS架构的pwn"><a href="#MIPS架构的pwn" class="headerlink" title="MIPS架构的pwn"></a>MIPS架构的pwn</h2>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/04/02/mips_arm_aarch64-pwn%E5%88%9D%E6%8E%A2/#more" rel="contents">
@@ -905,13 +828,6 @@
 
               <time title="创建时间：2020-03-06 14:25:11" itemprop="dateCreated datePublished" datetime="2020-03-06T14:25:11+08:00">2020-03-06</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 12:00:11" itemprop="dateModified" datetime="2025-06-26T12:00:11+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -936,9 +852,6 @@
           <p>Prctl是linux的一个函数，可以对进程、线程做一些设置，<strong>prctl内部通过虚表来调用对应的功能</strong>，如果我们劫持prctl的虚表，使它指向其他对我们有帮助的内核函数，比如call_usermodehelper函数，该函数执行一个用户传入的二进制文件，<strong>且以root权限执行，由此可以利用起来提权。</strong></p>
 <p>我们分析一下prctl源码，在linux&#x2F;kernel&#x2F;sys.c里，我们看到这</p>
 <img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image1.JPG" class>
-
-<p>我们继续跟进，查看security_task_prctl函数，在linux&#x2F;security&#x2F;security.c文件里找到</p>
-<img src="/2020/03/06/linux_kernel_pwn_hijack_prctl/image2.JPG" class>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/03/06/linux_kernel_pwn_hijack_prctl/#more" rel="contents">
@@ -991,13 +904,6 @@
 
               <time title="创建时间：2020-03-06 13:26:11" itemprop="dateCreated datePublished" datetime="2020-03-06T13:26:11+08:00">2020-03-06</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 11:55:37" itemprop="dateModified" datetime="2025-06-26T11:55:37+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1023,7 +929,6 @@
 <img src="/2020/03/06/linux_kernel_pwn_vdso/image1.png" class>
 
 <p>由于vdso是在内核里，每个程序使用的时候，从内核里映射给程序，如果我们<strong>事先在内核里把vdso给劫持了，并把相应的函数覆盖成我们的shellcode</strong>，然后，当其他程序要用的时候，从内核把我们篡改过的vdso映射过去，如果它正好调用了对应的函数，就会执行我们对应位置布下的shellcode。当然普通权限的程序，调用我们的shellcode，也只是普通权限；如果有r<strong>oot权限的程序，调用我们的shellcode，那么我们的shellcode也是以root权限执行</strong>。在linux中，<strong>crontab是带有root权限的，并且它会不断的调用vdso里的gettimeofday函数</strong>，因此，我们如果把gettimeofday函数劫持为shellcode，等待被调用即可。至于为什么可以劫持vdso，因为<strong>vdso对于用户程序，只读、执行，而对于内核，它是RWX的</strong>，可以修改。因此只要利用漏洞，将对于函数修改为shellcode，布置在vdso的shellcode可以为反弹shell的shellcode，也可以是再运行一个其他程序，其他程序将继承权限。以CSAW-2015-StringIPC为例。</p>
-<h1 id="CSAW-2015-StringIPC"><a href="#CSAW-2015-StringIPC" class="headerlink" title="CSAW-2015-StringIPC"></a>CSAW-2015-StringIPC</h1><p>为了劫持vdso，首先需要知道vdso在内核里的地址，查看内核映射图，vdso在内核附近，因此我们确定范围<strong>0xffffffff80000000——0xffffffffffffefff</strong></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/03/06/linux_kernel_pwn_vdso/#more" rel="contents">

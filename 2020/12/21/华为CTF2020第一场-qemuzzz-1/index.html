@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
-  <meta name="description" content="存在一个off by one，可以多读取或写入一个字节  其中buf后面是设备obj指针，由于读写会用到这个指针，因此，我们可以修改obj指针的低1字节，使得phys_addr、length、pos、obj、以及cpu_physical_memory_rw函数指针等字段偏移到buf可控区里。   同时cpu_physical_memory_rw是以原来对象指针来取得，而不是从obj，因此可以通过修">
+  <meta name="description" content="存在一个off by one，可以多读取或写入一个字节  其中buf后面是设备obj指针，由于读写会用到这个指针，因此，我们可以修改obj指针的低1字节，使得phys_addr、length、pos、obj、以及cpu_physical_memory_rw函数指针等字段偏移到buf可控区里。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="华为CTF2020第一场_qemuzzz_1">
 <meta property="og:url" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
-<meta property="og:description" content="存在一个off by one，可以多读取或写入一个字节  其中buf后面是设备obj指针，由于读写会用到这个指针，因此，我们可以修改obj指针的低1字节，使得phys_addr、length、pos、obj、以及cpu_physical_memory_rw函数指针等字段偏移到buf可控区里。   同时cpu_physical_memory_rw是以原来对象指针来取得，而不是从obj，因此可以通过修">
+<meta property="og:description" content="存在一个off by one，可以多读取或写入一个字节  其中buf后面是设备obj指针，由于读写会用到这个指针，因此，我们可以修改obj指针的低1字节，使得phys_addr、length、pos、obj、以及cpu_physical_memory_rw函数指针等字段偏移到buf可控区里。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/1.png">
 <meta property="og:image" content="https://github.com/2020/12/21/%E5%8D%8E%E4%B8%BACTF2020%E7%AC%AC%E4%B8%80%E5%9C%BA-qemuzzz-1/2.png">
@@ -226,13 +226,6 @@
 
               <time title="创建时间：2020-12-21 08:39:04" itemprop="dateCreated datePublished" datetime="2020-12-21T08:39:04+08:00">2020-12-21</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 13:56:28" itemprop="dateModified" datetime="2025-06-26T13:56:28+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>

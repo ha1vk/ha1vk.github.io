@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
-  <meta name="description" content="一个安卓端程序，native层是简单的菜单程序，其中edit功能没有检查长度，可以溢出，并且没有使用\0截断字符串，在show的时候可以泄露后续的数据  难点在于如何进行交互，程序注册了JSBridge用于与js进行交互，其中该接口对象在js中的对象名为_jsbridge  该对象有一个call函数">
+  <meta name="description" content="一个安卓端程序，native层是简单的菜单程序，其中edit功能没有检查长度，可以溢出，并且没有使用\0截断字符串，在show的时候可以泄露后续的数据  难点在于如何进行交互，程序注册了JSBridge用于与js进行交互，其中该接口对象在js中的对象名为_jsbridge">
 <meta property="og:type" content="article">
 <meta property="og:title" content="bytectf2020 pwnandroid">
 <meta property="og:url" content="https://github.com/2020/10/27/bytectf2020-pwnandroid/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
-<meta property="og:description" content="一个安卓端程序，native层是简单的菜单程序，其中edit功能没有检查长度，可以溢出，并且没有使用\0截断字符串，在show的时候可以泄露后续的数据  难点在于如何进行交互，程序注册了JSBridge用于与js进行交互，其中该接口对象在js中的对象名为_jsbridge  该对象有一个call函数">
+<meta property="og:description" content="一个安卓端程序，native层是简单的菜单程序，其中edit功能没有检查长度，可以溢出，并且没有使用\0截断字符串，在show的时候可以泄露后续的数据  难点在于如何进行交互，程序注册了JSBridge用于与js进行交互，其中该接口对象在js中的对象名为_jsbridge">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://github.com/2020/10/27/bytectf2020-pwnandroid/1.png">
 <meta property="og:image" content="https://github.com/2020/10/27/bytectf2020-pwnandroid/2.png">
@@ -224,13 +224,6 @@
 
               <time title="创建时间：2020-10-27 18:06:50" itemprop="dateCreated datePublished" datetime="2020-10-27T18:06:50+08:00">2020-10-27</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 10:53:04" itemprop="dateModified" datetime="2025-06-26T10:53:04+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>

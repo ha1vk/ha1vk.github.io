@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
   </script>
 
-  <meta name="description" content="首先，介绍一下malloc_hook，这是C语言提供的一个用来包装malloc的，类似还有free_hook，具体可以查阅相关资料学习 Malloc hook我们看如下代码 12345678910111213#include &lt;stdio.h&gt;  #include &lt;malloc.h&gt;    void *fun() &#123;     __malloc_hook &#x3D; NU">
+  <meta name="description" content="首先，介绍一下malloc_hook，这是C语言提供的一个用来包装malloc的，类似还有free_hook，具体可以查阅相关资料学习 Malloc hook我们看如下代码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Noleak">
 <meta property="og:url" content="https://github.com/2019/11/13/Noleak/index.html">
 <meta property="og:site_name" content="ha1vk&#39;s blog">
-<meta property="og:description" content="首先，介绍一下malloc_hook，这是C语言提供的一个用来包装malloc的，类似还有free_hook，具体可以查阅相关资料学习 Malloc hook我们看如下代码 12345678910111213#include &lt;stdio.h&gt;  #include &lt;malloc.h&gt;    void *fun() &#123;     __malloc_hook &#x3D; NU">
+<meta property="og:description" content="首先，介绍一下malloc_hook，这是C语言提供的一个用来包装malloc的，类似还有free_hook，具体可以查阅相关资料学习 Malloc hook我们看如下代码">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://github.com/2019/11/13/Noleak/image1.JPG">
 <meta property="og:image" content="https://github.com/2019/11/13/Noleak/image2.JPG">
@@ -243,13 +243,6 @@
 
               <time title="创建时间：2019-11-13 21:47:50" itemprop="dateCreated datePublished" datetime="2019-11-13T21:47:50+08:00">2019-11-13</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-06-21 16:04:59" itemprop="dateModified" datetime="2025-06-21T16:04:59+08:00">2025-06-21</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
